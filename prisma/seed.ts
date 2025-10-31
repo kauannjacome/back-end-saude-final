@@ -39,7 +39,9 @@ async function main() {
     },
   })
 
-  // Unidades
+  // ===========================
+  // UNIDADES
+  // ===========================
   const unit1 = await prisma.unit.upsert({
     where: { uuid: '00000000-0000-0000-0000-000000000001' },
     update: {},
@@ -60,9 +62,16 @@ async function main() {
     },
   })
 
-  // Profissionais
+  // ===========================
+  // PROFISSIONAIS
+  // ===========================
   const prof1 = await prisma.professional.upsert({
-    where: { cpf: '11111111111' },
+    where: {
+      subscriber_id_cpf: {
+        subscriber_id: subscriber1.id,
+        cpf: '11111111111',
+      },
+    },
     update: {},
     create: {
       subscriber_id: subscriber1.id,
@@ -79,7 +88,12 @@ async function main() {
   })
 
   const prof2 = await prisma.professional.upsert({
-    where: { cpf: '22222222222' },
+    where: {
+      subscriber_id_cpf: {
+        subscriber_id: subscriber1.id,
+        cpf: '22222222222',
+      },
+    },
     update: {},
     create: {
       subscriber_id: subscriber1.id,
@@ -95,9 +109,16 @@ async function main() {
     },
   })
 
-  // Pacientes
+  // ===========================
+  // PACIENTES
+  // ===========================
   const pac1 = await prisma.patient.upsert({
-    where: { cpf: '33333333333' },
+    where: {
+      subscriber_id_cpf: {
+        subscriber_id: subscriber1.id,
+        cpf: '33333333333',
+      },
+    },
     update: {},
     create: {
       subscriber_id: subscriber1.id,
@@ -112,7 +133,12 @@ async function main() {
   })
 
   const pac2 = await prisma.patient.upsert({
-    where: { cpf: '44444444444' },
+    where: {
+      subscriber_id_cpf: {
+        subscriber_id: subscriber1.id,
+        cpf: '44444444444',
+      },
+    },
     update: {},
     create: {
       subscriber_id: subscriber1.id,
@@ -126,7 +152,9 @@ async function main() {
     },
   })
 
-  // Grupo e Subgrupo
+  // ===========================
+  // GRUPOS / SUBGRUPOS
+  // ===========================
   const group1 = await prisma.group.upsert({
     where: { uuid: '00000000-0000-0000-0000-000000000010' },
     update: {},
@@ -151,7 +179,9 @@ async function main() {
     },
   })
 
-  // Cuidados (procedimentos)
+  // ===========================
+  // CUIDADOS
+  // ===========================
   const care1 = await prisma.care.upsert({
     where: { uuid: '00000000-0000-0000-0000-000000000021' },
     update: {},
@@ -192,7 +222,9 @@ async function main() {
     },
   })
 
-  // Pasta
+  // ===========================
+  // PASTA
+  // ===========================
   const folder1 = await prisma.folder.upsert({
     where: { uuid: '00000000-0000-0000-0000-000000000030' },
     update: {},
@@ -209,9 +241,16 @@ async function main() {
     },
   })
 
-  // Fornecedores
+  // ===========================
+  // FORNECEDOR
+  // ===========================
   const supplier1 = await prisma.supplier.upsert({
-    where: { cnpj: '55555555000111' },
+    where: {
+      subscriber_id_cnpj: {
+        subscriber_id: subscriber1.id,
+        cnpj: '55555555000111',
+      },
+    },
     update: {},
     create: {
       subscriber_id: subscriber1.id,
@@ -221,7 +260,9 @@ async function main() {
     },
   })
 
-  // Regulação
+  // ===========================
+  // REGULAÇÃO
+  // ===========================
   const regulation1 = await prisma.regulation.upsert({
     where: { uuid: '00000000-0000-0000-0000-000000000050' },
     update: {},
@@ -237,6 +278,21 @@ async function main() {
       creator_id: prof1.id,
       folder_id: folder1.id,
       relationship: relationship.cuidador_a,
+    },
+  })
+
+  await prisma.care_regulation.upsert({
+    where: {
+      care_id_regulation_id: {
+        care_id: care1.id,
+        regulation_id: regulation1.id,
+      },
+    },
+    update: { quantity: 1 },
+    create: {
+      care_id: care1.id,
+      regulation_id: regulation1.id,
+      quantity: 1,
     },
   })
 
@@ -275,7 +331,12 @@ async function main() {
   })
 
   const profRJ = await prisma.professional.upsert({
-    where: { cpf: '99999999999' },
+    where: {
+      subscriber_id_cpf: {
+        subscriber_id: subscriber2.id,
+        cpf: '99999999999',
+      },
+    },
     update: {},
     create: {
       subscriber_id: subscriber2.id,
@@ -292,7 +353,12 @@ async function main() {
   })
 
   const pacRJ = await prisma.patient.upsert({
-    where: { cpf: '88888888888' },
+    where: {
+      subscriber_id_cpf: {
+        subscriber_id: subscriber2.id,
+        cpf: '88888888888',
+      },
+    },
     update: {},
     create: {
       subscriber_id: subscriber2.id,
@@ -338,7 +404,12 @@ async function main() {
   })
 
   const supplierRJ = await prisma.supplier.upsert({
-    where: { cnpj: '77777777000122' },
+    where: {
+      subscriber_id_cnpj: {
+        subscriber_id: subscriber2.id,
+        cnpj: '77777777000122',
+      },
+    },
     update: {},
     create: {
       subscriber_id: subscriber2.id,
@@ -361,6 +432,21 @@ async function main() {
       notes: 'Solicitação de ECG de urgência',
       supplier_id: supplierRJ.id,
       creator_id: profRJ.id,
+    },
+  })
+
+  await prisma.care_regulation.upsert({
+    where: {
+      care_id_regulation_id: {
+        care_id: careRJ.id,
+        regulation_id: regulationRJ.id,
+      },
+    },
+    update: { quantity: 1 },
+    create: {
+      care_id: careRJ.id,
+      regulation_id: regulationRJ.id,
+      quantity: 1,
     },
   })
 

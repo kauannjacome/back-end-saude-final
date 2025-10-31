@@ -1,12 +1,23 @@
+
 import {
   IsString,
   IsOptional,
   IsDateString,
   IsEnum,
   IsInt,
-  IsNumber,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { status, relationship } from '@prisma/client';
+
+class CareRegulationDto {
+  @IsInt()
+  care_id: number;
+
+  @IsInt()
+  quantity: number;
+}
 
 export class CreateRegulationDto {
   @IsInt()
@@ -83,4 +94,10 @@ export class CreateRegulationDto {
   @IsOptional()
   @IsInt()
   version_document?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CareRegulationDto)
+  cares?: CareRegulationDto[];
 }

@@ -1,13 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
+// Learn more at https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
-
 
 datasource db {
   provider = "sqlite"
@@ -201,10 +197,11 @@ model care {
   updated_at       DateTime         @updatedAt
   deleted_at       DateTime?
 
-  subscriber   subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  group        group?        @relation(fields: [group_id], references: [id])
-  professional professional? @relation(fields: [professional_id], references: [id])
-  folders      folder[]      @relation("CareFolder")
+  regulations  care_regulation[]
+  subscriber   subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  group        group?            @relation(fields: [group_id], references: [id])
+  professional professional?     @relation(fields: [professional_id], references: [id])
+  folders      folder[]          @relation("CareFolder")
 
   @@index([subscriber_id])
   @@index([group_id])
@@ -260,7 +257,7 @@ model patient {
   id                     Int       @id @default(autoincrement())
   uuid                   String    @unique @default(uuid())
   subscriber_id          Int
-  cpf                    String    @unique
+  cpf                    String    
   cns                    String?
   full_name              String
   social_name            String?
@@ -297,7 +294,7 @@ model patient {
 
   subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   regulations regulation[]
-
+  @@unique([subscriber_id, cpf])
   @@index([subscriber_id])
 }
 
@@ -305,7 +302,7 @@ model professional {
   id                     Int       @id @default(autoincrement())
   uuid                   String    @unique @default(uuid())
   subscriber_id          Int
-  cpf                    String    @unique
+  cpf                    String    
   name                   String?
   professional_name      String?
   cargo                  String?
@@ -331,13 +328,13 @@ model professional {
   regulations_printed  regulation[] @relation("regulation_printer")
   cares                care[]
   audit_logs           audit_log[]
-
+  @@unique([subscriber_id, cpf])
   @@index([subscriber_id])
 }
 
 model regulation {
-  id                   Int           @id @default(autoincrement())
-  uuid                 String        @unique @default(uuid())
+  id                   Int               @id @default(autoincrement())
+  uuid                 String            @unique @default(uuid())
   subscriber_id        Int
   id_code              String?
   patient_id           Int?
@@ -350,6 +347,7 @@ model regulation {
   url_current_document String?
   folder_id            Int?
   relationship         relationship?
+  priority             priority?         @default(eletivo)
   caregiver_id         String?
   creator_id           Int?
   analyzed_id          Int?
@@ -357,8 +355,9 @@ model regulation {
   supplier_id          Int?
   history              Int?
   version_document     Int?
-  created_at           DateTime      @default(now())
-  updated_at           DateTime      @updatedAt
+  cares                care_regulation[]
+  created_at           DateTime          @default(now())
+  updated_at           DateTime          @updatedAt
   deleted_at           DateTime?
 
   subscriber subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
@@ -384,13 +383,29 @@ model supplier {
   subscriber_id Int
   name          String
   trade_name    String
-  cnpj          String    @unique
+  cnpj          String    
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
   deleted_at    DateTime?
 
   subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   regulations regulation[]
-
+  @@unique([subscriber_id, cnpj])
   @@index([subscriber_id])
+}
+
+model care_regulation {
+  id            Int      @id @default(autoincrement())
+  care_id       Int
+  regulation_id Int
+  quantity      Int      @default(1)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  care       care       @relation(fields: [care_id], references: [id], onDelete: Cascade)
+  regulation regulation @relation(fields: [regulation_id], references: [id], onDelete: Cascade)
+
+  @@unique([care_id, regulation_id])
+  @@index([care_id])
+  @@index([regulation_id])
 }

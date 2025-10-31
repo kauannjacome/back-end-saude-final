@@ -21,6 +21,20 @@ export class PatientService {
     });
   }
 
+  async search(subscriber_id: number, term: string) {
+  return this.prisma.patient.findMany({
+    where: {
+      subscriber_id,
+      deleted_at: null,
+      OR: [
+        { full_name: { contains: term } },
+        { cpf: { contains: term} },
+      ],
+    },
+    orderBy: { full_name: 'asc' },
+  });
+}
+
   async findOne(id: number) {
     const patient = await this.prisma.patient.findUnique({
       where: { id },
