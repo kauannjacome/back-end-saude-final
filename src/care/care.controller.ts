@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { CareService } from './care.service';
 import { CreateCareDto } from './dto/create-care.dto';
 import { UpdateCareDto } from './dto/update-care.dto';
@@ -10,6 +10,14 @@ export class CareController {
   @Post()
   create(@Body() createCareDto: CreateCareDto) {
     return this.careService.create(createCareDto);
+  }
+  // 🔍 Endpoint de busca
+  @Get('search/:subscriber_id')
+  search(
+    @Param('subscriber_id') subscriber_id: string,
+    @Query('term') term: string,
+  ) {
+    return this.careService.search(+subscriber_id, term);
   }
 
   @Get()

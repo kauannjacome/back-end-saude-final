@@ -42,6 +42,25 @@ export class CareService {
     });
   }
 
+  async search(subscriber_id: number, term: string) {
+  return this.prisma.care.findMany({
+    where: {
+      subscriber_id,
+      deleted_at: null,
+      OR: [
+        { name: { contains: term} },
+        { acronym: { contains: term} },
+
+      ],
+    },
+    orderBy: { name: 'asc' },
+    include: {
+      group: { select: { name: true } },
+      professional: { select: { name: true } },
+    },
+  });
+}
+
   /**
    * Retorna um único cuidado pelo ID
    */
