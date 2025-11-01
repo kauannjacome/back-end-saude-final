@@ -87,51 +87,53 @@ export async function generateRegulationPdf(
     doc.text(
       `Endereço: ${patient.address || 'N/A'}, ${patient.neighborhood || ''}, ${patient.city || ''}/${patient.state || ''}`,
     );
+    const x_save = doc.page.width;
+    const Y_save = doc.y
     doc.moveDown(1.5);
 
     // === QR CODE ===
-    const qrLink = `${process.env.LINK_BASE_QR_CODE || 'https://exemplo.com'}/auth-monitoring/${data.uuid}`;
-    const qrDataUrl = await QRCode.toDataURL(qrLink);
-    const base64Data = qrDataUrl.replace(/^data:image\/png;base64,/, '');
-    const qrImageBuffer = Buffer.from(base64Data, 'base64');
+    // const qrLink = `${process.env.LINK_BASE_QR_CODE || 'https://exemplo.com'}/auth-monitoring/${data.uuid}`;
+    // const qrDataUrl = await QRCode.toDataURL(qrLink);
+    // const base64Data = qrDataUrl.replace(/^data:image\/png;base64,/, '');
+    // const qrImageBuffer = Buffer.from(base64Data, 'base64');
 
-    const qrX = doc.page.width - 150;
-    const qrY = doc.y - 10;
-    doc.roundedRect(qrX - 15, qrY - 5, 130, 100, 10).fill(LAYOUT.colors.grayBox);
-    doc.image(qrImageBuffer, qrX + 25, qrY + 10, { width: 70 });
-    doc.fillColor('#000')
-      .font('Helvetica-Bold')
-      .fontSize(10)
-      .text('Acompanhe:', qrX - 5, qrY + 80, { width: 130, align: 'center' });
-    doc.moveDown(3);
+    // const qrX = doc.page.width - 150;
+    // const qrY = doc.y - 10;
+    doc.roundedRect( 405,  105, 130, 100, 10).fill(LAYOUT.colors.grayBox);
+    // doc.image(qrImageBuffer, qrX + 25, qrY + 10, { width: 70 });
+    // doc.fillColor('#000')
+    //   .font('Helvetica-Bold')
+    //   .fontSize(10)
+    //   .text('Acompanhe:', 5, 80, { width: 130, align: 'center' });
+    // doc.moveDown(3);
 
-    // === TABELA DE CUIDADOS ===
-    const table = {
-      headers: ['Cuidado', 'Quantidade'],
-      rows: data.cares.map((c) => [
-        Str(c.care.name).limit(60, '...').toString(),
-        c.quantity.toString(),
-      ]),
-    };
+    // // === TABELA DE CUIDADOS ===
+    // const table = {
+    //   headers: ['Cuidado', 'Quantidade'],
+    //   rows: data.cares.map((c) => [
+    //     Str(c.care.name).limit(60, '...').toString(),
+    //     c.quantity.toString(),
+    //   ]),
+    // };
 
-    await doc.table(table, {
-      columnsSize: [400, 100],
-      prepareHeader: () => doc.font('Helvetica-Bold').fontSize(10),
-      prepareRow: () => doc.font('Helvetica').fontSize(9),
-    });
+    // await doc.table(table, {
+    //   columnsSize: [400, 100],
+    //   prepareHeader: () => doc.font('Helvetica-Bold').fontSize(10),
+    //   prepareRow: () => doc.font('Helvetica').fontSize(9),
+    // });
 
-    // === LINHA DIVISÓRIA (MEIO DA FOLHA) ===
-    const halfY = doc.page.height / 2;
-    doc.moveTo(20, halfY).lineTo(doc.page.width - 20, halfY).dash(3, { space: 3 }).stroke();
+    // // === LINHA DIVISÓRIA (MEIO DA FOLHA) ===
+    // const halfY = doc.page.height / 2;
+    // doc.moveTo(20, halfY).lineTo(doc.page.width - 20, halfY).dash(3, { space: 3 }).stroke();
 
-    // === SEGUNDA VIA COM ASSINATURA ===
-    const startY = halfY + 20;
-    doc.font('Helvetica-Bold').fontSize(12).text('2ª VIA - ASSINATURA', 30, startY);
-    doc.font('Helvetica').fontSize(10);
-    doc.text(`Paciente: ${patient.full_name}`, 30, startY + 30);
-    doc.text(`CPF: ${patient.cpf}`, 30, startY + 45);
-    doc.text('________________________________________', 30, startY + 100);
-    doc.text('Assinatura do Responsável', 30, startY + 115);
+    // // === SEGUNDA VIA COM ASSINATURA ===
+    // const startY = halfY + 20;
+    // doc.font('Helvetica-Bold').fontSize(12).text('2ª VIA - ASSINATURA', 30, startY);
+    // doc.font('Helvetica').fontSize(10);
+    // doc.text(`Paciente: ${patient.full_name}`, 30, startY + 30);
+    // doc.text(`CPF: ${patient.cpf}`, 30, startY + 45);
+    // doc.text('________________________________________', 30, startY + 100);
+    // doc.text('Assinatura do Responsável', 30, startY + 115);
 
     // === RODAPÉ ===
     const footerY = doc.page.height - 30;

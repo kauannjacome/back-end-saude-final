@@ -1,7 +1,8 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import * as path from 'path';
+import { TipoArquivo } from './dto/create-upload.dto';
 
 @Injectable()
 export class UploadService {
@@ -23,10 +24,10 @@ export class UploadService {
     }
   }
 
-  async uploadFile(file: Express.Multer.File) {
+  async uploadFile(file: Express.Multer.File,folder:string) {
     try {
       const fileExt = path.extname(file.originalname).toLowerCase();
-      const key = `uploads/${randomUUID()}${fileExt}`;
+      const key = `${folder}/${randomUUID()}${fileExt}`;
 
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -45,8 +46,47 @@ export class UploadService {
         url,
       };
     } catch (error) {
-      console.error('Erro no upload:', error);
-      throw new HttpException('Erro ao enviar arquivo para o S3', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Erro detalhado no upload para o S3:');
+    }
+  }
+
+
+ async uploadImage(
+    file: Express.Multer.File,
+    tipo: TipoArquivo,
+    id: number,
+  ) {
+    try {
+      if (!file) {
+        throw new Error('Nenhum arquivo recebido para upload.');
+      }
+
+      const fileExt = path.extname(file.originalname).toLowerCase();
+      const key = `imagem/${id}/${tipo}-${randomUUID()}${fileExt}`;
+
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      });
+
+      await this.s3Client.send(command);
+
+      const url = `https://${this.bucketName}.s3.amazonaws.com/${key}`;
+
+      return {
+        message: 'Upload realizado com sucesso!',
+        key,
+        url,
+        tipo,
+        id,
+      };
+    } catch (error) {
+      console.error('Erro detalhado no upload para o S3:', error);
+      throw new InternalServerErrorException(
+        'Falha ao fazer upload da imagem. Tente novamente mais tarde.',
+      );
     }
   }
 }

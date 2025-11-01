@@ -72,6 +72,8 @@ export class RegulationService {
       throw new NotFoundException(`Regulation #${id} not found`);
     return regulation;
   }
+
+  
 async generatePdf(id: number, copies: number = 1) {
   const regulation = await this.findOne(id); // já traz todos os includes
   const pdfBuffer = await generateRegulationPdf(regulation, copies);
