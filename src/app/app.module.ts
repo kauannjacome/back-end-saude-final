@@ -12,6 +12,7 @@ import { RegulationModule } from '../regulation/regulation.module';
 import { SubscriberModule } from '../subscriber/subscriber.module';
 import { SupplierModule } from '../supplier/supplier.module';
 import { UnitModule } from '../unit/unit.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
@@ -24,7 +25,8 @@ import { UnitModule } from '../unit/unit.module';
     RegulationModule,
     SubscriberModule,
     SupplierModule,
-    UnitModule
+    UnitModule,
+    UploadModule
 
 
    ],
