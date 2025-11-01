@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRegulationDto } from './dto/create-regulation.dto';
 import { UpdateRegulationDto } from './dto/update-regulation.dto';
+import { generateRegulationPdf } from './pdf/generate-regulation-pdf';
+
 
 @Injectable()
 export class RegulationService {
@@ -70,6 +72,12 @@ export class RegulationService {
       throw new NotFoundException(`Regulation #${id} not found`);
     return regulation;
   }
+async generatePdf(id: number, copies: number = 1) {
+  const regulation = await this.findOne(id); // já traz todos os includes
+  const pdfBuffer = await generateRegulationPdf(regulation, copies);
+
+  return pdfBuffer; // você pode retornar direto ou salvar num arquivo temporário
+}
 
 async update(id: number, updateRegulationDto: UpdateRegulationDto) {
   await this.findOne(id);

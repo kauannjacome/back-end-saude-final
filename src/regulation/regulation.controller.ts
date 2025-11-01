@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Res,
+} from '@nestjs/common';
+import type { Response } from 'express'; // ✅ import type
 import { RegulationService } from './regulation.service';
 import { CreateRegulationDto } from './dto/create-regulation.dto';
 import { UpdateRegulationDto } from './dto/update-regulation.dto';
@@ -12,19 +23,34 @@ export class RegulationController {
     return this.regulationService.create(createRegulationDto);
   }
 
-    @Get()
+  @Get()
   findAll(@Query('subscriber_id') subscriber_id: number) {
     return this.regulationService.findAll(Number(subscriber_id));
   }
-
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.regulationService.findOne(+id);
   }
 
+  @Get(':id/pdf')
+  async generatePdf(@Param('id') id: string, @Res() res: Response) {
+    const buffer = await this.regulationService.generatePdf(Number(id));
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="regulamento_${id}.pdf"`,
+      'Content-Length': buffer.length,
+    });
+
+    res.end(buffer);
+  }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRegulationDto: UpdateRegulationDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateRegulationDto: UpdateRegulationDto,
+  ) {
     return this.regulationService.update(+id, updateRegulationDto);
   }
 
