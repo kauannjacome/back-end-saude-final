@@ -75,11 +75,30 @@ export class RegulationService {
 
   
 async generatePdf(id: number, copies: number = 1) {
-  const regulation = await this.findOne(id); // já traz todos os includes
+
+      const regulation = await this.prisma.regulation.findUnique({
+      where: { id },
+      include: {
+        patient: true,
+        folder: true,
+        supplier: true,
+        creator: true,
+        subscriber:true,
+        cares: {
+          include: { care: true },
+        },
+      },
+    });
+
+
+
   const pdfBuffer = await generateRegulationPdf(regulation, copies);
 
   return pdfBuffer; // você pode retornar direto ou salvar num arquivo temporário
 }
+
+
+
 
 async update(id: number, updateRegulationDto: UpdateRegulationDto) {
   await this.findOne(id);

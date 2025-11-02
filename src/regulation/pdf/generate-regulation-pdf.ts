@@ -2,32 +2,22 @@
 import PDFDocument from 'pdfkit-table';
 import * as QRCode from 'qrcode';
 import Str from '@supercharge/strings';
+import fetch from 'node-fetch';
 
-
-// Define layout padrão
 const LAYOUT = {
   margin: 20,
   pageSize: 'A4',
   font: {
-    header: { family: 'Helvetica-Bold', size: 16 },
-    body: { family: 'Helvetica', size: 10 },
+    header: { family: 'Helvetica-Bold', size: 14 },
+    body: { family: 'Helvetica', size: 9 },
     small: { family: 'Helvetica-Oblique', size: 8 },
   },
   colors: {
     grayBox: '#E0E0E0',
-  },
-  signature: {
-    width: 260,
-    height: 35,
-    gap: 10,
+    black: '#000',
   },
 };
 
-/**
- * Gera o PDF completo de uma Regulation (ficha de regulação)
- * @param data Regulation completa com includes (patient, cares, care, creator, supplier, etc.)
- * @param copies Quantidade de vias (default 1)
- */
 export async function generateRegulationPdf(
   data: any,
   copies: number = 1,
@@ -40,7 +30,6 @@ export async function generateRegulationPdf(
       Title: `Regulação - ${data.id_code || 'N/A'}`,
       Author: data.creator?.name || 'Sistema de Regulação',
       Subject: 'Ficha de Regulação de Paciente',
-      Keywords: 'regulação, saúde, PDF',
       Creator: 'Sistema Municipal',
     },
   });
@@ -52,105 +41,132 @@ export async function generateRegulationPdf(
   );
 
   const patient = data.patient;
+  const subscriber = data.subscriber;
   const formatDate = (d: Date | null) =>
     d ? new Date(d).toLocaleDateString('pt-BR') : 'N/A';
 
-  for (let i = 0; i < copies; i++) {
-    if (i > 0) doc.addPage();
+  async function drawRegulationSection(startY: number, showSignature = false) {
+    doc.y = startY;
 
-    // === CABEÇALHO ===
-    doc.y = 30;
+    // Espaço adicional na segunda via
+    if (showSignature) doc.moveDown(2);
+
+    // === Cabeçalho ===
     doc.font(LAYOUT.font.header.family)
       .fontSize(LAYOUT.font.header.size)
-      .text('FICHA DE REGULAÇÃO', { align: 'center' })
-      .moveDown(1.5);
+      .text('FICHA DE REGULAÇÃO', { align: 'center' });
 
-    // Dados básicos da regulation
     doc.font(LAYOUT.font.body.family).fontSize(LAYOUT.font.body.size);
-    doc.text(`Código: ${data.id_code || 'N/A'}`);
-    doc.text(`Data da Solicitação: ${formatDate(data.request_date)}`);
-    doc.text(`Status: ${data.status || 'N/A'}`);
-    doc.text(`Prioridade: ${data.priority || 'N/A'}`);
-    doc.text(`Observações: ${data.notes || 'N/A'}`);
-    doc.moveDown();
+    doc.text(`${subscriber.municipality_name || 'N/A'}`, { align: 'center' });
+    doc.text(`${subscriber.email || 'N/A'}`, { align: 'center' });
+    doc.text(`${subscriber.telephone || 'N/A'}`, { align: 'center' });
 
-    // === DADOS DO PACIENTE ===
+    doc.moveDown(0.5);
+
+    // === Dados do paciente ===
     doc.font(LAYOUT.font.header.family)
       .fontSize(LAYOUT.font.body.size + 1)
-      .text('Dados do Paciente', { underline: true });
-    doc.moveDown(0.5);
+      .text('Paciente', { underline: true });
 
     doc.font(LAYOUT.font.body.family).fontSize(LAYOUT.font.body.size);
     doc.text(`Nome: ${patient.full_name}`);
     doc.text(`CPF: ${patient.cpf}`);
-    doc.text(`Telefone: ${(patient.phone || '') || 'N/A'}`);
+    doc.text(`Telefone: ${patient.phone || 'N/A'}`);
     doc.text(
       `Endereço: ${patient.address || 'N/A'}, ${patient.neighborhood || ''}, ${patient.city || ''}/${patient.state || ''}`,
     );
-    const x_save = doc.page.width;
-    const Y_save = doc.y
-    doc.moveDown(1.5);
 
-    // === QR CODE ===
-    // const qrLink = `${process.env.LINK_BASE_QR_CODE || 'https://exemplo.com'}/auth-monitoring/${data.uuid}`;
-    // const qrDataUrl = await QRCode.toDataURL(qrLink);
-    // const base64Data = qrDataUrl.replace(/^data:image\/png;base64,/, '');
-    // const qrImageBuffer = Buffer.from(base64Data, 'base64');
+    doc.moveDown(0.3);
 
-    // const qrX = doc.page.width - 150;
-    // const qrY = doc.y - 10;
-    doc.roundedRect( 405,  105, 130, 100, 10).fill(LAYOUT.colors.grayBox);
-    // doc.image(qrImageBuffer, qrX + 25, qrY + 10, { width: 70 });
-    // doc.fillColor('#000')
-    //   .font('Helvetica-Bold')
-    //   .fontSize(10)
-    //   .text('Acompanhe:', 5, 80, { width: 130, align: 'center' });
-    // doc.moveDown(3);
+    // === Observações ===
+    doc.font(LAYOUT.font.header.family)
+      .fontSize(LAYOUT.font.body.size + 1)
+      .text('Observações', { underline: true });
 
-    // // === TABELA DE CUIDADOS ===
-    // const table = {
-    //   headers: ['Cuidado', 'Quantidade'],
-    //   rows: data.cares.map((c) => [
-    //     Str(c.care.name).limit(60, '...').toString(),
-    //     c.quantity.toString(),
-    //   ]),
-    // };
+    doc.font(LAYOUT.font.body.family).fontSize(LAYOUT.font.body.size);
+    doc.text(` ${data.notes || 'N/A'}`, {
+      width: 460,
+      align: 'justify',
+    });
+    const tableX = doc.x
+    const tableY = doc.y
+    // === QR Code e informações ===
+    const qrLink = `${process.env.LINK_BASE_QR_CODE || 'https://exemplo.com'}/auth-monitoring/${data.uuid}`;
+    const qrDataUrl = await QRCode.toDataURL(qrLink);
+    const qrBuffer = Buffer.from(qrDataUrl.replace(/^data:image\/png;base64,/, ''), 'base64');
 
-    // await doc.table(table, {
-    //   columnsSize: [400, 100],
-    //   prepareHeader: () => doc.font('Helvetica-Bold').fontSize(10),
-    //   prepareRow: () => doc.font('Helvetica').fontSize(9),
-    // });
 
-    // // === LINHA DIVISÓRIA (MEIO DA FOLHA) ===
-    // const halfY = doc.page.height / 2;
-    // doc.moveTo(20, halfY).lineTo(doc.page.width - 20, halfY).dash(3, { space: 3 }).stroke();
+    const qrX = 430;
+    const qrY = startY + (50); // QR mais baixo na 2ª via
+    // Desenha o retângulo em volta do bloco de QR + texto
+    doc
+      .rect(qrX - 5, qrY - 5, 150, 80) // x, y, largura, altura
+      .strokeColor('#000000')           // cor da borda
+      .lineWidth(1)
+      .stroke();                        // desenha o contorno
 
-    // // === SEGUNDA VIA COM ASSINATURA ===
-    // const startY = halfY + 20;
-    // doc.font('Helvetica-Bold').fontSize(12).text('2ª VIA - ASSINATURA', 30, startY);
-    // doc.font('Helvetica').fontSize(10);
-    // doc.text(`Paciente: ${patient.full_name}`, 30, startY + 30);
-    // doc.text(`CPF: ${patient.cpf}`, 30, startY + 45);
-    // doc.text('________________________________________', 30, startY + 100);
-    // doc.text('Assinatura do Responsável', 30, startY + 115);
 
-    // === RODAPÉ ===
-    const footerY = doc.page.height - 30;
-    const subscriber = data.creator || { name: 'Secretaria Municipal de Saúde', email: '', telephone: '' };
-    doc.font('Helvetica-Oblique')
-      .fontSize(LAYOUT.font.body.size)
-      .fillColor('#000')
-      .text(
-        `${subscriber.name || 'Secretaria de Saúde'} - telefone: ${
-          subscriber.telephone || '' || 'N/A'
-        } - email: ${subscriber.email || 'N/A'}`,
-        30,
-        footerY,
-        { align: 'center', width: doc.page.width - 60 },
-      );
+    doc.image(qrBuffer, qrX, qrY, { width: 60, height: 60 });
+
+    doc.fontSize(8);
+    doc.text(`Código: ${data.id_code || 'N/A'}`, qrX + 60, qrY);
+    doc.text(`Data: ${formatDate(data.created_at)}`, qrX + 60, qrY + 15);
+    doc.text(`Status: ${data.status || 'N/A'}`, qrX + 60, qrY + 30);
+    doc.text(`Prioridade: ${data.priority || 'N/A'}`, qrX + 60, qrY + 40);
+
+    // === Logo (opcional) ===
+    try {
+      const res = await fetch(subscriber.state_logo);
+      const buf = await res.arrayBuffer();
+      doc.image(Buffer.from(buf), 20, startY, { width: 40, height: 40 });
+    } catch {
+      // ignora erro de logo
+    }
+    doc.x = tableX
+    doc.y = tableY
+    // === Tabela de cuidados ===
+    doc.moveDown(0.8);
+    const table = {
+      headers: ['Cuidado', 'Quantidade'],
+      rows: data.cares.map((c) => [
+        Str(c.care.name).limit(60, '...').toString(),
+        c.quantity.toString(),
+      ]),
+    };
+
+    await doc.table(table, {
+      columnsSize: [380, 80],
+      prepareHeader: () => doc.font('Helvetica-Bold').fontSize(9),
+      prepareRow: () => doc.font('Helvetica').fontSize(8),
+    });
+
+    // === Campo de assinatura (apenas na segunda via) ===
+    if (showSignature) {
+          const x_signature = doc.x
+      doc.moveDown(1.5);
+
+      const y_signature = doc.y
+
+      doc.text('________________________________________', );
+      doc.text('Assinatura do Responsável', );
+      doc.x =x_signature +300
+      doc.y =y_signature  
+         doc.text('________________________________________', );
+      doc.text('Assinatura do Responsável', );
+    }
   }
 
+  // === Primeira via ===
+  await drawRegulationSection(30, false);
+
+  // === Linha divisória ===
+  const halfY = doc.page.height / 2;
+  doc.moveTo(20, halfY).lineTo(doc.page.width - 20, halfY).dash(3, { space: 3 }).stroke();
+  doc.undash();
+  // === Segunda via, com cabeçalho centralizado ===
+  await drawRegulationSection(halfY + 50, true); // agora começa bem mais abaixo
+
+  // === Finaliza ===
   doc.end();
   return await pdfDone;
 }
