@@ -3,7 +3,7 @@ import { IsEnum, IsNotEmpty } from 'class-validator';
 export enum TipoArquivo {
   ESTADUAL = 'estadual',
   MUNICIPAL = 'municipal',
-  FEDERAL = 'federal',
+  ADMINISTRATION = 'administration',
 }
 
 export class CreateUploadDto {
