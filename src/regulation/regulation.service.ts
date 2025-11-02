@@ -83,6 +83,7 @@ async generatePdf(id: number, copies: number = 1) {
         folder: true,
         supplier: true,
         creator: true,
+        analyzer:true,
         subscriber:true,
         cares: {
           include: { care: true },

@@ -42,6 +42,9 @@ export async function generateRegulationPdf(
 
   const patient = data.patient;
   const subscriber = data.subscriber;
+  const analyzer = data.analyzer;
+  console.log(analyzer)
+  const folder = data.folder;
   const formatDate = (d: Date | null) =>
     d ? new Date(d).toLocaleDateString('pt-BR') : 'N/A';
 
@@ -49,7 +52,7 @@ export async function generateRegulationPdf(
     doc.y = startY;
 
     // Espaço adicional na segunda via
-    if (showSignature) doc.moveDown(2);
+    if (showSignature) doc.moveDown(1);
 
     // === Cabeçalho ===
     doc.font(LAYOUT.font.header.family)
@@ -76,18 +79,36 @@ export async function generateRegulationPdf(
       `Endereço: ${patient.address || 'N/A'}, ${patient.neighborhood || ''}, ${patient.city || ''}/${patient.state || ''}`,
     );
 
-    doc.moveDown(0.3);
+    doc.moveDown(0.5);
 
-    // === Observações ===
-    doc.font(LAYOUT.font.header.family)
-      .fontSize(LAYOUT.font.body.size + 1)
-      .text('Observações', { underline: true });
 
-    doc.font(LAYOUT.font.body.family).fontSize(LAYOUT.font.body.size);
-    doc.text(` ${data.notes || 'N/A'}`, {
-      width: 460,
-      align: 'justify',
-    });
+    if (showSignature) {
+
+      // === Observações ===
+      doc.font(LAYOUT.font.header.family)
+        .fontSize(LAYOUT.font.body.size + 1)
+        .text('Observações', { underline: true });
+      doc.moveDown(0.5);
+      doc.font(LAYOUT.font.body.family).fontSize(LAYOUT.font.body.size);
+      const notes = Str(data.notes || 'N/A').limit(400, '...').toString();
+      doc.text(` ${notes}`, {
+        width: 460,
+        align: 'justify',
+      });
+      // === Dados do paciente ===
+      doc.font(LAYOUT.font.header.family)
+        .fontSize(LAYOUT.font.body.size + 1)
+        .text('Regulação', { underline: true });
+
+      doc.font(LAYOUT.font.body.family).fontSize(LAYOUT.font.body.size);
+      doc.text(`Nome: ${analyzer?.name || 'N/A'}`);
+
+      doc.text(`Pasta: ${folder.name || 'N/A'}`);
+
+
+
+
+    }
     const tableX = doc.x
     const tableY = doc.y
     // === QR Code e informações ===
@@ -97,16 +118,16 @@ export async function generateRegulationPdf(
 
 
     const qrX = 430;
-    const qrY = startY + (50); // QR mais baixo na 2ª via
+    const qrY = startY + (60); // QR mais baixo na 2ª via
     // Desenha o retângulo em volta do bloco de QR + texto
     doc
-      .rect(qrX - 5, qrY - 5, 150, 80) // x, y, largura, altura
+      .rect(qrX - 5, qrY - 5, 150, 60) // x, y, largura, altura
       .strokeColor('#000000')           // cor da borda
       .lineWidth(1)
       .stroke();                        // desenha o contorno
 
 
-    doc.image(qrBuffer, qrX, qrY, { width: 60, height: 60 });
+    doc.image(qrBuffer, qrX, qrY, { width: 50, height: 50 });
 
     doc.fontSize(8);
     doc.text(`Código: ${data.id_code || 'N/A'}`, qrX + 60, qrY);
@@ -116,16 +137,24 @@ export async function generateRegulationPdf(
 
     // === Logo (opcional) ===
     try {
-      const res = await fetch(subscriber.state_logo);
-      const buf = await res.arrayBuffer();
-      doc.image(Buffer.from(buf), 20, startY, { width: 40, height: 40 });
+      // Logo Estadual (à esquerda)
+      const resEstadual = await fetch(subscriber.state_logo);
+      const bufEstadual = await resEstadual.arrayBuffer();
+      doc.image(Buffer.from(bufEstadual), 30, startY, { width: 50 });
+
+
+
+      // Logo Municipal (à direita)
+      const resMunicipal = await fetch(subscriber.municipal_logo);
+      const bufMunicipal = await resMunicipal.arrayBuffer();
+      doc.image(Buffer.from(bufMunicipal), 500, startY, { width: 50 });
     } catch {
       // ignora erro de logo
     }
     doc.x = tableX
     doc.y = tableY
     // === Tabela de cuidados ===
-    doc.moveDown(0.8);
+    doc.moveDown(1.2);
     const table = {
       headers: ['Cuidado', 'Quantidade'],
       rows: data.cares.map((c) => [
@@ -135,36 +164,53 @@ export async function generateRegulationPdf(
     };
 
     await doc.table(table, {
-      columnsSize: [380, 80],
+      columnsSize: [480, 80],
       prepareHeader: () => doc.font('Helvetica-Bold').fontSize(9),
       prepareRow: () => doc.font('Helvetica').fontSize(8),
     });
 
     // === Campo de assinatura (apenas na segunda via) ===
     if (showSignature) {
-          const x_signature = doc.x
+      const x_signature = doc.x;
       doc.moveDown(1.5);
+      const y_signature = doc.y;
 
-      const y_signature = doc.y
+      // Primeira assinatura
+      doc.text('________________________________________');
+      doc.text('1. Assinatura do Responsável');
 
-      doc.text('________________________________________', );
-      doc.text('Assinatura do Responsável', );
-      doc.x =x_signature +300
-      doc.y =y_signature  
-         doc.text('________________________________________', );
-      doc.text('Assinatura do Responsável', );
+      // Segunda assinatura (ao lado)
+      doc.x = x_signature + 200;
+      doc.y = y_signature;
+      doc.text('________________________________________');
+      doc.text('2. Assinatura do Resolvido');
+
+      // Segunda assinatura (ao lado)
+      doc.x = x_signature + 400;
+      doc.y = y_signature;
+      doc.text('STATUS:___________________________');
+       doc.moveDown(1);
+            doc.text('DATA: ____/____/________');
+
+
+
+
     }
   }
 
   // === Primeira via ===
-  await drawRegulationSection(30, false);
+  await drawRegulationSection(20, false);
 
   // === Linha divisória ===
-  const halfY = doc.page.height / 2;
-  doc.moveTo(20, halfY).lineTo(doc.page.width - 20, halfY).dash(3, { space: 3 }).stroke();
+  const afterFirstTableY = doc.y + 10; // pequeno espaçamento antes da linha
+
+  doc.moveTo(2, afterFirstTableY)
+    .lineTo(doc.page.width - 20, afterFirstTableY)
+    .dash(3, { space: 3 })
+    .stroke();
   doc.undash();
   // === Segunda via, com cabeçalho centralizado ===
-  await drawRegulationSection(halfY + 50, true); // agora começa bem mais abaixo
+  await drawRegulationSection(afterFirstTableY + 40, true); // agora começa bem mais abaixo
 
   // === Finaliza ===
   doc.end();
