@@ -8,7 +8,7 @@ const LAYOUT = {
   margin: 20,
   pageSize: 'A4',
   font: {
-    header: { family: 'Helvetica-Bold', size: 14 },
+    header: { family: 'Helvetica-Bold', size: 10 },
     body: { family: 'Helvetica', size: 9 },
     small: { family: 'Helvetica-Oblique', size: 8 },
   },
@@ -43,15 +43,53 @@ export async function generateRegulationPdf(
   const patient = data.patient;
   const subscriber = data.subscriber;
   const analyzer = data.analyzer;
-  console.log(analyzer)
   const folder = data.folder;
+
   const formatDate = (d: Date | null) =>
     d ? new Date(d).toLocaleDateString('pt-BR') : 'N/A';
 
+  // ===============================
+  // Função que desenha cada via
+  // ===============================
   async function drawRegulationSection(startY: number, showSignature = false) {
     doc.y = startY;
 
-    // Espaço adicional na segunda via
+    // === LOGOS (desenhar antes do texto) ===
+    try {
+      const logoWidth = 50;
+      const logoHeight = 50;
+      const spacingBelowLogos = 20;
+
+      // Logo Estadual (esquerda)
+      if (subscriber.state_logo) {
+        const resEstadual = await fetch(subscriber.state_logo);
+        const bufEstadual = await resEstadual.arrayBuffer();
+        doc.image(Buffer.from(bufEstadual), 30, startY, { width: logoWidth });
+      }
+
+      // Logo da Administração (centro)
+      if (subscriber.administration_logo) {
+        const resAdm = await fetch(subscriber.administration_logo);
+        const bufAdm = await resAdm.arrayBuffer();
+        const centerX = (595.28 / 2) - (logoWidth / 2); // largura A4
+        doc.image(Buffer.from(bufAdm), centerX, startY, { width: logoWidth });
+      }
+
+      // Logo Municipal (direita)
+      if (subscriber.municipal_logo) {
+        const resMunicipal = await fetch(subscriber.municipal_logo);
+        const bufMunicipal = await resMunicipal.arrayBuffer();
+        doc.image(Buffer.from(bufMunicipal), 500, startY, { width: logoWidth });
+      }
+
+      // Ajusta o cursor Y abaixo dos logos
+      doc.y = startY + logoHeight ;
+    } catch {
+      // ignora erros de logo
+      doc.moveDown(3);
+    }
+
+    // === Espaço adicional na segunda via ===
     if (showSignature) doc.moveDown(1);
 
     // === Cabeçalho ===
@@ -64,6 +102,8 @@ export async function generateRegulationPdf(
     doc.text(`${subscriber.email || 'N/A'}`, { align: 'center' });
     doc.text(`${subscriber.telephone || 'N/A'}`, { align: 'center' });
 
+
+    doc.y =startY +50
     doc.moveDown(0.5);
 
     // === Dados do paciente ===
@@ -81,51 +121,45 @@ export async function generateRegulationPdf(
 
     doc.moveDown(0.5);
 
-
+    // === Observações e Regulação (apenas na 2ª via) ===
     if (showSignature) {
-
-      // === Observações ===
       doc.font(LAYOUT.font.header.family)
         .fontSize(LAYOUT.font.body.size + 1)
         .text('Observações', { underline: true });
       doc.moveDown(0.5);
+
       doc.font(LAYOUT.font.body.family).fontSize(LAYOUT.font.body.size);
       const notes = Str(data.notes || 'N/A').limit(400, '...').toString();
-      doc.text(` ${notes}`, {
+      doc.text(notes, {
         width: 460,
         align: 'justify',
       });
-      // === Dados do paciente ===
+
+      doc.moveDown(0.5);
       doc.font(LAYOUT.font.header.family)
         .fontSize(LAYOUT.font.body.size + 1)
         .text('Regulação', { underline: true });
 
       doc.font(LAYOUT.font.body.family).fontSize(LAYOUT.font.body.size);
       doc.text(`Nome: ${analyzer?.name || 'N/A'}`);
-
-      doc.text(`Pasta: ${folder.name || 'N/A'}`);
-
-
-
-
+      doc.text(`Pasta: ${folder?.name || 'N/A'}`);
     }
-    const tableX = doc.x
-    const tableY = doc.y
-    // === QR Code e informações ===
+
+    const tableX = doc.x;
+    const tableY = doc.y;
+
+    // === QR Code ===
     const qrLink = `${process.env.LINK_BASE_QR_CODE || 'https://exemplo.com'}/auth-monitoring/${data.uuid}`;
     const qrDataUrl = await QRCode.toDataURL(qrLink);
     const qrBuffer = Buffer.from(qrDataUrl.replace(/^data:image\/png;base64,/, ''), 'base64');
 
-
     const qrX = 430;
-    const qrY = startY + (60); // QR mais baixo na 2ª via
-    // Desenha o retângulo em volta do bloco de QR + texto
-    doc
-      .rect(qrX - 5, qrY - 5, 150, 60) // x, y, largura, altura
-      .strokeColor('#000000')           // cor da borda
-      .lineWidth(1)
-      .stroke();                        // desenha o contorno
+    const qrY = startY + 60;
 
+    doc.rect(qrX - 5, qrY - 5, 150, 60)
+      .strokeColor('#000000')
+      .lineWidth(1)
+      .stroke();
 
     doc.image(qrBuffer, qrX, qrY, { width: 50, height: 50 });
 
@@ -133,28 +167,13 @@ export async function generateRegulationPdf(
     doc.text(`Código: ${data.id_code || 'N/A'}`, qrX + 60, qrY);
     doc.text(`Data: ${formatDate(data.created_at)}`, qrX + 60, qrY + 15);
     doc.text(`Status: ${data.status || 'N/A'}`, qrX + 60, qrY + 30);
-    doc.text(`Prioridade: ${data.priority || 'N/A'}`, qrX + 60, qrY + 40);
+    doc.text(`Prioridade: ${data.priority || 'N/A'}`, qrX + 60, qrY + 45);
 
-    // === Logo (opcional) ===
-    try {
-      // Logo Estadual (à esquerda)
-      const resEstadual = await fetch(subscriber.state_logo);
-      const bufEstadual = await resEstadual.arrayBuffer();
-      doc.image(Buffer.from(bufEstadual), 30, startY, { width: 50 });
-
-
-
-      // Logo Municipal (à direita)
-      const resMunicipal = await fetch(subscriber.municipal_logo);
-      const bufMunicipal = await resMunicipal.arrayBuffer();
-      doc.image(Buffer.from(bufMunicipal), 500, startY, { width: 50 });
-    } catch {
-      // ignora erro de logo
-    }
-    doc.x = tableX
-    doc.y = tableY
     // === Tabela de cuidados ===
+    doc.x = tableX;
+    doc.y = tableY;
     doc.moveDown(1.2);
+
     const table = {
       headers: ['Cuidado', 'Quantidade'],
       rows: data.cares.map((c) => [
@@ -169,48 +188,43 @@ export async function generateRegulationPdf(
       prepareRow: () => doc.font('Helvetica').fontSize(8),
     });
 
-    // === Campo de assinatura (apenas na segunda via) ===
+    // === Assinaturas (somente na 2ª via) ===
     if (showSignature) {
-      const x_signature = doc.x;
+      const xSignature = doc.x;
       doc.moveDown(1.5);
-      const y_signature = doc.y;
+      const ySignature = doc.y;
 
-      // Primeira assinatura
       doc.text('________________________________________');
       doc.text('1. Assinatura do Responsável');
 
-      // Segunda assinatura (ao lado)
-      doc.x = x_signature + 200;
-      doc.y = y_signature;
+      doc.x = xSignature + 200;
+      doc.y = ySignature;
       doc.text('________________________________________');
       doc.text('2. Assinatura do Resolvido');
 
-      // Segunda assinatura (ao lado)
-      doc.x = x_signature + 400;
-      doc.y = y_signature;
-      doc.text('STATUS:___________________________');
-       doc.moveDown(1);
-            doc.text('DATA: ____/____/________');
-
-
-
-
+      doc.x = xSignature + 400;
+      doc.y = ySignature;
+      doc.text('STATUS: _________________________');
+      doc.moveDown(1);
+      doc.text('DATA: ____/____/________');
     }
   }
 
   // === Primeira via ===
   await drawRegulationSection(20, false);
 
+    // === Linha divisória ===
+console.log(doc.y)
   // === Linha divisória ===
-  const afterFirstTableY = doc.y + 10; // pequeno espaçamento antes da linha
-
+  const afterFirstTableY = 320;
   doc.moveTo(2, afterFirstTableY)
     .lineTo(doc.page.width - 20, afterFirstTableY)
     .dash(3, { space: 3 })
     .stroke();
   doc.undash();
-  // === Segunda via, com cabeçalho centralizado ===
-  await drawRegulationSection(afterFirstTableY + 40, true); // agora começa bem mais abaixo
+
+  // === Segunda via ===
+  await drawRegulationSection(afterFirstTableY + 40, true);
 
   // === Finaliza ===
   doc.end();

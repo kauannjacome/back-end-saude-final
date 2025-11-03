@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRegulationDto } from './dto/create-regulation.dto';
 import { UpdateRegulationDto } from './dto/update-regulation.dto';
-import { generateRegulationPdf } from './pdf/generate-regulation-pdf';
+import { generateRegulationPdf } from './pdf/divided-regulation-pdf';
+import { PageRegulationPdf } from './pdf/page-regulation-pdf';
 
 
 @Injectable()
@@ -93,8 +94,8 @@ async generatePdf(id: number, copies: number = 1) {
 
 
 
+  // const pdfBuffer = await generateRegulationPdf(regulation, copies);
   const pdfBuffer = await generateRegulationPdf(regulation, copies);
-
   return pdfBuffer; // você pode retornar direto ou salvar num arquivo temporário
 }
 
