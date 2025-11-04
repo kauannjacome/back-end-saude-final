@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from '@prisma/client'; // 👈 IMPORTANTE!
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 
@@ -7,12 +8,62 @@ import { UpdateProfessionalDto } from './dto/update-professional.dto';
 export class ProfessionalService {
   constructor(private prisma: PrismaService) {}
 
+  // ✅ CRIAR PROFISSIONAL
   async create(createProfessionalDto: CreateProfessionalDto) {
     return this.prisma.professional.create({
       data: createProfessionalDto,
     });
   }
 
+  // ✅ NOVA FUNÇÃO SEARCH
+  async search(subscriber_id: number, term?: string) {
+    console.log('📥 [ProfessionalService.search] subscriber_id:', subscriber_id);
+    console.log('📥 [ProfessionalService.search] term:', term);
+
+    try {
+      if (!term || term.trim() === '') {
+        console.log('⚠️ Termo vazio — retornando lista vazia');
+        return [];
+      }
+
+      const where: Prisma.professionalWhereInput = {
+        subscriber_id,
+        deleted_at: null,
+        OR: [
+          { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
+          { professional_name: { contains: term, mode: Prisma.QueryMode.insensitive } },
+          { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
+          { email: { contains: term, mode: Prisma.QueryMode.insensitive } },
+          { cargo: { contains: term, mode: Prisma.QueryMode.insensitive } },
+        ],
+      };
+
+      console.log('🔍 Prisma where:', JSON.stringify(where, null, 2));
+
+      const results = await this.prisma.professional.findMany({
+        where,
+        orderBy: { name: 'asc' },
+        include: {
+          cares: true,
+          audit_logs: true,
+          regulations_created: true,
+          regulations_analyzed: true,
+          regulations_printed: true,
+        },
+      });
+
+      console.log(`✅ ${results.length} profissionais encontrados`);
+      return results;
+    } catch (error) {
+      console.error('❌ Erro no ProfessionalService.search:', error);
+      throw new HttpException(
+        { message: 'Erro ao buscar profissionais', detail: error.message },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // ✅ LISTAR TODOS
   async findAll(subscriber_id: number) {
     return this.prisma.professional.findMany({
       where: { subscriber_id, deleted_at: null },
@@ -27,6 +78,7 @@ export class ProfessionalService {
     });
   }
 
+  // ✅ BUSCAR POR ID
   async findOne(id: number) {
     const professional = await this.prisma.professional.findUnique({
       where: { id },
@@ -43,6 +95,7 @@ export class ProfessionalService {
     return professional;
   }
 
+  // ✅ ATUALIZAR
   async update(id: number, updateProfessionalDto: UpdateProfessionalDto) {
     await this.findOne(id);
     return this.prisma.professional.update({
@@ -51,6 +104,7 @@ export class ProfessionalService {
     });
   }
 
+  // ✅ REMOVER (soft delete)
   async remove(id: number) {
     await this.findOne(id);
     return this.prisma.professional.update({

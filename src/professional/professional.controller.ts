@@ -12,6 +12,16 @@ export class ProfessionalController {
     return this.professionalService.create(createProfessionalDto);
   }
 
+  @Get('search')
+search(
+
+  @Query('term') term: string,
+) {
+  console.log('🟢 [GET /professional/search]', {  term });
+  return this.professionalService.search(Number(1), term);
+}
+
+
   @Get()
   findAll(@Query('subscriber_id') subscriber_id: number) {
     return this.professionalService.findAll(Number(subscriber_id));
