@@ -30,6 +30,7 @@
     "@supercharge/strings": "^2.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "extenso": "^2.1.0",
     "node-fetch": "^3.3.2",
     "pdfkit": "^0.17.2",
     "pdfkit-table": "^0.1.99",

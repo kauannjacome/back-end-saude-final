@@ -9,8 +9,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { status, relationship } from '@prisma/client';
-
+import { status, relationship, priority } from '@prisma/client';
 class CareRegulationDto {
   @IsInt()
   care_id: number;
@@ -86,6 +85,9 @@ export class CreateRegulationDto {
   @IsOptional()
   @IsInt()
   supplier_id?: number;
+    @IsOptional()
+  @IsEnum(priority)
+  priority?: priority;
 
   @IsOptional()
   @IsInt()

@@ -18,6 +18,7 @@ export class ReportController {
     return this.reportService.getRegulationReport(filters);
   }
 
+
   @Get()
   findAll() {
     return this.reportService.findAll();
