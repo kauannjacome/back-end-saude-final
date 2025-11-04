@@ -19,10 +19,9 @@ export class PatientController {
 
   @Get('search')
   search(
-    @Query('subscriber_id') subscriber_id: number,
     @Query('term') term: string,
   ) {
-    return this.patientService.search(Number(subscriber_id), term);
+    return this.patientService.search(Number(1), term);
   }
 
 

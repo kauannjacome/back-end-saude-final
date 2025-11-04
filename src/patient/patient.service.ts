@@ -26,9 +26,19 @@ export class PatientService {
     where: {
       subscriber_id,
       deleted_at: null,
-      OR: [
-        { full_name: { contains: term } },
-        { cpf: { contains: term} },
+       OR: [
+        {
+          full_name: {
+            contains: term,
+            mode: 'insensitive', // <-- ignora maiúsculas/minúsculas
+          },
+        },
+        {
+          cpf: {
+            contains: term,
+            mode: 'insensitive', // <-- idem para CPF
+          },
+        },
       ],
     },
     orderBy: { full_name: 'asc' },
