@@ -175,7 +175,7 @@ export async function generateRegulationPdf(
     doc.moveDown(1.2);
 
     const table = {
-      headers: ['Cuidado', 'Quantidade'],
+      headers: ['Solicitações', 'Quantidade'],
       rows: data.cares.map((c) => [
         Str(c.care.name).limit(60, '...').toString(),
         c.quantity.toString(),
