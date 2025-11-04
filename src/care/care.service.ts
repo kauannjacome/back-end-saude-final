@@ -12,6 +12,7 @@ export class CareService {
    * Cria um novo registro de cuidado (care)
    */
   async create(createCareDto: CreateCareDto) {
+    console.log(createCareDto)
     try {
       return await this.prisma.care.create({
         data: createCareDto,
