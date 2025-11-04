@@ -22,6 +22,8 @@ export class PatientService {
   }
 
   async search(subscriber_id: number, term: string) {
+   console.log('📥 subscriber_id:', subscriber_id);
+  console.log('📥 term:', term);
   return this.prisma.patient.findMany({
     where: {
       subscriber_id,
@@ -43,6 +45,7 @@ export class PatientService {
     },
     orderBy: { full_name: 'asc' },
   });
+  
 }
 
   async findOne(id: number) {
