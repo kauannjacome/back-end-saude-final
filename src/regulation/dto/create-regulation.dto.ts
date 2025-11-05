@@ -1,4 +1,3 @@
-
 import {
   IsString,
   IsOptional,
@@ -10,6 +9,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { status, relationship, priority } from '@prisma/client';
+
 class CareRegulationDto {
   @IsInt()
   care_id: number;
@@ -67,10 +67,6 @@ export class CreateRegulationDto {
   relationship?: relationship;
 
   @IsOptional()
-  @IsString()
-  caregiver_id?: string;
-
-  @IsOptional()
   @IsInt()
   creator_id?: number;
 
@@ -85,7 +81,8 @@ export class CreateRegulationDto {
   @IsOptional()
   @IsInt()
   supplier_id?: number;
-    @IsOptional()
+
+  @IsOptional()
   @IsEnum(priority)
   priority?: priority;
 

@@ -257,7 +257,7 @@ model patient {
   id                     Int       @id @default(autoincrement())
   uuid                   String    @unique @default(uuid())
   subscriber_id          Int
-  cpf                    String    
+  cpf                    String
   cns                    String?
   full_name              String
   social_name            String?
@@ -294,6 +294,7 @@ model patient {
 
   subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   regulations regulation[]
+
   @@unique([subscriber_id, cpf])
   @@index([subscriber_id])
 }
@@ -302,7 +303,7 @@ model professional {
   id                     Int       @id @default(autoincrement())
   uuid                   String    @unique @default(uuid())
   subscriber_id          Int
-  cpf                    String    
+  cpf                    String
   name                   String?
   professional_name      String?
   cargo                  String?
@@ -328,37 +329,38 @@ model professional {
   regulations_printed  regulation[] @relation("regulation_printer")
   cares                care[]
   audit_logs           audit_log[]
+
   @@unique([subscriber_id, cpf])
   @@index([subscriber_id])
 }
 
 model regulation {
-  id                   Int               @id @default(autoincrement())
-  uuid                 String            @unique @default(uuid())
-  subscriber_id        Int
-  id_code              String?
-  patient_id           Int?
-  request_date         DateTime?
-  scheduled_date       DateTime?
-  status               status?
-  notes                String?
-  url_requirement      String?
-  url_pre_document     String?
-  url_current_document String?
-  folder_id            Int?
-  relationship         relationship?
-  priority             priority?         @default(eletivo)
-  caregiver_id         String?
-  creator_id           Int?
-  analyzed_id          Int?
-  printer_id           Int?
-  supplier_id          Int?
-  history              Int?
-  version_document     Int?
-  cares                care_regulation[]
-  created_at           DateTime          @default(now())
-  updated_at           DateTime          @updatedAt
-  deleted_at           DateTime?
+  id                      Int               @id @default(autoincrement())
+  uuid                    String            @unique @default(uuid())
+  subscriber_id           Int
+  id_code                 String?
+  patient_id              Int?
+  request_date            DateTime?
+  scheduled_date          DateTime?
+  status                  status?
+  notes                   String?
+  url_requirement         String?
+  url_pre_document        String?
+  url_current_document    String?
+  folder_id               Int?
+  relationship            relationship?
+  priority                priority?         @default(eletivo)
+  requesting_professional String?
+  creator_id              Int?
+  analyzed_id             Int?
+  printer_id              Int?
+  supplier_id             Int?
+  history                 Int?
+  version_document        Int?
+  cares                   care_regulation[]
+  created_at              DateTime          @default(now())
+  updated_at              DateTime          @updatedAt
+  deleted_at              DateTime?
 
   subscriber subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   patient    patient?      @relation(fields: [patient_id], references: [id])
@@ -383,13 +385,14 @@ model supplier {
   subscriber_id Int
   name          String
   trade_name    String
-  cnpj          String    
+  cnpj          String
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
   deleted_at    DateTime?
 
   subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   regulations regulation[]
+
   @@unique([subscriber_id, cnpj])
   @@index([subscriber_id])
 }
