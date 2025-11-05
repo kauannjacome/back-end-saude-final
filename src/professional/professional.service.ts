@@ -55,6 +55,10 @@ export class ProfessionalService {
       console.log(`✅ ${results.length} profissionais encontrados`);
       return results;
     } catch (error) {
+        console.error('❌ Erro detalhado no ProfessionalService.search:');
+  console.error('Mensagem:', error.message);
+  console.error('Stack:', error.stack);
+  console.error('Detalhes Prisma:', error);
       console.error('❌ Erro no ProfessionalService.search:', error);
       throw new HttpException(
         { message: 'Erro ao buscar profissionais', detail: error.message },

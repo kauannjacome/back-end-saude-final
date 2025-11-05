@@ -5,7 +5,7 @@ import { UpdateProfessionalDto } from './dto/update-professional.dto';
 
 @Controller('professional')
 export class ProfessionalController {
-  constructor(private readonly professionalService: ProfessionalService) {}
+  constructor(private readonly professionalService: ProfessionalService) { }
 
   @Post()
   create(@Body() createProfessionalDto: CreateProfessionalDto) {
@@ -13,13 +13,13 @@ export class ProfessionalController {
   }
 
   @Get('search')
-search(
+  search(
 
-  @Query('term') term: string,
-) {
-  console.log('🟢 [GET /professional/search]', {  term });
-  return this.professionalService.search(Number(1), term);
-}
+    @Query('term') term: string,
+  ) {
+    console.log('🟢 [GET /professional/search]', { term });
+    return this.professionalService.search(Number(1), term);
+  }
 
 
   @Get()
