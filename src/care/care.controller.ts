@@ -12,12 +12,11 @@ export class CareController {
     return this.careService.create(createCareDto);
   }
   // 🔍 Endpoint de busca
-  @Get('search/:subscriber_id')
+  @Get('search')
   search(
-    @Param('subscriber_id') subscriber_id: string,
     @Query('term') term: string,
   ) {
-    return this.careService.search(+subscriber_id, term);
+    return this.careService.search(1, term);
   }
 
   @Get()
