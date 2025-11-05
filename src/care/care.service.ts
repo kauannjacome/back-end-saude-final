@@ -51,9 +51,8 @@ export class CareService {
       subscriber_id,
       deleted_at: null,
       OR: [
-        { name: { contains: term} },
-        { acronym: { contains: term} },
-
+        { name: { contains: term, mode: 'insensitive' } },   // ✅ ignora maiúsculas/minúsculas
+        { acronym: { contains: term, mode: 'insensitive' } } // ✅ idem
       ],
     },
     orderBy: { name: 'asc' },
