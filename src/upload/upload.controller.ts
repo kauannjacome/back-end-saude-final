@@ -6,11 +6,13 @@ import {
   UploadedFile,
   Get,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
 import { TipoArquivo } from './dto/create-upload.dto';
 import { UpdateUploadDto } from './dto/update-upload.dto';
+import { getDocumentUrl } from './dto/get-document-url.dto';
 
 @Controller('upload')
 export class UploadController {
@@ -28,6 +30,23 @@ export class UploadController {
     console.log('Arquivo recebido:', file.originalname);
     return await this.uploadService.uploadFile(file, 'certificados');
   }
+
+    @Post('/requirement')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadRequirement(
+    @UploadedFile() file: Express.Multer.File,
+
+  ) {
+    console.log("chegou aqui")
+    if (!file) throw new Error('Nenhum arquivo foi enviado.');
+
+
+    console.log('Arquivo recebido:', file.originalname);
+;
+
+    return await this.uploadService.uploadRequirement(file, 1);
+  }
+
 
   /**
    * Upload de imagem associada a um ID e tipo
@@ -62,5 +81,18 @@ export class UploadController {
   async getDownloadUrl(@Query('key') key: string) {
     if (!key) throw new Error('O parâmetro "key" é obrigatório.');
     return await this.uploadService.getDownloadUrl(key);
+  }
+
+    @Get('document')
+  async getDocumentUrl(@Query() query: getDocumentUrl) {
+    const { type, id } = query;
+    console.log(query)
+
+    // Garantir que o id venha como número (DTO faz isso, mas reforçamos)
+    if (!type || !id) {
+      throw new BadRequestException('Parâmetros "type" e "id" são obrigatórios.');
+    }
+
+    return this.uploadService.getDocumentUrl(type, id);
   }
 }
