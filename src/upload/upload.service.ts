@@ -1,5 +1,14 @@
-import { Injectable, HttpException, HttpStatus, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import * as path from 'path';
 import { TipoArquivo } from './dto/create-upload.dto';
@@ -7,28 +16,62 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UploadService {
-  private s3Client: S3Client;
-  private bucketName: string;
+  private readonly s3Client: S3Client;
+  private readonly bucketName: string;
+  private readonly region: string;
 
   constructor(private readonly prisma: PrismaService) {
+    // 🔍 Logs de inicialização
+    console.log('🟢 Iniciando UploadService...');
+    console.log('🔧 Lendo variáveis de ambiente:');
+    console.log('  AWS_REGION:', process.env.AWS_REGION);
+    console.log('  S3_BUCKET:', process.env.S3_BUCKET);
+    console.log('  AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? '[OK]' : '[FALTANDO]');
+    console.log('  AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? '[OK]' : '[FALTANDO]');
+
+    this.region = process.env.AWS_REGION || 'us-east-1';
+    this.bucketName = process.env.S3_BUCKET as string;
+
+    if (!this.bucketName) {
+      throw new Error('❌ S3_BUCKET não está definido nas variáveis de ambiente!');
+    }
+
+    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+      throw new Error('❌ Credenciais AWS não configuradas corretamente no .env');
+    }
+
+    // ✅ Configuração com endpoint regional forçado
+    const endpoint = `https://s3.${this.region}.amazonaws.com`;
+
     this.s3Client = new S3Client({
-      region: process.env.AWS_REGION,
+      region: this.region,
+      endpoint,
+      forcePathStyle: false,
       credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
       },
     });
 
-    this.bucketName = process.env.AWS_BUCKET_NAME as string;
-    if (!this.bucketName) {
-      throw new Error('AWS_BUCKET_NAME não está definido nas variáveis de ambiente!');
-    }
+    console.log('✅ S3 Client configurado com sucesso:');
+    console.log('  Região:', this.region);
+    console.log('  Bucket:', this.bucketName);
+    console.log('  Endpoint:', endpoint);
   }
 
+  /**
+   * Upload genérico de arquivo para o S3
+   */
   async uploadFile(file: Express.Multer.File, folder: string) {
+    console.log('📤 Iniciando upload genérico...');
+    console.log('  Nome original:', file.originalname);
+    console.log('  Pasta destino:', folder);
+
     try {
       const fileExt = path.extname(file.originalname).toLowerCase();
       const key = `${folder}/${randomUUID()}${fileExt}`;
+
+      console.log('🗝️  Key gerada:', key);
 
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -39,7 +82,9 @@ export class UploadService {
 
       await this.s3Client.send(command);
 
-      const url = `https://${this.bucketName}.s3.amazonaws.com/${key}`;
+      const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
+      console.log('✅ Upload concluído com sucesso!');
+      console.log('  URL:', url);
 
       return {
         message: 'Upload realizado com sucesso!',
@@ -47,27 +92,40 @@ export class UploadService {
         url,
       };
     } catch (error) {
-      console.error('Erro detalhado no upload para o S3:');
+      console.error('❌ Erro detalhado no upload para o S3:');
+      console.error('  Código:', error?.Code || error?.name);
+      console.error('  Mensagem:', error?.message);
+      console.error('  Endpoint:', error?.Endpoint);
+      console.error('  Região retornada:', error?.$response?.headers?.['x-amz-bucket-region']);
+      console.error('  Stack:', error?.stack);
+
+      throw new InternalServerErrorException(
+        'Falha ao enviar o arquivo para o S3. Tente novamente mais tarde.',
+      );
     }
   }
 
+  /**
+   * Upload de imagem e atualização do subscriber
+   */
+  async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
+    console.log('🖼️ Iniciando upload de imagem...');
+    console.log('  Tipo recebido:', tipo);
+    console.log('  ID recebido:', id);
 
-  async uploadImage(
-    file: Express.Multer.File,
-    tipo: TipoArquivo,
-    id: number,
-  ) {
     try {
-      if (!file) {
-        throw new Error('Nenhum arquivo recebido para upload.');
-      }
+      if (!file) throw new Error('Nenhum arquivo recebido para upload.');
+
       const subscriber = await this.prisma.subscriber.findUnique({ where: { id } });
       if (!subscriber) {
+        console.warn(`⚠️ Assinante #${id} não encontrado.`);
         throw new NotFoundException(`Assinante (subscriber) #${id} não encontrado.`);
       }
 
       const fileExt = path.extname(file.originalname).toLowerCase();
-      const key = `imagem/${id}/${tipo}-${randomUUID()}${fileExt}`;
+      const key = `imagens/${id}/${tipo}-${randomUUID()}${fileExt}`;
+
+      console.log('🗝️  Key da imagem:', key);
 
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -78,39 +136,71 @@ export class UploadService {
 
       await this.s3Client.send(command);
 
-
-      function generateS3Url(bucketName: string, key: string) {
-        return `https://${bucketName}.s3.amazonaws.com/${key}`;
-      }
-      const fileUrl = generateS3Url(this.bucketName, key);
-      // Define qual campo atualizar baseado no tipo
-      console.log('TIPO recebido:', tipo);
+      const fileUrl = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
+      console.log('✅ Upload da imagem concluído!');
+      console.log('  URL da imagem:', fileUrl);
 
       let updateData: Record<string, any> = {};
-      if (tipo.toLowerCase() === TipoArquivo.ESTADUAL.toLowerCase()) {
-        updateData.state_logo = fileUrl;
-      } else if (tipo.toLowerCase() === TipoArquivo.MUNICIPAL.toLowerCase()) {
-        updateData.municipal_logo = fileUrl;
-      } else if (tipo.toLowerCase() === TipoArquivo.ADMINISTRATION.toLowerCase()) {
-        updateData.administration_logo = fileUrl;
+      switch (tipo.toLowerCase()) {
+        case TipoArquivo.ESTADUAL.toLowerCase():
+          updateData.state_logo = fileUrl;
+          break;
+        case TipoArquivo.MUNICIPAL.toLowerCase():
+          updateData.municipal_logo = fileUrl;
+          break;
+        case TipoArquivo.ADMINISTRATION.toLowerCase():
+          updateData.administration_logo = fileUrl;
+          break;
       }
 
-      console.log('updateData:', updateData);
+      console.log('📝 Atualizando registro do subscriber:', updateData);
 
-      // Atualiza o registro no banco
       const subscriberUpdate = await this.prisma.subscriber.update({
         where: { id },
         data: updateData,
       });
 
+      console.log('✅ Subscriber atualizado com sucesso!');
       return subscriberUpdate;
-
-
     } catch (error) {
-      console.error('Erro detalhado no upload para o S3:', error);
+      console.error('❌ Erro detalhado no upload de imagem:');
+      console.error('  Código:', error?.Code || error?.name);
+      console.error('  Mensagem:', error?.message);
+      console.error('  Endpoint:', error?.Endpoint);
+      console.error('  Região retornada:', error?.$response?.headers?.['x-amz-bucket-region']);
+      console.error('  Stack:', error?.stack);
+
       throw new InternalServerErrorException(
         'Falha ao fazer upload da imagem. Tente novamente mais tarde.',
       );
+    }
+  }
+
+  /**
+   * Gera URL de download temporária (assinada)
+   */
+  async getDownloadUrl(key: string) {
+    console.log('🔗 Gerando URL de download para:', key);
+
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3000 });
+
+      console.log('✅ URL de download gerada com sucesso!');
+      console.log('  URL:', signedUrl);
+
+      return { downloadUrl: signedUrl };
+    } catch (error) {
+      console.error('❌ Erro ao gerar URL de download:');
+      console.error('  Código:', error?.Code || error?.name);
+      console.error('  Mensagem:', error?.message);
+      console.error('  Stack:', error?.stack);
+
+      throw new InternalServerErrorException('Erro ao gerar link de download.');
     }
   }
 }
