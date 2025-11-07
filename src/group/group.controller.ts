@@ -12,6 +12,13 @@ export class GroupController {
     return this.groupService.create(createGroupDto);
   }
 
+  // 🔍 Endpoint de busca
+@Get('search')
+search(@Query('subscriber_id') subscriber_id: number, @Query('term') term: string) {
+  return this.groupService.search(Number(subscriber_id), term);
+}
+
+
   @Get()
   findAll(@Query('subscriber_id') subscriber_id: number) {
     return this.groupService.findAll(Number(subscriber_id));

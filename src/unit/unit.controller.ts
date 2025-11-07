@@ -11,6 +11,15 @@ export class UnitController {
   create(@Body() createUnitDto: CreateUnitDto) {
     return this.unitService.create(createUnitDto);
   }
+  // 🔍 Endpoint de busca
+@Get('search')
+search(
+  @Query('subscriber_id') subscriber_id: number,
+  @Query('term') term: string,
+) {
+  return this.unitService.search(Number(subscriber_id), term);
+}
+
 
   @Get()
   findAll(@Query('subscriber_id') subscriber_id: number) {

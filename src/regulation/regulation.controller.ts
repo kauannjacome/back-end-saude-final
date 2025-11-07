@@ -23,6 +23,13 @@ export class RegulationController {
     return this.regulationService.create(createRegulationDto);
   }
 
+  // 🔍 Endpoint de busca
+@Get('search')
+search(@Query('subscriber_id') subscriber_id: number, @Query('term') term: string) {
+  return this.regulationService.search(Number(subscriber_id), term);
+}
+
+
   @Get()
   findAll(@Query('subscriber_id') subscriber_id: number) {
     return this.regulationService.findAll(Number(subscriber_id));

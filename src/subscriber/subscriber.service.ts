@@ -13,6 +13,24 @@ export class SubscriberService {
     });
   }
 
+  async search(term: string) {
+  console.log('📥 term:', term);
+
+  return this.prisma.subscriber.findMany({
+    where: {
+      deleted_at: null,
+      OR: [
+        { name: { contains: term, mode: 'insensitive' } },
+        { municipality_name: { contains: term, mode: 'insensitive' } },
+        { email: { contains: term, mode: 'insensitive' } },
+        { cnpj: { contains: term, mode: 'insensitive' } },
+      ],
+    },
+    orderBy: { name: 'asc' },
+  });
+}
+
+
   async findAll() {
     return this.prisma.subscriber.findMany({
       where: { deleted_at: null },

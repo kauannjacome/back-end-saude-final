@@ -12,6 +12,21 @@ export class UnitService {
       data: createUnitDto,
     });
   }
+async search(subscriber_id: number, term: string) {
+  console.log('📥 subscriber_id:', subscriber_id);
+  console.log('📥 term:', term);
+
+  return this.prisma.unit.findMany({
+    where: {
+      subscriber_id,
+      deleted_at: null,
+      OR: [
+        { name: { contains: term, mode: 'insensitive' } },
+      ],
+    },
+    orderBy: { name: 'asc' },
+  });
+}
 
   async findAll(subscriber_id: number) {
     return this.prisma.unit.findMany({

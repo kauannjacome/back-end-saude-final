@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { SubscriberService } from './subscriber.service';
 import { CreateSubscriberDto } from './dto/create-subscriber.dto';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
@@ -11,6 +11,13 @@ export class SubscriberController {
   create(@Body() createSubscriberDto: CreateSubscriberDto) {
     return this.subscriberService.create(createSubscriberDto);
   }
+
+  // 🔍 Endpoint de busca
+@Get('search')
+search(@Query('term') term: string) {
+  return this.subscriberService.search(term);
+}
+
 
   @Get()
   findAll() {

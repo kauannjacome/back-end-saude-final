@@ -39,6 +39,32 @@ export class RegulationService {
     return regulation;
   }
 
+  async search(subscriber_id: number, term: string) {
+  console.log('📥 subscriber_id:', subscriber_id);
+  console.log('📥 term:', term);
+
+  return this.prisma.regulation.findMany({
+    where: {
+      subscriber_id,
+      deleted_at: null,
+      OR: [
+        { id_code: { contains: term, mode: 'insensitive' } },
+        { notes: { contains: term, mode: 'insensitive' } },
+        { requesting_professional: { contains: term, mode: 'insensitive' } },
+      ],
+    },
+    include: {
+      patient: { select: { full_name: true } },
+      supplier: { select: { name: true } },
+      cares: {
+        include: { care: { select: { name: true } } },
+      },
+    },
+    orderBy: { created_at: 'desc' },
+  });
+}
+
+
   async findAll(subscriber_id: number) {
     return this.prisma.regulation.findMany({
       where: { subscriber_id, deleted_at: null },

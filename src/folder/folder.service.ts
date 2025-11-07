@@ -12,6 +12,28 @@ export class FolderService {
       data: createFolderDto,
     });
   }
+async search(subscriber_id: number, term: string) {
+  console.log('📥 subscriber_id:', subscriber_id);
+  console.log('📥 term:', term);
+
+  return this.prisma.folder.findMany({
+    where: {
+      subscriber_id,
+      deleted_at: null,
+      OR: [
+        { name: { contains: term, mode: 'insensitive' } },
+        { description: { contains: term, mode: 'insensitive' } },
+      ],
+    },
+    include: {
+      care: { select: { name: true } },
+      group: { select: { name: true } },
+      regulations: true,
+    },
+    orderBy: { name: 'asc' },
+  });
+}
+
 
   async findAll(subscriber_id: number) {
     return this.prisma.folder.findMany({

@@ -266,6 +266,8 @@ async uploadRequirement(file: Express.Multer.File, regulationId: number) {
     }
   }
 
+
+  
 async getDocumentUrl(type: string, id: number) {
   console.log('🔗 Gerando URL de download para tipo:', type, 'ID:', id);
 

@@ -12,6 +12,16 @@ export class SupplierController {
     return this.supplierService.create(createSupplierDto);
   }
 
+  // 🔍 Endpoint de busca
+@Get('search')
+search(
+  @Query('subscriber_id') subscriber_id: number,
+  @Query('term') term: string,
+) {
+  return this.supplierService.search(Number(subscriber_id), term);
+}
+
+
   @Get()
   findAll(@Query('subscriber_id') subscriber_id: number) {
     return this.supplierService.findAll(Number(subscriber_id));
