@@ -128,12 +128,12 @@ export async function RequestRegulationPdf(data: any): Promise<Buffer> {
     paragraphGap: 5,
     continued: false,
   });
-  doc.text("dou fé "), {
+  doc.text(" E, para constar, firmo a presente em duas vias de igual teor para surta todos os seus efeitos legais. Dou fé"), {
     align: 'justify',
     paragraphGap: 5,
     continued: true,
   };
-doc.y = doc.page.height - 120;
+
 doc.text(`${subscriber.municipality_name}/${subscriber.state_acronym},${requestDate}`, { align: 'right' });
   // === Assinaturas ===
 doc.y = doc.page.height - 80;
