@@ -94,28 +94,37 @@ export async function RequestRegulationPdf(data: any): Promise<Buffer> {
     .font(LAYOUT.font.body.family) // sem negrito
     .fontSize(LAYOUT.font.body.size);
 
-  let textoPrincipal = `Declaro, sob as penas de Lei, para fins de comprovação junto aos órgãos de controle interno e externo que eu, ${patient.full_name || 'N/A'}, portador(a) do CPF nº ${
-    patient.cpf || 'N/A'
-  }, residente  no endereço especificado: ${patient.address || 'N/A'}, ${
-    patient.neighborhood || ''
-  }, ${patient.city || ''}/${patient.state || ''}, venho solicitar `;
+  let textoPrincipal = `Declaro, sob as penas de Lei, para fins de comprovação junto aos órgãos de controle interno e externo que eu, ${patient.full_name || 'N/A'}, portador(a) do CPF nº ${patient.cpf || 'N/A'
+    }, residente  no endereço especificado: ${patient.address || 'N/A'}, ${patient.neighborhood || ''
+    }, ${patient.city || ''}/${patient.state || ''}, venho solicitar `;
 
   // === Cuidados (texto corrido em uma linha) ===
   if (Array.isArray(data.cares) && data.cares.length > 0) {
+
     const frases = data.cares.map((c) => {
       const nomeCuidado = Str(c.care?.name || '').limit(60, '...').toString();
-      const quantidade = c.quantity ? parseInt(c.quantity) : 0;
-      const quantidadeTexto =
-        quantidade > 0 ? extenso(quantidade, { mode: 'number' }) : 'zero';
-      return `${quantidadeTexto} ${nomeCuidado}`;
+      const quantidade = parseInt(c.quantity) || 0;
+
+      // Se quantidade for 1 → não mostra número
+      if (quantidade === 1) {
+        return `${nomeCuidado}`;
+      }
+
+      // Se quantidade >= 2 → mostra número por extenso
+      if (quantidade > 1) {
+        const quantidadeTexto = extenso(quantidade, { mode: "number" });
+        return `${quantidadeTexto} ${nomeCuidado}`;
+      }
+
+      return nomeCuidado;
     });
 
     const textoCorrido =
       frases.length === 1
         ? `${frases[0]}.`
         : frases.length === 2
-        ? `${frases.join(' e ')}.`
-        : `${frases.slice(0, -1).join(', ')} e ${frases.slice(-1)}.`;
+          ? `${frases.join(' e ')}.`
+          : `${frases.slice(0, -1).join(', ')} e ${frases.slice(-1)}.`;
 
     textoPrincipal += textoCorrido;
   } else {
@@ -133,14 +142,14 @@ export async function RequestRegulationPdf(data: any): Promise<Buffer> {
     paragraphGap: 5,
     continued: true,
   };
-
-doc.text(`${subscriber.municipality_name}/${subscriber.state_acronym},${requestDate}`, { align: 'right' });
+  doc.moveDown(1);
+  doc.text(`${subscriber.municipality_name}/${subscriber.state_acronym}, ${requestDate}`, { align: 'right' });
   // === Assinaturas ===
-doc.y = doc.page.height - 80;
+  doc.y = doc.page.height - 80;
 
-// Centraliza os textos
-doc.text('________________________________________', { align: 'center' });
-doc.text('Assinatura do Responsável', { align: 'center' });
+  // Centraliza os textos
+  doc.text('________________________________________', { align: 'center' });
+  doc.text('Assinatura do Responsável', { align: 'center' });
 
   // === Finaliza ===
   doc.end();
