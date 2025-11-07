@@ -5,18 +5,20 @@ import { UpdateRegulationDto } from './dto/update-regulation.dto';
 import { generateRegulationPdf } from './pdf/divided-regulation-pdf';
 import { PageRegulationPdf } from './pdf/page-regulation-pdf';
 import { RequestRegulationPdf } from './pdf/authorization-regulation-pdf';
-
+import { customAlphabet } from 'nanoid'
 
 @Injectable()
 export class RegulationService {
   constructor(private prisma: PrismaService) { }
 
   async create(createRegulationDto: CreateRegulationDto) {
+    const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUXYZ', 10)
     const { cares, ...regulationData } = createRegulationDto;
 
     const regulation = await this.prisma.regulation.create({
       data: {
         ...regulationData,
+        id_code:nanoid() ,
         history: regulationData.history ?? 1,
         version_document: regulationData.version_document ?? 1,
         cares: cares

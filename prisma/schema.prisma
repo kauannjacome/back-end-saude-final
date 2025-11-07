@@ -27,6 +27,7 @@ enum status {
   recebido
   em_andamento
   aprovado
+  autorizado
   reprovado
   removido
 }
