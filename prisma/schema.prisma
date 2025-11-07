@@ -293,7 +293,9 @@ model patient {
   deleted_at             DateTime?
 
   subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  regulations regulation[]
+  regulations            regulation[] @relation(name: "PatientRegulation")
+  responsible_for        regulation[] @relation(name: "ResponsibleRegulation")
+
 
   @@unique([subscriber_id, cpf])
   @@index([subscriber_id])
@@ -340,6 +342,7 @@ model regulation {
   subscriber_id           Int
   id_code                 String?
   patient_id              Int?
+  responsible_id          Int?
   request_date            DateTime?
   scheduled_date          DateTime?
   status                  status?
@@ -362,13 +365,14 @@ model regulation {
   updated_at              DateTime          @updatedAt
   deleted_at              DateTime?
 
-  subscriber subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  patient    patient?      @relation(fields: [patient_id], references: [id])
-  folder     folder?       @relation(fields: [folder_id], references: [id])
-  supplier   supplier?     @relation(fields: [supplier_id], references: [id])
-  creator    professional? @relation("regulation_creator", fields: [creator_id], references: [id])
-  analyzer   professional? @relation("regulation_analyzer", fields: [analyzed_id], references: [id])
-  printer    professional? @relation("regulation_printer", fields: [printer_id], references: [id])
+  subscriber  subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  patient     patient?      @relation(name: "PatientRegulation", fields: [patient_id], references: [id])
+  responsible patient?      @relation(name: "ResponsibleRegulation", fields: [responsible_id], references: [id])
+  folder      folder?       @relation(fields: [folder_id], references: [id])
+  supplier    supplier?     @relation(fields: [supplier_id], references: [id])
+  creator     professional? @relation("regulation_creator", fields: [creator_id], references: [id])
+  analyzer    professional? @relation("regulation_analyzer", fields: [analyzed_id], references: [id])
+  printer     professional? @relation("regulation_printer", fields: [printer_id], references: [id])
 
   @@index([subscriber_id])
   @@index([patient_id])
