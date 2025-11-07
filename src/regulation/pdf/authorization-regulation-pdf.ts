@@ -94,9 +94,9 @@ export async function RequestRegulationPdf(data: any): Promise<Buffer> {
     .font(LAYOUT.font.body.family) // sem negrito
     .fontSize(LAYOUT.font.body.size);
 
-  let textoPrincipal = `Eu ${patient.full_name || 'N/A'}, portador(a) do CPF nº ${
+  let textoPrincipal = `Declaro, sob as penas de Lei, para fins de comprovação junto aos órgãos de controle interno e externo que eu, ${patient.full_name || 'N/A'}, portador(a) do CPF nº ${
     patient.cpf || 'N/A'
-  }, residente e domiciliado(a) à Endereço: ${patient.address || 'N/A'}, ${
+  }, residente  no endereço especificado: ${patient.address || 'N/A'}, ${
     patient.neighborhood || ''
   }, ${patient.city || ''}/${patient.state || ''}, venho solicitar `;
 
@@ -134,7 +134,7 @@ export async function RequestRegulationPdf(data: any): Promise<Buffer> {
     continued: true,
   };
 doc.y = doc.page.height - 120;
-doc.text(requestDate, { align: 'right' });
+doc.text(`${subscriber.municipality_name}/${subscriber.state_acronym},${requestDate}`, { align: 'right' });
   // === Assinaturas ===
 doc.y = doc.page.height - 80;
 
