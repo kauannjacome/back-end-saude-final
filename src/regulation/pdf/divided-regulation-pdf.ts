@@ -176,7 +176,7 @@ export async function generateRegulationPdf(
 
     const table = {
       headers: ['Solicitações', 'Quantidade'],
-      rows: data.cares.map((c) => [
+      rows: data.cares.slice(0, 10).map((c) => [
         Str(c.care.name).limit(60, '...').toString(),
         c.quantity.toString(),
       ]),
