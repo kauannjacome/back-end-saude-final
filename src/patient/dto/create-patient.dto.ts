@@ -127,6 +127,7 @@ export class CreatePatientDto {
   @IsString()
   accepted_terms_version?: string;
 
+  @IsOptional()
   @IsInt()
   subscriber_id: number;
 }
