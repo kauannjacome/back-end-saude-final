@@ -8,8 +8,12 @@ export class FolderService {
   constructor(private prisma: PrismaService) {}
 
   async create(createFolderDto: CreateFolderDto) {
+      const subscriberMockId = 1;
     return this.prisma.folder.create({
-      data: createFolderDto,
+    data: {
+      ...createFolderDto,
+      subscriber_id: subscriberMockId,
+    },
     });
   }
 async search(subscriber_id: number, term: string) {

@@ -40,6 +40,7 @@ export class CreateFolderDto {
   @IsInt()
   sub_group_id?: number;
 
+    @IsOptional()
   @IsInt()
   subscriber_id: number;
 }
