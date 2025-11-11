@@ -9,6 +9,7 @@ export class FolderController {
 
   @Post()
   create(@Body() createFolderDto: CreateFolderDto) {
+    console.log(createFolderDto)
     return this.folderService.create(createFolderDto);
   }
 
