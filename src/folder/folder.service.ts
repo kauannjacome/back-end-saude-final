@@ -13,6 +13,8 @@ export class FolderService {
     data: {
       ...createFolderDto,
       subscriber_id: subscriberMockId,
+            start_date: createFolderDto.start_date ? new Date(createFolderDto.start_date) :null,
+      end_date: createFolderDto.end_date ? new Date(createFolderDto.end_date) : null,
     },
     });
   }
