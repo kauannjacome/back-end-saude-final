@@ -144,7 +144,9 @@ async uploadRequirement(file: Express.Multer.File, regulationId: number) {
     // 🔹 Atualiza o campo url_requirement do regulation mantendo os outros dados
     const updatedRegulation = await this.prisma.regulation.update({
       where: { id: regulationId },
-      data: { url_requirement: key }, // grava a KEY (não a URL completa)
+      data: { url_requirement: key,
+            history: (regulation.history ?? 1) + 1,
+       }, // grava a KEY (não a URL completa)
     });
 
     console.log('✅ Regulation atualizado com a nova key!');
@@ -267,7 +269,7 @@ async uploadRequirement(file: Express.Multer.File, regulationId: number) {
   }
 
 
-  
+
 async getDocumentUrl(type: string, id: number) {
   console.log('🔗 Gerando URL de download para tipo:', type, 'ID:', id);
 

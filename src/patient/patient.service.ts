@@ -7,11 +7,18 @@ import { UpdatePatientDto } from './dto/update-patient.dto';
 export class PatientService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createPatientDto: CreatePatientDto) {
-    return this.prisma.patient.create({
-      data: createPatientDto,
-    });
-  }
+async create(createPatientDto: CreatePatientDto) {
+  return this.prisma.patient.create({
+    data: {
+      ...createPatientDto,
+      birth_date: new Date(createPatientDto.birth_date), 
+      accepted_terms_at: createPatientDto.accepted_terms_at
+        ? new Date(createPatientDto.accepted_terms_at)
+        : null,
+    },
+  });
+}
+
 
   async findAll(subscriber_id: number) {
     return this.prisma.patient.findMany({
