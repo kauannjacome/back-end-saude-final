@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsEnum, IsInt, IsDateString } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { folder_type } from '@prisma/client';
 
 export class CreateFolderDto {
@@ -22,11 +23,13 @@ export class CreateFolderDto {
 
   @IsOptional()
   @IsDateString()
-  start_date?: string;
+  @Transform(({ value }) => (value ? new Date(value) : null))
+  start_date?: Date;     // ✅ Agora vira Date automaticamente
 
   @IsOptional()
   @IsDateString()
-  end_date?: string;
+  @Transform(({ value }) => (value ? new Date(value) : null))
+  end_date?: Date;       // ✅ Agora vira Date automaticamente
 
   @IsOptional()
   @IsInt()
@@ -40,7 +43,7 @@ export class CreateFolderDto {
   @IsInt()
   sub_group_id?: number;
 
-    @IsOptional()
+  @IsOptional()
   @IsInt()
   subscriber_id: number;
 }
