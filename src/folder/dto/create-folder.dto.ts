@@ -22,14 +22,12 @@ export class CreateFolderDto {
   responsible_id?: number;
 
   @IsOptional()
-  @IsDateString()
-  @Transform(({ value }) => (value ? new Date(value) : null))
-  start_date?: Date;     // ✅ Agora vira Date automaticamente
+  @IsDateString() // ✅ Agora só valida string ISO
+  start_date?: string;
 
   @IsOptional()
   @IsDateString()
-  @Transform(({ value }) => (value ? new Date(value) : null))
-  end_date?: Date;       // ✅ Agora vira Date automaticamente
+  end_date?: string;
 
   @IsOptional()
   @IsInt()
