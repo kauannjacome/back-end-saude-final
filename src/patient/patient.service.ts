@@ -11,6 +11,7 @@ async create(createPatientDto: CreatePatientDto) {
   return this.prisma.patient.create({
     data: {
       ...createPatientDto,
+      subscriber_id:1,
       birth_date: new Date(createPatientDto.birth_date), 
       accepted_terms_at: createPatientDto.accepted_terms_at
         ? new Date(createPatientDto.accepted_terms_at)
