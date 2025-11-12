@@ -21,9 +21,7 @@ class CareRegulationDto {
 export class CreateRegulationDto {
 
 
-  @IsOptional()
-  @IsString()
-  id_code?: string;
+
 
   @IsOptional()
   @IsInt()
@@ -89,9 +87,7 @@ export class CreateRegulationDto {
   @IsInt()
   history?: number;
 
-  @IsOptional()
-  @IsInt()
-  version_document?: number;
+
 
   @IsOptional()
   @IsArray()

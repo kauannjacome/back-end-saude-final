@@ -21,7 +21,7 @@ export class RegulationService {
         id_code:nanoid() ,
         subscriber_id:1,
         history: regulationData.history ?? 1,
-        version_document: regulationData.version_document ?? 1,
+        version_document:  1,
         cares: cares
           ? {
             create: cares.map((c) => ({
