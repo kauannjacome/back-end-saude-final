@@ -19,8 +19,7 @@ class CareRegulationDto {
 }
 
 export class CreateRegulationDto {
-  @IsInt()
-  subscriber_id: number;
+
 
   @IsOptional()
   @IsString()

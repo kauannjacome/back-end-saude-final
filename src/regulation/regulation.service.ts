@@ -19,6 +19,7 @@ export class RegulationService {
       data: {
         ...regulationData,
         id_code:nanoid() ,
+        subscriber_id:1,
         history: regulationData.history ?? 1,
         version_document: regulationData.version_document ?? 1,
         cares: cares
