@@ -13,10 +13,11 @@ import type { Response } from 'express'; // ✅ import type
 import { RegulationService } from './regulation.service';
 import { CreateRegulationDto } from './dto/create-regulation.dto';
 import { UpdateRegulationDto } from './dto/update-regulation.dto';
+import { UpdateStatusRegulationDto } from './dto/update-status-regulation.dto';
 
 @Controller('regulation')
 export class RegulationController {
-  constructor(private readonly regulationService: RegulationService) {}
+  constructor(private readonly regulationService: RegulationService) { }
 
   @Post()
   create(@Body() createRegulationDto: CreateRegulationDto) {
@@ -25,10 +26,10 @@ export class RegulationController {
   }
 
   // 🔍 Endpoint de busca
-@Get('search')
-search(@Query('subscriber_id') subscriber_id: number, @Query('term') term: string) {
-  return this.regulationService.search(Number(subscriber_id), term);
-}
+  @Get('search')
+  search(@Query('subscriber_id') subscriber_id: number, @Query('term') term: string) {
+    return this.regulationService.search(Number(subscriber_id), term);
+  }
 
 
   @Get()
@@ -55,7 +56,7 @@ search(@Query('subscriber_id') subscriber_id: number, @Query('term') term: strin
   }
 
 
-    @Get(':id/request')
+  @Get(':id/request')
   async requestPdf(@Param('id') id: string, @Res() res: Response) {
     const buffer = await this.regulationService.requestPdf(Number(id));
 
@@ -67,6 +68,14 @@ search(@Query('subscriber_id') subscriber_id: number, @Query('term') term: strin
 
     res.end(buffer);
   }
+  @Patch('status/:id')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateStatusRegulationDto,
+  ) {
+    return this.regulationService.updateStatus(+id, updateStatusDto.status);
+  }
+
 
   @Patch(':id')
   update(

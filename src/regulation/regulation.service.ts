@@ -6,6 +6,7 @@ import { generateRegulationPdf } from './pdf/divided-regulation-pdf';
 import { PageRegulationPdf } from './pdf/page-regulation-pdf';
 import { RequestRegulationPdf } from './pdf/authorization-regulation-pdf';
 import { customAlphabet } from 'nanoid'
+import { status } from '@prisma/client';
 
 @Injectable()
 export class RegulationService {
@@ -18,10 +19,10 @@ export class RegulationService {
     const regulation = await this.prisma.regulation.create({
       data: {
         ...regulationData,
-        id_code:nanoid() ,
-        subscriber_id:1,
+        id_code: nanoid(),
+        subscriber_id: 1,
         history: regulationData.history ?? 1,
-        version_document:  1,
+        version_document: 1,
         cares: cares
           ? {
             create: cares.map((c) => ({
@@ -163,6 +164,12 @@ export class RegulationService {
 
     const pdfBuffer = await RequestRegulationPdf(regulation);
     return pdfBuffer;
+  }
+  async updateStatus(id: number, status: status) {
+    return this.prisma.regulation.update({
+      where: { id },
+      data: { status },
+    });
   }
 
   async update(id: number, updateRegulationDto: UpdateRegulationDto) {
