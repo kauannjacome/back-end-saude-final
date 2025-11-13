@@ -171,9 +171,7 @@ async function main() {
       uuid: '00000000-0000-0000-0000-000000000011',
       subscriber_id: subscriber1.id,
       name: 'Subgrupo Hematologia',
-      type: folder_type.sub_grupo,
       description: 'Exames hematológicos',
-      group_id: group1.id,
     },
   })
 
@@ -230,11 +228,9 @@ async function main() {
       uuid: '00000000-0000-0000-0000-000000000030',
       subscriber_id: subscriber1.id,
       name: 'Registros de Hemograma',
-      type: folder_type.procedimento,
+
       description: 'Pasta para arquivamento de hemogramas',
-      care_id: care1.id,
-      group_id: group1.id,
-      sub_group_id: subGroup1.id,
+ 
       responsible_id: prof1.id,
     },
   })

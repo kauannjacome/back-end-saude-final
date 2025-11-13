@@ -2,7 +2,7 @@
 CREATE TYPE "audit_action" AS ENUM ('create', 'update', 'delete', 'view');
 
 -- CreateEnum
-CREATE TYPE "status" AS ENUM ('recebido', 'em_andamento', 'aprovado', 'reprovado', 'removido');
+CREATE TYPE "status" AS ENUM ('recebido', 'em_andamento', 'aprovado', 'autorizado', 'reprovado', 'removido');
 
 -- CreateEnum
 CREATE TYPE "unit_measure" AS ENUM ('mg', 'g', 'mcg', 'kg', 'ml', 'l', 'amp', 'comp', 'caps', 'fr', 'tub', 'dose', 'ui', 'cx', 'un', 'sessao', 'diaria', 'medida', 'pomada', 'creme', 'gel');
@@ -91,7 +91,6 @@ CREATE TABLE "care" (
     "name" TEXT NOT NULL,
     "acronym" TEXT,
     "description" TEXT,
-    "authorization_id" TEXT,
     "status" "status",
     "resource" "resource_origin" DEFAULT 'nao_especificado',
     "unit_measure" "unit_measure" NOT NULL,
@@ -100,6 +99,7 @@ CREATE TABLE "care" (
     "amount" INTEGER,
     "group_id" INTEGER,
     "professional_id" INTEGER,
+    "supplier_id" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted_at" TIMESTAMP(3),
@@ -113,15 +113,11 @@ CREATE TABLE "folder" (
     "uuid" TEXT NOT NULL,
     "subscriber_id" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
-    "type" "folder_type" NOT NULL,
     "id_code" TEXT,
     "description" TEXT,
     "responsible_id" INTEGER,
     "start_date" TIMESTAMP(3),
     "end_date" TIMESTAMP(3),
-    "care_id" INTEGER,
-    "group_id" INTEGER,
-    "sub_group_id" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted_at" TIMESTAMP(3),
@@ -193,7 +189,6 @@ CREATE TABLE "professional" (
     "subscriber_id" INTEGER NOT NULL,
     "cpf" TEXT NOT NULL,
     "name" TEXT,
-    "professional_name" TEXT,
     "cargo" TEXT,
     "sex" "sex",
     "birth_date" TIMESTAMP(3),
@@ -221,6 +216,7 @@ CREATE TABLE "regulation" (
     "subscriber_id" INTEGER NOT NULL,
     "id_code" TEXT,
     "patient_id" INTEGER,
+    "responsible_id" INTEGER,
     "request_date" TIMESTAMP(3),
     "scheduled_date" TIMESTAMP(3),
     "status" "status",
@@ -315,12 +311,6 @@ CREATE UNIQUE INDEX "folder_uuid_key" ON "folder"("uuid");
 CREATE INDEX "folder_subscriber_id_idx" ON "folder"("subscriber_id");
 
 -- CreateIndex
-CREATE INDEX "folder_group_id_idx" ON "folder"("group_id");
-
--- CreateIndex
-CREATE INDEX "folder_sub_group_id_idx" ON "folder"("sub_group_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX "group_uuid_key" ON "group"("uuid");
 
 -- CreateIndex
@@ -405,13 +395,13 @@ ALTER TABLE "care" ADD CONSTRAINT "care_group_id_fkey" FOREIGN KEY ("group_id") 
 ALTER TABLE "care" ADD CONSTRAINT "care_professional_id_fkey" FOREIGN KEY ("professional_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "care" ADD CONSTRAINT "care_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "supplier"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "folder" ADD CONSTRAINT "folder_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "folder" ADD CONSTRAINT "folder_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "group"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "folder" ADD CONSTRAINT "folder_care_id_fkey" FOREIGN KEY ("care_id") REFERENCES "care"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "folder" ADD CONSTRAINT "folder_responsible_id_fkey" FOREIGN KEY ("responsible_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "group" ADD CONSTRAINT "group_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -427,6 +417,9 @@ ALTER TABLE "regulation" ADD CONSTRAINT "regulation_subscriber_id_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "regulation" ADD CONSTRAINT "regulation_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "patient"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "regulation" ADD CONSTRAINT "regulation_responsible_id_fkey" FOREIGN KEY ("responsible_id") REFERENCES "patient"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "regulation" ADD CONSTRAINT "regulation_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "folder"("id") ON DELETE SET NULL ON UPDATE CASCADE;

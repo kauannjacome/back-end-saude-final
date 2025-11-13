@@ -202,7 +202,6 @@ model care {
   subscriber   subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   group        group?            @relation(fields: [group_id], references: [id])
   professional professional?     @relation(fields: [professional_id], references: [id])
-  folders      folder[]          @relation("CareFolder")
   supplier     supplier?         @relation(fields: [supplier_id], references: [id])
   @@index([subscriber_id])
   @@index([group_id])
@@ -214,27 +213,22 @@ model folder {
   uuid           String      @unique @default(uuid())
   subscriber_id  Int
   name           String
-  type           folder_type
   id_code        String?
   description    String?
   responsible_id Int?
   start_date     DateTime?
   end_date       DateTime?
-  care_id        Int?
-  group_id       Int?
-  sub_group_id   Int?
   created_at     DateTime    @default(now())
   updated_at     DateTime    @updatedAt
   deleted_at     DateTime?
 
   subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  group       group?       @relation(fields: [group_id], references: [id])
-  care        care?        @relation("CareFolder", fields: [care_id], references: [id])
+
+  responsible professional? @relation("ProfessionalResponsible", fields: [responsible_id], references: [id])
   regulations regulation[]
 
   @@index([subscriber_id])
-  @@index([group_id])
-  @@index([sub_group_id])
+
 }
 
 model group {
@@ -249,7 +243,6 @@ model group {
 
   subscriber subscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   cares      care[]
-  folders    folder[]
 
   @@index([subscriber_id])
 }
@@ -331,7 +324,7 @@ model professional {
   regulations_printed  regulation[] @relation("regulation_printer")
   cares                care[]
   audit_logs           audit_log[]
-
+  folders_responsible  folder[]     @relation("ProfessionalResponsible")
   @@unique([subscriber_id, cpf])
   @@index([subscriber_id])
 }
