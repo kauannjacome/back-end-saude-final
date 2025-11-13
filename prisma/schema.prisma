@@ -185,7 +185,6 @@ model care {
   name             String
   acronym          String?
   description      String?
-  authorization_id String?
   status           status?
   resource         resource_origin? @default(nao_especificado)
   unit_measure     unit_measure
@@ -194,6 +193,7 @@ model care {
   amount           Int?
   group_id         Int?
   professional_id  Int?
+   supplier_id      Int? 
   created_at       DateTime         @default(now())
   updated_at       DateTime         @updatedAt
   deleted_at       DateTime?
@@ -203,7 +203,7 @@ model care {
   group        group?            @relation(fields: [group_id], references: [id])
   professional professional?     @relation(fields: [professional_id], references: [id])
   folders      folder[]          @relation("CareFolder")
-
+  supplier     supplier?         @relation(fields: [supplier_id], references: [id])
   @@index([subscriber_id])
   @@index([group_id])
   @@index([professional_id])
@@ -397,7 +397,7 @@ model supplier {
 
   subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   regulations regulation[]
-
+  cares care[]
   @@unique([subscriber_id, cnpj])
   @@index([subscriber_id])
 }
