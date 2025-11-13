@@ -30,6 +30,10 @@ export class RegulationController {
   search(@Query('subscriber_id') subscriber_id: number, @Query('term') term: string) {
     return this.regulationService.search(Number(subscriber_id), term);
   }
+  @Get('by-patient/:patient_id')
+  findByPatient(@Param('patient_id') patient_id: string) {
+    return this.regulationService.findByPatient(Number(patient_id));
+  }
 
 
   @Get()

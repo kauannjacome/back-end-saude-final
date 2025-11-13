@@ -44,6 +44,22 @@ export class RegulationService {
 
     return regulation;
   }
+async findByPatient(patient_id: number) {
+  return this.prisma.regulation.findMany({
+    where: {
+      patient_id,
+      deleted_at: null,
+    },
+    include: {
+      patient: true,
+      supplier: true,
+      cares: {
+        include: { care: true },
+      },
+    },
+    orderBy: { created_at: 'desc' },
+  });
+}
 
   async search(subscriber_id: number, term: string) {
     console.log('📥 subscriber_id:', subscriber_id);
