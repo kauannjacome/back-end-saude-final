@@ -42,7 +42,7 @@ export class RegulationController {
     return this.regulationService.findOne(+id);
   }
 
-  @Get(':id/pdf')
+  @Get('pdf/:id')
   async generatePdf(@Param('id') id: string, @Res() res: Response) {
     const buffer = await this.regulationService.generatePdf(Number(id));
 
@@ -56,7 +56,7 @@ export class RegulationController {
   }
 
 
-  @Get(':id/request')
+  @Get('request/:id')
   async requestPdf(@Param('id') id: string, @Res() res: Response) {
     const buffer = await this.regulationService.requestPdf(Number(id));
 
