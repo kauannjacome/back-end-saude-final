@@ -308,7 +308,6 @@ model professional {
   subscriber_id          Int
   cpf                    String
   name                   String?
-  professional_name      String?
   cargo                  String?
   sex                    sex?
   birth_date             DateTime?
