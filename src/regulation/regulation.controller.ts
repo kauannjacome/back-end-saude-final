@@ -20,6 +20,7 @@ export class RegulationController {
 
   @Post()
   create(@Body() createRegulationDto: CreateRegulationDto) {
+    console.log(createRegulationDto)
     return this.regulationService.create(createRegulationDto);
   }
 
