@@ -14,6 +14,7 @@ import { SupplierModule } from '../supplier/supplier.module';
 import { UnitModule } from '../unit/unit.module';
 import { UploadModule } from '../upload/upload.module';
 import { ReportModule } from '../report/report.module';
+import { DeclarationModule } from '../declaration/declaration.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
@@ -28,7 +29,8 @@ import { ReportModule } from '../report/report.module';
     SupplierModule,
     UnitModule,
     UploadModule,
-    ReportModule
+    ReportModule,
+    DeclarationModule
 
 
    ],
