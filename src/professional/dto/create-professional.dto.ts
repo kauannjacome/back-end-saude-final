@@ -17,9 +17,6 @@ export class CreateProfessionalDto {
   @IsString()
   name?: string;
 
-  @IsOptional()
-  @IsString()
-  professional_name?: string;
 
   @IsOptional()
   @IsString()

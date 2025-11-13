@@ -31,7 +31,6 @@ export class ProfessionalService {
         deleted_at: null,
         OR: [
           { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
-          { professional_name: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { email: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { cargo: { contains: term, mode: Prisma.QueryMode.insensitive } },
