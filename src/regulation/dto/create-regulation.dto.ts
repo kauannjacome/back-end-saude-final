@@ -42,6 +42,10 @@ export class CreateRegulationDto {
   @IsOptional()
   @IsString()
   notes?: string;
+  
+  @IsOptional()
+  @IsString()
+  requesting_professional?: string;
 
   @IsOptional()
   @IsString()
