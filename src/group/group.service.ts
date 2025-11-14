@@ -28,7 +28,6 @@ export class GroupService {
     },
     include: {
       cares: { select: { name: true } },
-      folders: { select: { name: true } },
     },
     orderBy: { name: 'asc' },
   });
@@ -39,7 +38,6 @@ export class GroupService {
       where: { subscriber_id, deleted_at: null },
       include: {
         cares: true,
-        folders: true,
       },
       orderBy: { created_at: 'desc' },
     });
@@ -48,7 +46,7 @@ export class GroupService {
   async findOne(id: number) {
     const group = await this.prisma.group.findUnique({
       where: { id },
-      include: { cares: true, folders: true },
+      include: { cares: true },
     });
 
     if (!group) throw new NotFoundException(`Group #${id} not found`);
