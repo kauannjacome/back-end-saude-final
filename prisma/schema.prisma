@@ -234,7 +234,7 @@ model regulation {
   folder_id               Int?
   relationship            relationship?
   priority                priority?         @default(eletivo)
-  type_declaration        type_declaration? @default(requerimento_1)
+  type_declaration        type_declaration? 
   requesting_professional String?
   creator_id              Int?
   analyzed_id             Int?
