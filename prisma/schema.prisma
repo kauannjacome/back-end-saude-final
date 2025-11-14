@@ -1,6 +1,3 @@
-// This is your Prisma schema file
-// Learn more at https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,11 +7,296 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/**
- * ===========================
- * ENUMS
- * ===========================
- */
+model subscriber {
+  id                  Int            @id @default(autoincrement())
+  uuid                String         @unique @default(uuid())
+  name                String
+  municipality_name   String
+  email               String
+  telephone           String
+  cnpj                String         @unique
+  postal_code         String
+  city                String
+  neighborhood        String
+  street              String
+  number              String
+  state_name          String
+  state_acronym       String
+  state_logo          String?
+  municipal_logo      String?
+  administration_logo String?
+  payment             Boolean        @default(false)
+  created_at          DateTime       @default(now())
+  updated_at          DateTime       @updatedAt
+  deleted_at          DateTime?
+  audit_logs          audit_log[]
+  cares               care[]
+  folders             folder[]
+  groups              group[]
+  patients            patient[]
+  professionals       professional[]
+  regulations         regulation[]
+  suppliers           supplier[]
+  units               unit[]
+}
+
+model unit {
+  id            Int        @id @default(autoincrement())
+  uuid          String     @unique @default(uuid())
+  subscriber_id Int
+  name          String
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  deleted_at    DateTime?
+  subscriber    subscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+
+  @@index([subscriber_id])
+}
+
+model audit_log {
+  id            Int           @id @default(autoincrement())
+  uuid          String        @unique @default(uuid())
+  subscriber_id Int
+  actor_id      Int?
+  object_type   String
+  object_id     Int
+  action        audit_action
+  detail        Json
+  occurred_at   DateTime      @default(now())
+  actor         professional? @relation(fields: [actor_id], references: [id])
+  subscriber    subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+
+  @@index([subscriber_id])
+  @@index([actor_id])
+  @@index([object_type, object_id])
+}
+
+model care {
+  id              Int               @id @default(autoincrement())
+  uuid            String            @unique @default(uuid())
+  subscriber_id   Int
+  name            String
+  acronym         String?
+  description     String?
+  status          status?
+  resource        resource_origin?  @default(nao_especificado)
+  unit_measure    unit_measure
+  priority        priority?
+  value           Float?
+  amount          Int?
+  group_id        Int?
+  professional_id Int?
+  supplier_id     Int?
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  deleted_at      DateTime?
+  group           group?            @relation(fields: [group_id], references: [id])
+  professional    professional?     @relation(fields: [professional_id], references: [id])
+  subscriber      subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  supplier        supplier?         @relation(fields: [supplier_id], references: [id])
+  regulations     care_regulation[]
+
+  @@index([subscriber_id])
+  @@index([group_id])
+  @@index([professional_id])
+}
+
+model folder {
+  id             Int           @id @default(autoincrement())
+  uuid           String        @unique @default(uuid())
+  subscriber_id  Int
+  name           String
+  id_code        String?
+  description    String?
+  responsible_id Int?
+  start_date     DateTime?
+  end_date       DateTime?
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+  deleted_at     DateTime?
+  responsible    professional? @relation("ProfessionalResponsible", fields: [responsible_id], references: [id])
+  subscriber     subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  regulations    regulation[]
+
+  @@index([subscriber_id])
+}
+
+model group {
+  id            Int        @id @default(autoincrement())
+  uuid          String     @unique @default(uuid())
+  subscriber_id Int
+  name          String
+  description   String?
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  deleted_at    DateTime?
+  cares         care[]
+  subscriber    subscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+
+  @@index([subscriber_id])
+}
+
+model patient {
+  id                     Int          @id @default(autoincrement())
+  uuid                   String       @unique @default(uuid())
+  subscriber_id          Int
+  cpf                    String
+  cns                    String?
+  full_name              String
+  social_name            String?
+  gender                 String
+  race                   String
+  sex                    String?
+  birth_date             DateTime
+  death_date             DateTime?
+  mother_name            String?
+  father_name            String?
+  phone                  String?
+  email                  String?
+  postal_code            String?
+  state                  String?
+  city                   String?
+  address                String?
+  number                 String?
+  complement             String?
+  neighborhood           String?
+  nationality            String?
+  naturalness            String?
+  marital_status         String?
+  blood_type             String?
+  password_hash          String?
+  is_password_temp       Boolean      @default(false)
+  number_try             Int?         @default(0)
+  is_blocked             Boolean      @default(false)
+  accepted_terms         Boolean      @default(false)
+  accepted_terms_at      DateTime?
+  accepted_terms_version String?
+  created_at             DateTime     @default(now())
+  updated_at             DateTime     @updatedAt
+  deleted_at             DateTime?
+  subscriber             subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  regulations            regulation[] @relation("PatientRegulation")
+  responsible_for        regulation[] @relation("ResponsibleRegulation")
+
+  @@unique([subscriber_id, cpf])
+  @@index([subscriber_id])
+}
+
+model professional {
+  id                     Int          @id @default(autoincrement())
+  uuid                   String       @unique @default(uuid())
+  subscriber_id          Int
+  cpf                    String
+  name                   String?
+  cargo                  String?
+  sex                    sex?
+  birth_date             DateTime?
+  phone_number           String?
+  email                  String?
+  role                   role?
+  password_hash          String?
+  is_password_temp       Boolean      @default(false)
+  number_try             Int?         @default(0)
+  is_blocked             Boolean      @default(false)
+  accepted_terms         Boolean      @default(false)
+  accepted_terms_at      DateTime?
+  accepted_terms_version String?
+  created_at             DateTime     @default(now())
+  updated_at             DateTime     @updatedAt
+  deleted_at             DateTime?
+  audit_logs             audit_log[]
+  cares                  care[]
+  folders_responsible    folder[]     @relation("ProfessionalResponsible")
+  subscriber             subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  regulations_analyzed   regulation[] @relation("regulation_analyzer")
+  regulations_created    regulation[] @relation("regulation_creator")
+  regulations_printed    regulation[] @relation("regulation_printer")
+
+  @@unique([subscriber_id, cpf])
+  @@index([subscriber_id])
+}
+
+model regulation {
+  id                      Int               @id @default(autoincrement())
+  uuid                    String            @unique @default(uuid())
+  subscriber_id           Int
+  id_code                 String?
+  patient_id              Int?
+  responsible_id          Int?
+  request_date            DateTime?
+  scheduled_date          DateTime?
+  status                  status?
+  notes                   String?
+  justification           String?
+  url_requirement         String?
+  url_pre_document        String?
+  url_current_document    String?
+  folder_id               Int?
+  relationship            relationship?
+  priority                priority?         @default(eletivo)
+  type_declaration        type_declaration? @default(requerimento_1)
+  requesting_professional String?
+  creator_id              Int?
+  analyzed_id             Int?
+  printer_id              Int?
+  supplier_id             Int?
+  history                 Int?
+  version_document        Int?
+  created_at              DateTime          @default(now())
+  updated_at              DateTime          @updatedAt
+  deleted_at              DateTime?
+
+  cares       care_regulation[]
+  analyzer    professional?     @relation("regulation_analyzer", fields: [analyzed_id], references: [id])
+  creator     professional?     @relation("regulation_creator", fields: [creator_id], references: [id])
+  folder      folder?           @relation(fields: [folder_id], references: [id])
+  patient     patient?          @relation("PatientRegulation", fields: [patient_id], references: [id])
+  printer     professional?     @relation("regulation_printer", fields: [printer_id], references: [id])
+  responsible patient?          @relation("ResponsibleRegulation", fields: [responsible_id], references: [id])
+  subscriber  subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  supplier    supplier?         @relation(fields: [supplier_id], references: [id])
+
+  @@index([subscriber_id])
+  @@index([patient_id])
+  @@index([folder_id])
+  @@index([supplier_id])
+  @@index([creator_id])
+  @@index([analyzed_id])
+  @@index([printer_id])
+}
+
+model supplier {
+  id            Int          @id @default(autoincrement())
+  uuid          String       @unique @default(uuid())
+  subscriber_id Int
+  name          String
+  trade_name    String
+  cnpj          String
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  deleted_at    DateTime?
+  cares         care[]
+  regulations   regulation[]
+  subscriber    subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+
+  @@unique([subscriber_id, cnpj])
+  @@index([subscriber_id])
+}
+
+model care_regulation {
+  id            Int        @id @default(autoincrement())
+  care_id       Int
+  regulation_id Int
+  quantity      Int        @default(1)
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  care          care       @relation(fields: [care_id], references: [id], onDelete: Cascade)
+  regulation    regulation @relation(fields: [regulation_id], references: [id], onDelete: Cascade)
+
+  @@unique([care_id, regulation_id])
+  @@index([care_id])
+  @@index([regulation_id])
+}
 
 enum audit_action {
   create
@@ -106,307 +388,19 @@ enum resource_origin {
   federal
 }
 
-/**
- * ===========================
- * MODELS
- * ===========================
- */
-
-model subscriber {
-  id                  Int       @id @default(autoincrement())
-  uuid                String    @unique @default(uuid())
-  name                String
-  municipality_name   String
-  email               String
-  telephone           String
-  cnpj                String    @unique
-  postal_code         String
-  city                String
-  neighborhood        String
-  street              String
-  number              String
-  state_name          String
-  state_acronym       String
-  state_logo          String?
-  municipal_logo      String?
-  administration_logo String?
-  payment             Boolean   @default(false)
-  created_at          DateTime  @default(now())
-  updated_at          DateTime  @updatedAt
-  deleted_at          DateTime?
-
-  units         unit[]
-  patients      patient[]
-  professionals professional[]
-  suppliers     supplier[]
-  cares         care[]
-  regulations   regulation[]
-  audit_logs    audit_log[]
-  folders       folder[]
-  groups        group[]
-}
-
-model unit {
-  id            Int        @id @default(autoincrement())
-  uuid          String     @unique @default(uuid())
-  subscriber_id Int
-  name          String
-  subscriber    subscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  created_at    DateTime   @default(now())
-  updated_at    DateTime   @updatedAt
-  deleted_at    DateTime?
-
-  @@index([subscriber_id])
-}
-
-model audit_log {
-  id            Int          @id @default(autoincrement())
-  uuid          String       @unique @default(uuid())
-  subscriber_id Int
-  actor_id      Int?
-  object_type   String
-  object_id     Int
-  action        audit_action
-  detail        Json
-  occurred_at   DateTime     @default(now())
-
-  subscriber subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  actor      professional? @relation(fields: [actor_id], references: [id])
-
-  @@index([subscriber_id])
-  @@index([actor_id])
-  @@index([object_type, object_id])
-}
-
-model care {
-  id               Int              @id @default(autoincrement())
-  uuid             String           @unique @default(uuid())
-  subscriber_id    Int
-  name             String
-  acronym          String?
-  description      String?
-  status           status?
-  resource         resource_origin? @default(nao_especificado)
-  unit_measure     unit_measure
-  priority         priority?
-  value            Float?
-  amount           Int?
-  group_id         Int?
-  professional_id  Int?
-   supplier_id      Int? 
-  created_at       DateTime         @default(now())
-  updated_at       DateTime         @updatedAt
-  deleted_at       DateTime?
-
-  regulations  care_regulation[]
-  subscriber   subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  group        group?            @relation(fields: [group_id], references: [id])
-  professional professional?     @relation(fields: [professional_id], references: [id])
-  supplier     supplier?         @relation(fields: [supplier_id], references: [id])
-  @@index([subscriber_id])
-  @@index([group_id])
-  @@index([professional_id])
-}
-
-model folder {
-  id             Int         @id @default(autoincrement())
-  uuid           String      @unique @default(uuid())
-  subscriber_id  Int
-  name           String
-  id_code        String?
-  description    String?
-  responsible_id Int?
-  start_date     DateTime?
-  end_date       DateTime?
-  created_at     DateTime    @default(now())
-  updated_at     DateTime    @updatedAt
-  deleted_at     DateTime?
-
-  subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-
-  responsible professional? @relation("ProfessionalResponsible", fields: [responsible_id], references: [id])
-  regulations regulation[]
-
-  @@index([subscriber_id])
-
-}
-
-model group {
-  id            Int       @id @default(autoincrement())
-  uuid          String    @unique @default(uuid())
-  subscriber_id Int
-  name          String
-  description   String?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  deleted_at    DateTime?
-
-  subscriber subscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  cares      care[]
-
-  @@index([subscriber_id])
-}
-
-model patient {
-  id                     Int       @id @default(autoincrement())
-  uuid                   String    @unique @default(uuid())
-  subscriber_id          Int
-  cpf                    String
-  cns                    String?
-  full_name              String
-  social_name            String?
-  gender                 String
-  race                   String
-  sex                    String?
-  birth_date             DateTime
-  death_date             DateTime?
-  mother_name            String?
-  father_name            String?
-  phone                  String?
-  email                  String?
-  postal_code            String?
-  state                  String?
-  city                   String?
-  address                String?
-  number                 String?
-  complement             String?
-  neighborhood           String?
-  nationality            String?
-  naturalness            String?
-  marital_status         String?
-  blood_type             String?
-  password_hash          String?
-  is_password_temp       Boolean   @default(false)
-  number_try             Int?      @default(0)
-  is_blocked             Boolean   @default(false)
-  accepted_terms         Boolean   @default(false)
-  accepted_terms_at      DateTime?
-  accepted_terms_version String?
-  created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
-  deleted_at             DateTime?
-
-  subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  regulations            regulation[] @relation(name: "PatientRegulation")
-  responsible_for        regulation[] @relation(name: "ResponsibleRegulation")
-
-
-  @@unique([subscriber_id, cpf])
-  @@index([subscriber_id])
-}
-
-model professional {
-  id                     Int       @id @default(autoincrement())
-  uuid                   String    @unique @default(uuid())
-  subscriber_id          Int
-  cpf                    String
-  name                   String?
-  cargo                  String?
-  sex                    sex?
-  birth_date             DateTime?
-  phone_number           String?
-  email                  String?
-  role                   role?
-  password_hash          String?
-  is_password_temp       Boolean   @default(false)
-  number_try             Int?      @default(0)
-  is_blocked             Boolean   @default(false)
-  accepted_terms         Boolean   @default(false)
-  accepted_terms_at      DateTime?
-  accepted_terms_version String?
-  created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
-  deleted_at             DateTime?
-
-  subscriber           subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  regulations_created  regulation[] @relation("regulation_creator")
-  regulations_analyzed regulation[] @relation("regulation_analyzer")
-  regulations_printed  regulation[] @relation("regulation_printer")
-  cares                care[]
-  audit_logs           audit_log[]
-  folders_responsible  folder[]     @relation("ProfessionalResponsible")
-  @@unique([subscriber_id, cpf])
-  @@index([subscriber_id])
-}
-
-model regulation {
-  id                      Int               @id @default(autoincrement())
-  uuid                    String            @unique @default(uuid())
-  subscriber_id           Int
-  id_code                 String?
-  patient_id              Int?
-  responsible_id          Int?
-  request_date            DateTime?
-  scheduled_date          DateTime?
-  status                  status?
-  notes                   String?
-  type_declaration        String?
-  url_requirement         String?
-  url_pre_document        String?
-  url_current_document    String?
-  folder_id               Int?
-  relationship            relationship?
-  priority                priority?         @default(eletivo)
-  requesting_professional String?
-  creator_id              Int?
-  analyzed_id             Int?
-  printer_id              Int?
-  supplier_id             Int?
-  history                 Int?
-  version_document        Int?
-  cares                   care_regulation[]
-  created_at              DateTime          @default(now())
-  updated_at              DateTime          @updatedAt
-  deleted_at              DateTime?
-
-  subscriber  subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  patient     patient?      @relation(name: "PatientRegulation", fields: [patient_id], references: [id])
-  responsible patient?      @relation(name: "ResponsibleRegulation", fields: [responsible_id], references: [id])
-  folder      folder?       @relation(fields: [folder_id], references: [id])
-  supplier    supplier?     @relation(fields: [supplier_id], references: [id])
-  creator     professional? @relation("regulation_creator", fields: [creator_id], references: [id])
-  analyzer    professional? @relation("regulation_analyzer", fields: [analyzed_id], references: [id])
-  printer     professional? @relation("regulation_printer", fields: [printer_id], references: [id])
-
-  @@index([subscriber_id])
-  @@index([patient_id])
-  @@index([folder_id])
-  @@index([supplier_id])
-  @@index([creator_id])
-  @@index([analyzed_id])
-  @@index([printer_id])
-}
-
-model supplier {
-  id            Int       @id @default(autoincrement())
-  uuid          String    @unique @default(uuid())
-  subscriber_id Int
-  name          String
-  trade_name    String
-  cnpj          String
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  deleted_at    DateTime?
-
-  subscriber  subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  regulations regulation[]
-  cares care[]
-  @@unique([subscriber_id, cnpj])
-  @@index([subscriber_id])
-}
-
-model care_regulation {
-  id            Int      @id @default(autoincrement())
-  care_id       Int
-  regulation_id Int
-  quantity      Int      @default(1)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-
-  care       care       @relation(fields: [care_id], references: [id], onDelete: Cascade)
-  regulation regulation @relation(fields: [regulation_id], references: [id], onDelete: Cascade)
-
-  @@unique([care_id, regulation_id])
-  @@index([care_id])
-  @@index([regulation_id])
+enum type_declaration {
+  requerimento_1
+  requerimento_2
+  residencia_pec
+  residencia_cadsus
+  atualizacao_cadsus
+  ajuda_de_custo
+  exame_alto_custo
+  autorizacao
+  desistencia
+  aih
+  transporte
+  cer
+  medicamento_continuo
+  assistencia_farmaceutica
 }
