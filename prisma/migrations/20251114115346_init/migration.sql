@@ -219,6 +219,7 @@ CREATE TABLE "regulation" (
     "responsible_id" INTEGER,
     "request_date" TIMESTAMP(3),
     "scheduled_date" TIMESTAMP(3),
+    "declaration_date" TIMESTAMP(3),
     "status" "status",
     "notes" TEXT,
     "url_requirement" TEXT,

@@ -340,6 +340,7 @@ model regulation {
   scheduled_date          DateTime?
   status                  status?
   notes                   String?
+  type_declaration        String?
   url_requirement         String?
   url_pre_document        String?
   url_current_document    String?
