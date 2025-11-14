@@ -34,6 +34,7 @@ async search(subscriber_id: number, term: string) {
     include: {
  
       regulations: true,
+       responsible: true,
 
     },
     orderBy: { name: 'asc' },
@@ -47,6 +48,7 @@ async search(subscriber_id: number, term: string) {
       include: {
 
         regulations: true,
+         responsible: true,
       },
       orderBy: { created_at: 'desc' },
     });
@@ -55,7 +57,7 @@ async search(subscriber_id: number, term: string) {
   async findOne(id: number) {
     const folder = await this.prisma.folder.findUnique({
       where: { id },
-      include: {  regulations: true },
+      include: {  regulations: true, responsible: true, },
     });
 
     if (!folder) throw new NotFoundException(`Folder #${id} not found`);
