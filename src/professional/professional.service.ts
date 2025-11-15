@@ -32,6 +32,7 @@ async searchSimple(subscriber_id: number, term?: string) {
     select: {
       id: true,
       name: true,
+      cargo:true
     },
   });
 }
