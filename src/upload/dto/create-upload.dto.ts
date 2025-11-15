@@ -7,9 +7,9 @@ export enum TipoArquivo {
 }
 
 export class CreateUploadDto {
-    @IsNotEmpty({ message: 'O tipo é obrigatório.' })
+  @IsNotEmpty({ message: 'O tipo é obrigatório.' })
   @IsEnum(TipoArquivo, { message: 'O tipo deve ser estadual, municipal ou federal.' })
   tipo: TipoArquivo;
-    @IsNotEmpty({ message: 'O id é obrigatório.' })
-  id:number;
+  @IsNotEmpty({ message: 'O id é obrigatório.' })
+  id: number;
 }
