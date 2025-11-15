@@ -22,7 +22,7 @@ export class SeedsController {
     @Body() CreateSeedPatient: CreateSeedPatientDto,
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: 'text/csv' })
+        .addFileTypeValidator({ fileType: /(text\/csv|application\/vnd\.ms-excel)$/ })
         .build({
           errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
         }),
