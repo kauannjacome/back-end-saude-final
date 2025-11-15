@@ -14,10 +14,9 @@ export class UnitController {
   // 🔍 Endpoint de busca
 @Get('search')
 search(
-  @Query('subscriber_id') subscriber_id: number,
   @Query('term') term: string,
 ) {
-  return this.unitService.search(Number(subscriber_id), term);
+  return this.unitService.search(Number(1), term);
 }
 
 
