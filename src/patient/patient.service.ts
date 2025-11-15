@@ -2,24 +2,24 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
-import { PaginationDto } from './dto/pagination-dto';
+import {  SearchPaginationDto } from './dto/search-pagination-dto';
 
 @Injectable()
 export class PatientService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-async create(createPatientDto: CreatePatientDto) {
-  return this.prisma.patient.create({
-    data: {
-      ...createPatientDto,
-      subscriber_id:1,
-      birth_date: new Date(createPatientDto.birth_date), 
-      accepted_terms_at: createPatientDto.accepted_terms_at
-        ? new Date(createPatientDto.accepted_terms_at)
-        : null,
-    },
-  });
-}
+  async create(createPatientDto: CreatePatientDto) {
+    return this.prisma.patient.create({
+      data: {
+        ...createPatientDto,
+        subscriber_id: 1,
+        birth_date: new Date(createPatientDto.birth_date),
+        accepted_terms_at: createPatientDto.accepted_terms_at
+          ? new Date(createPatientDto.accepted_terms_at)
+          : null,
+      },
+    });
+  }
 
 
   async findAll(subscriber_id: number) {
@@ -30,67 +30,66 @@ async create(createPatientDto: CreatePatientDto) {
     });
   }
 
-  async search(subscriber_id: number, term: string, paginationDto?: PaginationDto) {
-   console.log('📥 subscriber_id:', subscriber_id);
-  console.log('📥 term:', term);
-    const { limit = 10, offset = 0 } = paginationDto ?? {};
-  return this.prisma.patient.findMany({
+  async search(subscriber_id: number, SearchPaginationDto?: SearchPaginationDto) {
+    console.log('📥 subscriber_id:', subscriber_id);
+    const { limit = 10, offset = 0 } = SearchPaginationDto ?? {};
+    return this.prisma.patient.findMany({
 
-    where: {
-      subscriber_id,
-      deleted_at: null,
-       OR: [
-        {
-          full_name: {
-            contains: term,
-            mode: 'insensitive', // <-- ignora maiúsculas/minúsculas
+      where: {
+        subscriber_id,
+        deleted_at: null,
+        OR: [
+          {
+            full_name: {
+              contains: SearchPaginationDto?.term,
+              mode: 'insensitive', // <-- ignora maiúsculas/minúsculas
+            },
           },
-        },
-        {
-          cpf: {
-            contains: term,
-            mode: 'insensitive', // <-- idem para CPF
+          {
+            cpf: {
+              contains: SearchPaginationDto?.term,
+              mode: 'insensitive', // <-- idem para CPF
+            },
           },
-        },
-      ],
-    },
-    take: limit,
-    skip: offset,
-    orderBy: { full_name: 'asc' },
-        select: {
-      id: true,
-      uuid: true,
-      subscriber_id: true,
-      cpf: true,
-      cns: true,
-      full_name: true,
-      social_name: true,
-      gender: true,
-      race: true,
-      sex: true,
-      birth_date: true,
-      death_date: true,
-      mother_name: true,
-      father_name: true,
-      phone: true,
-      email: true,
-      postal_code: true,
-      state: true,
-      city: true,
-      address: true,
-      number: true,
-      complement: true,
-      neighborhood: true,
-      nationality: true,
-      naturalness: true,
-      marital_status: true,
-      blood_type: true,
-      created_at:true,
-      updated_at:true
-    },
-  });
-  
-}
+        ],
+      },
+      take: limit,
+      skip: offset,
+      orderBy: { full_name: 'asc' },
+      select: {
+        id: true,
+        uuid: true,
+        subscriber_id: true,
+        cpf: true,
+        cns: true,
+        full_name: true,
+        social_name: true,
+        gender: true,
+        race: true,
+        sex: true,
+        birth_date: true,
+        death_date: true,
+        mother_name: true,
+        father_name: true,
+        phone: true,
+        email: true,
+        postal_code: true,
+        state: true,
+        city: true,
+        address: true,
+        number: true,
+        complement: true,
+        neighborhood: true,
+        nationality: true,
+        naturalness: true,
+        marital_status: true,
+        blood_type: true,
+        created_at: true,
+        updated_at: true
+      },
+    });
+
+  }
 
   async findOne(id: number) {
     const patient = await this.prisma.patient.findUnique({
