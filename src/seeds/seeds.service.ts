@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { fromZonedTime } from 'date-fns-tz';
 
 import { parse } from 'fast-csv';
 import PQueue from 'p-queue';
@@ -105,19 +104,21 @@ export class SeedsService {
 
   // Converte DD/MM/YYYY → YYYY-MM-DD
   private brToIso(value: string): string {
-    if (value.includes('-')) return value; // já é ISO
+    if (value.includes('-')) return value; // já está ISO
 
     const [d, m, y] = value.split('/');
     return `${y}-${m}-${d}`;
   }
 
+  // Sempre salva as datas como 03:00:00.000Z (UTC-3 fixo)
   private brDate(value: string | null): Date {
     if (!value) return new Date();
 
     try {
-      const iso = this.brToIso(value); // corrige formato BR
-      const date = fromZonedTime(iso, 'America/Sao_Paulo');
-      return isNaN(date.getTime()) ? new Date() : date;
+      const iso = this.brToIso(value);
+
+      // FORÇA UTC-3 FIXO independente do ano
+      return new Date(`${iso}T03:00:00.000Z`);
     } catch {
       return new Date();
     }
@@ -128,8 +129,7 @@ export class SeedsService {
 
     try {
       const iso = this.brToIso(value);
-      const date = fromZonedTime(iso, 'America/Sao_Paulo');
-      return isNaN(date.getTime()) ? null : date;
+      return new Date(`${iso}T03:00:00.000Z`);
     } catch {
       return null;
     }
