@@ -15,10 +15,9 @@ export class SupplierController {
   // 🔍 Endpoint de busca
 @Get('search')
 search(
-  @Query('subscriber_id') subscriber_id: number,
   @Query('term') term: string,
 ) {
-  return this.supplierService.search(Number(subscriber_id), term);
+  return this.supplierService.search(Number(1), term);
 }
 
 
