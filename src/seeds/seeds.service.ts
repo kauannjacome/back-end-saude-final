@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { fromZonedTime } from 'date-fns-tz';
+
 import { parse } from 'fast-csv';
 import PQueue from 'p-queue';
 
@@ -53,8 +55,8 @@ export class SeedsService {
               race: this.mapRace(row.co_raca_cor),
               sex: row.no_sexo || null,
 
-              birth_date: this.safeDate(row.dt_nascimento),
-              death_date: this.safeNullableDate(row.dt_obito),
+              birth_date: this.brDate(row.dt_nascimento),
+              death_date: this.brNullableDate(row.dt_obito),
 
               mother_name: row.no_mae || null,
               father_name: row.no_pai || null,
@@ -66,8 +68,8 @@ export class SeedsService {
 
               email: row.ds_email || null,
               postal_code: row.ds_cep || null,
-              state:  null,
-              city:  null,
+              state: null,
+              city: null,
               address: row.ds_logradouro || null,
               number: row.nu_numero || null,
               complement: row.ds_complemento || null,
@@ -99,17 +101,35 @@ export class SeedsService {
     };
   }
 
-  private safeDate(value: string | null): Date {
-    const d = new Date(value ?? '');
-    return isNaN(d.getTime()) ? new Date() : d;
+  // ---------------------------
+  //   TRATAMENTO DE DATAS (BR)
+  // ---------------------------
+  private brDate(value: string | null): Date {
+    if (!value) return new Date();
+
+    try {
+      // Converte data de Brasília -> UTC
+      const date = fromZonedTime(value, 'America/Sao_Paulo');
+      return isNaN(date.getTime()) ? new Date() : date;
+    } catch {
+      return new Date();
+    }
   }
 
-  private safeNullableDate(value: string | null): Date | null {
+  private brNullableDate(value: string | null): Date | null {
     if (!value) return null;
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? null : d;
+
+    try {
+      const date = fromZonedTime(value, 'America/Sao_Paulo');
+      return isNaN(date.getTime()) ? null : date;
+    } catch {
+      return null;
+    }
   }
 
+  // ---------------------------
+  //   MAPEAMENTO DE CAMPOS
+  // ---------------------------
   private mapGender(value: string | null): string {
     if (!value) return 'nao_informado';
 

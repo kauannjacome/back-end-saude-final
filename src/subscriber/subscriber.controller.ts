@@ -5,7 +5,7 @@ import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
 
 @Controller('subscriber')
 export class SubscriberController {
-  constructor(private readonly subscriberService: SubscriberService) {}
+  constructor(private readonly subscriberService: SubscriberService) { }
 
   @Post()
   create(@Body() createSubscriberDto: CreateSubscriberDto) {
@@ -13,10 +13,10 @@ export class SubscriberController {
   }
 
   // 🔍 Endpoint de busca
-@Get('search')
-search(@Query('term') term: string) {
-  return this.subscriberService.search(term);
-}
+  @Get('search')
+  search(@Query('term') term: string) {
+    return this.subscriberService.search(term);
+  }
 
 
   @Get()
