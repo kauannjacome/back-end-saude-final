@@ -5,7 +5,7 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 
 @Injectable()
 export class GroupService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createGroupDto: CreateGroupDto) {
     return this.prisma.group.create({
@@ -14,24 +14,26 @@ export class GroupService {
   }
 
   async search(subscriber_id: number, term: string) {
-  console.log('📥 subscriber_id:', subscriber_id);
-  console.log('📥 term:', term);
+    console.log('📥 subscriber_id:', subscriber_id);
+    console.log('📥 term:', term);
 
-  return this.prisma.group.findMany({
-    where: {
-      subscriber_id,
-      deleted_at: null,
-      OR: [
-        { name: { contains: term, mode: 'insensitive' } },
-        { description: { contains: term, mode: 'insensitive' } },
-      ],
-    },
-    include: {
-      cares: { select: { name: true } },
-    },
-    orderBy: { name: 'asc' },
-  });
-}
+    return this.prisma.group.findMany({
+      where: {
+        subscriber_id,
+        deleted_at: null,
+        OR: [
+          { name: { contains: term, mode: 'insensitive' } },
+          { description: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+      include: {
+        cares: { select: { name: true } },
+      },
+      take: 10,
+      skip: 0,
+      orderBy: { name: 'asc' },
+    });
+  }
 
   async findAll(subscriber_id: number) {
     return this.prisma.group.findMany({

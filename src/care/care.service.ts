@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CareService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * Cria um novo registro de cuidado (care)
@@ -44,24 +44,26 @@ export class CareService {
   }
 
   async search(subscriber_id: number, term: string) {
-     console.log('📥 subscriber_id:', subscriber_id);
-  console.log('📥 term:', term);
-  return this.prisma.care.findMany({
-    where: {
-      subscriber_id,
-      deleted_at: null,
-      OR: [
-        { name: { contains: term, mode: 'insensitive' } },   // ✅ ignora maiúsculas/minúsculas
-        { acronym: { contains: term, mode: 'insensitive' } } // ✅ idem
-      ],
-    },
-    orderBy: { name: 'asc' },
-    include: {
-      group: { select: { name: true } },
-      professional: { select: { name: true } },
-    },
-  });
-}
+    console.log('📥 subscriber_id:', subscriber_id);
+    console.log('📥 term:', term);
+    return this.prisma.care.findMany({
+      where: {
+        subscriber_id,
+        deleted_at: null,
+        OR: [
+          { name: { contains: term, mode: 'insensitive' } },   // ✅ ignora maiúsculas/minúsculas
+          { acronym: { contains: term, mode: 'insensitive' } } // ✅ idem
+        ],
+      },
+      take: 10,
+      skip: 0,
+      orderBy: { name: 'asc' },
+      include: {
+        group: { select: { name: true } },
+        professional: { select: { name: true } },
+      },
+    });
+  }
 
   /**
    * Retorna um único cuidado pelo ID

@@ -37,6 +37,8 @@ export class FolderService {
         responsible: true,
 
       },
+      take: 10,
+      skip: 0,
       orderBy: { name: 'asc' },
     });
   }

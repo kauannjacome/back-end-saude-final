@@ -15,27 +15,29 @@ export class ProfessionalService {
     });
   }
 
-async searchSimple(subscriber_id: number, term?: string) {
-  const where: Prisma.professionalWhereInput = {
-    subscriber_id,
-    deleted_at: null,
-    OR: [
-      { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
-      { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
-    ],
-  };
+  async searchSimple(subscriber_id: number, term?: string) {
+    const where: Prisma.professionalWhereInput = {
+      subscriber_id,
+      deleted_at: null,
+      OR: [
+        { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
+        { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
+      ],
+    };
 
-  return this.prisma.professional.findMany({
-    where,
-    orderBy: { name: 'asc' },
+    return this.prisma.professional.findMany({
+      where,
+      take: 10,
+      skip: 0,
+      orderBy: { name: 'asc' },
 
-    select: {
-      id: true,
-      name: true,
-      cargo:true
-    },
-  });
-}
+      select: {
+        id: true,
+        name: true,
+        cargo: true
+      },
+    });
+  }
 
   async search(subscriber_id: number, term?: string) {
     console.log('📥 [ProfessionalService.search] subscriber_id:', subscriber_id);
@@ -59,6 +61,8 @@ async searchSimple(subscriber_id: number, term?: string) {
 
       const results = await this.prisma.professional.findMany({
         where,
+        take: 10,
+        skip: 0,
         orderBy: { name: 'asc' },
         include: {
           cares: true,

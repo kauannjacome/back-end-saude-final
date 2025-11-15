@@ -5,7 +5,7 @@ import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
 
 @Injectable()
 export class SubscriberService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createSubscriberDto: CreateSubscriberDto) {
     return this.prisma.subscriber.create({
@@ -14,21 +14,23 @@ export class SubscriberService {
   }
 
   async search(term: string) {
-  console.log('📥 term:', term);
+    console.log('📥 term:', term);
 
-  return this.prisma.subscriber.findMany({
-    where: {
-      deleted_at: null,
-      OR: [
-        { name: { contains: term, mode: 'insensitive' } },
-        { municipality_name: { contains: term, mode: 'insensitive' } },
-        { email: { contains: term, mode: 'insensitive' } },
-        { cnpj: { contains: term, mode: 'insensitive' } },
-      ],
-    },
-    orderBy: { name: 'asc' },
-  });
-}
+    return this.prisma.subscriber.findMany({
+      where: {
+        deleted_at: null,
+        OR: [
+          { name: { contains: term, mode: 'insensitive' } },
+          { municipality_name: { contains: term, mode: 'insensitive' } },
+          { email: { contains: term, mode: 'insensitive' } },
+          { cnpj: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+      take: 10,
+      skip: 0,
+      orderBy: { name: 'asc' },
+    });
+  }
 
 
   async findAll() {

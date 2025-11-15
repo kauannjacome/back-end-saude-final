@@ -5,28 +5,30 @@ import { UpdateUnitDto } from './dto/update-unit.dto';
 
 @Injectable()
 export class UnitService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createUnitDto: CreateUnitDto) {
     return this.prisma.unit.create({
       data: createUnitDto,
     });
   }
-async search(subscriber_id: number, term: string) {
-  console.log('📥 subscriber_id:', subscriber_id);
-  console.log('📥 term:', term);
+  async search(subscriber_id: number, term: string) {
+    console.log('📥 subscriber_id:', subscriber_id);
+    console.log('📥 term:', term);
 
-  return this.prisma.unit.findMany({
-    where: {
-      subscriber_id,
-      deleted_at: null,
-      OR: [
-        { name: { contains: term, mode: 'insensitive' } },
-      ],
-    },
-    orderBy: { name: 'asc' },
-  });
-}
+    return this.prisma.unit.findMany({
+      where: {
+        subscriber_id,
+        deleted_at: null,
+        OR: [
+          { name: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+      take: 10,
+      skip: 0,
+      orderBy: { name: 'asc' },
+    });
+  }
 
   async findAll(subscriber_id: number) {
     return this.prisma.unit.findMany({

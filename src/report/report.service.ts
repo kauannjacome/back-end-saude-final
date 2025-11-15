@@ -64,6 +64,8 @@ export class ReportService {
         patient: true,
         supplier: true,
       },
+      take: 10,
+      skip: 0,
     });
 
     return regulations;
