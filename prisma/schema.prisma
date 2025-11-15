@@ -144,8 +144,8 @@ model patient {
   cns                    String?
   full_name              String
   social_name            String?
-  gender                 String
-  race                   String
+  gender                 String?
+  race                   String?
   sex                    String?
   birth_date             DateTime
   death_date             DateTime?
