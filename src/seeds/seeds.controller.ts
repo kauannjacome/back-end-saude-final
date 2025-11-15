@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, Logger, UploadedFile, ParseFilePipeBuilder, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, UseInterceptors, Logger, UploadedFile,  BadRequestException } from '@nestjs/common';
 import { SeedsService } from './seeds.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -11,30 +11,32 @@ export class SeedsController {
  private readonly logger = new Logger(SeedsController.name);
 
 
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: memoryStorage(),
-      limits: { fileSize: 10 * 1024 * 1024 },
-    }),
-  )
-  @Post('/person')
-  csvPerson(
-    @Body() CreateSeedPatient: CreateSeedPatientDto,
-    @UploadedFile(
-      new ParseFilePipeBuilder()
-        .addFileTypeValidator({ fileType: /(text\/csv|application\/vnd\.ms-excel)$/ })
-        .build({
-          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-        }),
-    )
-    file: Express.Multer.File,
-  ) {
-    this.logger.log(
-      `Recebido upload CSV — payload=${JSON.stringify(
-        CreateSeedPatient,
-      )} file=${file.originalname}`,
-    );
-
-    return this.seedsService.csvPerson(CreateSeedPatient, file);
+@UseInterceptors(
+  FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+  }),
+)
+@Post('/person')
+csvPerson(
+  @Body() CreateSeedPatient: CreateSeedPatientDto,
+  @UploadedFile() file: Express.Multer.File,
+) {
+  if (!file) {
+    throw new BadRequestException('Arquivo CSV obrigatório');
   }
+
+  if (!file.originalname.toLowerCase().endsWith('.csv')) {
+    throw new BadRequestException('O arquivo deve ser um .csv');
+  }
+
+  this.logger.log(
+    `Recebido upload CSV — payload=${JSON.stringify(
+      CreateSeedPatient,
+    )} file=${file.originalname}`,
+  );
+
+  return this.seedsService.csvPerson(CreateSeedPatient, file);
+}
+
 }
