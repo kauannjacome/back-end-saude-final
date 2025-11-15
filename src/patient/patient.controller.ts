@@ -23,7 +23,7 @@ export class PatientController {
     @Query('term') term: string,
     @Query() SearchPaginationDto: SearchPaginationDto
   ) {
-    return this.patientService.search(Number(1), term, SearchPaginationDto);
+    return this.patientService.search(Number(1), SearchPaginationDto);
   }
 
 
