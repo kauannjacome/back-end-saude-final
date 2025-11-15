@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { fromZonedTime } from 'date-fns-tz';
 
 import { parse } from 'fast-csv';
 import PQueue from 'p-queue';
@@ -99,26 +100,26 @@ export class SeedsService {
   }
 
   // ---------------------------
-  //   TRATAMENTO DE DATAS (BR)
+  //   TRATAMENTO DE DATAS
   // ---------------------------
 
-  // Converte DD/MM/YYYY → YYYY-MM-DD
+  // converte DD/MM/YYYY → YYYY-MM-DD
   private brToIso(value: string): string {
-    if (value.includes('-')) return value; // já está ISO
+    if (!value) return value;
+    if (value.includes('-')) return value;
 
     const [d, m, y] = value.split('/');
     return `${y}-${m}-${d}`;
   }
 
-  // Sempre salva as datas como 03:00:00.000Z (UTC-3 fixo)
+  // UTC-3 fixo (Etc/GMT+3)
   private brDate(value: string | null): Date {
     if (!value) return new Date();
 
     try {
       const iso = this.brToIso(value);
-
-      // FORÇA UTC-3 FIXO independente do ano
-      return new Date(`${iso}T03:00:00.000Z`);
+      const date = fromZonedTime(iso, 'Etc/GMT+3'); // <-- UTC-3 fixo
+      return isNaN(date.getTime()) ? new Date() : date;
     } catch {
       return new Date();
     }
@@ -129,7 +130,8 @@ export class SeedsService {
 
     try {
       const iso = this.brToIso(value);
-      return new Date(`${iso}T03:00:00.000Z`);
+      const date = fromZonedTime(iso, 'Etc/GMT+3'); // <-- UTC-3 fixo
+      return isNaN(date.getTime()) ? null : date;
     } catch {
       return null;
     }
