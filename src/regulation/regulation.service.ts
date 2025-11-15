@@ -4,7 +4,6 @@ import { CreateRegulationDto } from './dto/create-regulation.dto';
 import { UpdateRegulationDto } from './dto/update-regulation.dto';
 import { generateRegulationPdf } from './pdf/divided-regulation-pdf';
 import { PageRegulationPdf } from './pdf/page-regulation-pdf';
-import { RequestRegulationPdf } from './pdf/authorization-regulation-pdf';
 import { customAlphabet } from 'nanoid'
 import { status } from '@prisma/client';
 
@@ -149,38 +148,7 @@ async findByPatient(patient_id: number) {
   }
 
 
-  async requestPdf(id: number) {
-    // 1️⃣ Busca o registro atual
-    const existing = await this.prisma.regulation.findUnique({
-      where: { id },
-      select: { request_date: true },
-    });
 
-    // 2️⃣ Atualiza apenas se não tiver data
-    if (!existing?.request_date) {
-      await this.prisma.regulation.update({
-        where: { id },
-        data: { request_date: new Date() },
-      });
-    }
-
-    // 3️⃣ Agora carrega os dados completos para gerar o PDF
-    const regulation = await this.prisma.regulation.findUnique({
-      where: { id },
-      include: {
-        patient: true,
-        folder: true,
-        supplier: true,
-        creator: true,
-        analyzer: true,
-        subscriber: true,
-        cares: { include: { care: true } },
-      },
-    });
-
-    const pdfBuffer = await RequestRegulationPdf(regulation);
-    return pdfBuffer;
-  }
   async updateStatus(id: number, status: status) {
     return this.prisma.regulation.update({
       where: { id },
