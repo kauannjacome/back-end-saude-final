@@ -27,8 +27,8 @@ export class RegulationController {
 
   // 🔍 Endpoint de busca
   @Get('search')
-  search(@Query('subscriber_id') subscriber_id: number, @Query('term') term: string) {
-    return this.regulationService.search(Number(subscriber_id), term);
+  search( @Query('term') term: string) {
+    return this.regulationService.search(Number(1), term);
   }
   @Get('by-patient/:patient_id')
   findByPatient(@Param('patient_id') patient_id: string) {
