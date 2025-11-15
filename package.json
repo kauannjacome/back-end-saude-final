@@ -35,6 +35,8 @@
     "class-validator": "^0.14.2",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "dayjs": "^1.11.19",
+    "dayjs-plugin-utc": "^0.1.2",
     "extenso": "^2.1.0",
     "fast-csv": "^5.0.5",
     "nanoid": "^5.1.6",

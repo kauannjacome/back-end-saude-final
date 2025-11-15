@@ -1,9 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { fromZonedTime } from 'date-fns-tz';
 
 import { parse } from 'fast-csv';
 import PQueue from 'p-queue';
+
+// ---- DAYJS ----
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 @Injectable()
 export class SeedsService {
@@ -34,7 +41,6 @@ export class SeedsService {
 
     this.logger.log(`Processando ${rows.length} registros...`);
 
-    // --- FILA COM CONCORRÊNCIA CONTROLADA ---
     const queue = new PQueue({ concurrency: 10 });
 
     const subscriberId = Number(createSeedDto.subscriber_id);
@@ -91,7 +97,6 @@ export class SeedsService {
       });
     }
 
-    // Esperar todas as tarefas terminarem
     await queue.onIdle();
 
     return {
@@ -107,24 +112,15 @@ export class SeedsService {
   private brDate(value: string | null): Date {
     if (!value) return new Date();
 
-    try {
-      // Converte data de Brasília -> UTC
-      const date = fromZonedTime(value, 'America/Sao_Paulo');
-      return isNaN(date.getTime()) ? new Date() : date;
-    } catch {
-      return new Date();
-    }
+    const date = dayjs.tz(value, 'America/Sao_Paulo').toDate();
+    return isNaN(date.getTime()) ? new Date() : date;
   }
 
   private brNullableDate(value: string | null): Date | null {
     if (!value) return null;
 
-    try {
-      const date = fromZonedTime(value, 'America/Sao_Paulo');
-      return isNaN(date.getTime()) ? null : date;
-    } catch {
-      return null;
-    }
+    const date = dayjs.tz(value, 'America/Sao_Paulo').toDate();
+    return isNaN(date.getTime()) ? null : date;
   }
 
   // ---------------------------
