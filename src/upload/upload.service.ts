@@ -19,8 +19,8 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UploadService {
   private readonly s3Client: S3Client;
   private readonly bucketName: string;
+  private readonly imageBucket: string;  // bucket de imagens
   private readonly region: string;
-
   constructor(private readonly prisma: PrismaService) {
     // 🔍 Logs de inicialização
     console.log('🟢 Iniciando UploadService...');
@@ -32,11 +32,14 @@ export class UploadService {
 
     this.region = process.env.AWS_REGION || 'us-east-1';
     this.bucketName = process.env.S3_BUCKET as string;
-
+    this.imageBucket = process.env.IMAGE_BUCKET as string;
     if (!this.bucketName) {
       throw new Error('❌ S3_BUCKET não está definido nas variáveis de ambiente!');
     }
 
+    if (!this.imageBucket) {
+      throw new Error('❌ IMAGE_BUCKET não está definido no .env');
+    }
     if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
       throw new Error('❌ Credenciais AWS não configuradas corretamente no .env');
     }
@@ -57,6 +60,7 @@ export class UploadService {
     console.log('✅ S3 Client configurado com sucesso:');
     console.log('  Região:', this.region);
     console.log('  Bucket:', this.bucketName);
+    console.log('  Bucket imagem:', this.imageBucket);
     console.log('  Endpoint:', endpoint);
   }
 
@@ -106,91 +110,28 @@ export class UploadService {
     }
   }
 
-async uploadRequirement(file: Express.Multer.File, regulationId: number) {
-  console.log('📤 Iniciando upload de requisito (requirement)...');
-  console.log('  Nome original:', file.originalname);
+  async uploadRequirement(file: Express.Multer.File, regulationId: number) {
+    console.log('📤 Iniciando upload de requisito (requirement)...');
+    console.log('  Nome original:', file.originalname);
 
-  console.log('  Regulation ID:', regulationId);
-
-  try {
-    // 🔹 Verifica se o regulation existe
-    const regulation = await this.prisma.regulation.findUnique({
-      where: { id: regulationId },
-    });
-
-    if (!regulation) {
-      throw new NotFoundException(`Regulação #${regulationId} não encontrada.`);
-    }
-
-    // 🔹 Gera a key do arquivo
-    const fileExt = path.extname(file.originalname).toLowerCase();
-    const key = `${regulationId}/${randomUUID()}${fileExt}`;
-    console.log('🗝️  Key gerada:', key);
-
-    // 🔹 Envia o arquivo para o S3
-    const command = new PutObjectCommand({
-      Bucket: this.bucketName,
-      Key: key,
-      Body: file.buffer,
-      ContentType: file.mimetype,
-    });
-
-    await this.s3Client.send(command);
-
-    const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
-    console.log('✅ Upload concluído com sucesso!');
-    console.log('  URL:', url);
-
-    // 🔹 Atualiza o campo url_requirement do regulation mantendo os outros dados
-    const updatedRegulation = await this.prisma.regulation.update({
-      where: { id: regulationId },
-      data: { url_requirement: key,
-            history: (regulation.history ?? 1) + 1,
-       }, // grava a KEY (não a URL completa)
-    });
-
-    console.log('✅ Regulation atualizado com a nova key!');
-    return {
-      message: 'Upload realizado e regulation atualizado com sucesso!',
-      key,
-      url,
-      regulation: updatedRegulation,
-    };
-  } catch (error) {
-    console.error('❌ Erro detalhado no uploadRequirement:');
-    console.error('  Código:', error?.Code || error?.name);
-    console.error('  Mensagem:', error?.message);
-    console.error('  Stack:', error?.stack);
-
-    throw new InternalServerErrorException(
-      'Falha ao enviar o arquivo ou atualizar o registro. Tente novamente mais tarde.',
-    );
-  }
-}
-
-
-  /**
-   * Upload de imagem e atualização do subscriber
-   */
-  async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
-    console.log('🖼️ Iniciando upload de imagem...');
-    console.log('  Tipo recebido:', tipo);
-    console.log('  ID recebido:', id);
+    console.log('  Regulation ID:', regulationId);
 
     try {
-      if (!file) throw new Error('Nenhum arquivo recebido para upload.');
+      // 🔹 Verifica se o regulation existe
+      const regulation = await this.prisma.regulation.findUnique({
+        where: { id: regulationId },
+      });
 
-      const subscriber = await this.prisma.subscriber.findUnique({ where: { id } });
-      if (!subscriber) {
-        console.warn(`⚠️ Assinante #${id} não encontrado.`);
-        throw new NotFoundException(`Assinante (subscriber) #${id} não encontrado.`);
+      if (!regulation) {
+        throw new NotFoundException(`Regulação #${regulationId} não encontrada.`);
       }
 
+      // 🔹 Gera a key do arquivo
       const fileExt = path.extname(file.originalname).toLowerCase();
-      const key = `imagens/${id}/${tipo}-${randomUUID()}${fileExt}`;
+      const key = `${regulationId}/${randomUUID()}${fileExt}`;
+      console.log('🗝️  Key gerada:', key);
 
-      console.log('🗝️  Key da imagem:', key);
-
+      // 🔹 Envia o arquivo para o S3
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: key,
@@ -200,45 +141,88 @@ async uploadRequirement(file: Express.Multer.File, regulationId: number) {
 
       await this.s3Client.send(command);
 
-      const fileUrl = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
-      console.log('✅ Upload da imagem concluído!');
-      console.log('  URL da imagem:', fileUrl);
+      const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
+      console.log('✅ Upload concluído com sucesso!');
+      console.log('  URL:', url);
 
-      let updateData: Record<string, any> = {};
-      switch (tipo.toLowerCase()) {
-        case TipoArquivo.ESTADUAL.toLowerCase():
-          updateData.state_logo = fileUrl;
-          break;
-        case TipoArquivo.MUNICIPAL.toLowerCase():
-          updateData.municipal_logo = fileUrl;
-          break;
-        case TipoArquivo.ADMINISTRATION.toLowerCase():
-          updateData.administration_logo = fileUrl;
-          break;
-      }
-
-      console.log('📝 Atualizando registro do subscriber:', updateData);
-
-      const subscriberUpdate = await this.prisma.subscriber.update({
-        where: { id },
-        data: updateData,
+      // 🔹 Atualiza o campo url_requirement do regulation mantendo os outros dados
+      const updatedRegulation = await this.prisma.regulation.update({
+        where: { id: regulationId },
+        data: {
+          url_requirement: key,
+          history: (regulation.history ?? 1) + 1,
+        }, // grava a KEY (não a URL completa)
       });
 
-      console.log('✅ Subscriber atualizado com sucesso!');
-      return subscriberUpdate;
+      console.log('✅ Regulation atualizado com a nova key!');
+      return {
+        message: 'Upload realizado e regulation atualizado com sucesso!',
+        key,
+        url,
+        regulation: updatedRegulation,
+      };
     } catch (error) {
-      console.error('❌ Erro detalhado no upload de imagem:');
+      console.error('❌ Erro detalhado no uploadRequirement:');
       console.error('  Código:', error?.Code || error?.name);
       console.error('  Mensagem:', error?.message);
-      console.error('  Endpoint:', error?.Endpoint);
-      console.error('  Região retornada:', error?.$response?.headers?.['x-amz-bucket-region']);
       console.error('  Stack:', error?.stack);
 
       throw new InternalServerErrorException(
-        'Falha ao fazer upload da imagem. Tente novamente mais tarde.',
+        'Falha ao enviar o arquivo ou atualizar o registro. Tente novamente mais tarde.',
       );
     }
   }
+
+
+  /**
+   * Upload de imagem e atualização do subscriber
+   */
+async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
+  console.log('🖼️ Iniciando upload de imagem...');
+
+  try {
+    if (!file) throw new Error('Nenhum arquivo recebido.');
+
+    const subscriber = await this.prisma.subscriber.findUnique({ where: { id } });
+    if (!subscriber) throw new NotFoundException(`Assinante #${id} não encontrado.`);
+
+    const fileExt = path.extname(file.originalname).toLowerCase();
+    const key = `imagens/${id}/${tipo}-${randomUUID()}${fileExt}`;
+
+    const command = new PutObjectCommand({
+      Bucket: this.imageBucket,  // ← USA O BUCKET DE IMAGENS
+      Key: key,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    });
+
+    await this.s3Client.send(command);
+
+    const fileUrl = `https://${this.imageBucket}.s3.${this.region}.amazonaws.com/${key}`;
+
+    let updateData: Record<string, any> = {};
+    switch (tipo.toLowerCase()) {
+      case TipoArquivo.ESTADUAL.toLowerCase():
+        updateData.state_logo = fileUrl;
+        break;
+      case TipoArquivo.MUNICIPAL.toLowerCase():
+        updateData.municipal_logo = fileUrl;
+        break;
+      case TipoArquivo.ADMINISTRATION.toLowerCase():
+        updateData.administration_logo = fileUrl;
+        break;
+    }
+
+    return await this.prisma.subscriber.update({
+      where: { id },
+      data: updateData,
+    });
+
+  } catch (error) {
+    console.error('❌ Erro no uploadImage:', error);
+    throw new InternalServerErrorException('Erro ao enviar imagem.');
+  }
+}
 
   /**
    * Gera URL de download temporária (assinada)
@@ -270,62 +254,62 @@ async uploadRequirement(file: Express.Multer.File, regulationId: number) {
 
 
 
-async getDocumentUrl(type: string, id: number) {
-  console.log('🔗 Gerando URL de download para tipo:', type, 'ID:', id);
+  async getDocumentUrl(type: string, id: number) {
+    console.log('🔗 Gerando URL de download para tipo:', type, 'ID:', id);
 
-  try {
-    // Busca o registro da regulação pelo ID
-    const regulation = await this.prisma.regulation.findUnique({
-      where: { id: Number(id) },
-      select: {
-        url_requirement: true,
-        url_pre_document: true,
-        url_current_document: true,
-      },
-    });
+    try {
+      // Busca o registro da regulação pelo ID
+      const regulation = await this.prisma.regulation.findUnique({
+        where: { id: Number(id) },
+        select: {
+          url_requirement: true,
+          url_pre_document: true,
+          url_current_document: true,
+        },
+      });
 
-    if (!regulation) {
-      throw new NotFoundException('Regulação não encontrada.');
+      if (!regulation) {
+        throw new NotFoundException('Regulação não encontrada.');
+      }
+
+      // Define a key conforme o tipo informado
+      let key: string | null | undefined;
+
+
+      if (type === 'requirement') {
+        key = regulation.url_requirement;
+      } else if (type === 'pre') {
+        key = regulation.url_pre_document;
+      } else if (type === 'current') {
+        key = regulation.url_current_document;
+      } else {
+        throw new BadRequestException('Tipo inválido. Use requirement, pre ou current.');
+      }
+
+      if (!key) {
+        throw new NotFoundException(`Nenhuma chave de arquivo encontrada para o tipo "${type}".`);
+      }
+
+      // Gera o link assinado do S3
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
+
+      console.log('✅ URL de download gerada com sucesso!');
+      console.log('  URL:', signedUrl);
+
+      return { downloadUrl: signedUrl };
+    } catch (error) {
+      console.error('❌ Erro ao gerar URL de download:');
+      console.error('  Código:', error?.Code || error?.name);
+      console.error('  Mensagem:', error?.message);
+      console.error('  Stack:', error?.stack);
+
+      throw new InternalServerErrorException('Erro ao gerar link de download.');
     }
-
-    // Define a key conforme o tipo informado
-   let key: string | null | undefined;
-
-
-    if (type === 'requirement') {
-      key = regulation.url_requirement;
-    } else if (type === 'pre') {
-      key = regulation.url_pre_document;
-    } else if (type === 'current') {
-      key = regulation.url_current_document;
-    } else {
-      throw new BadRequestException('Tipo inválido. Use requirement, pre ou current.');
-    }
-
-    if (!key) {
-      throw new NotFoundException(`Nenhuma chave de arquivo encontrada para o tipo "${type}".`);
-    }
-
-    // Gera o link assinado do S3
-    const command = new GetObjectCommand({
-      Bucket: this.bucketName,
-      Key: key,
-    });
-
-    const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
-
-    console.log('✅ URL de download gerada com sucesso!');
-    console.log('  URL:', signedUrl);
-
-    return { downloadUrl: signedUrl };
-  } catch (error) {
-    console.error('❌ Erro ao gerar URL de download:');
-    console.error('  Código:', error?.Code || error?.name);
-    console.error('  Mensagem:', error?.message);
-    console.error('  Stack:', error?.stack);
-
-    throw new InternalServerErrorException('Erro ao gerar link de download.');
   }
-}
 
 }
