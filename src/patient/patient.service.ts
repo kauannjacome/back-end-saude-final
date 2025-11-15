@@ -30,9 +30,9 @@ export class PatientService {
     });
   }
 
-  async search(subscriber_id: number, SearchPaginationDto?: SearchPaginationDto) {
+  async search(subscriber_id: number,  term?: string) {
     console.log('📥 subscriber_id:', subscriber_id);
-    const { limit = 10, offset = 0 } = SearchPaginationDto ?? {};
+
     return this.prisma.patient.findMany({
 
       where: {
@@ -41,20 +41,20 @@ export class PatientService {
         OR: [
           {
             full_name: {
-              contains: SearchPaginationDto?.term,
+              contains: term,
               mode: 'insensitive', // <-- ignora maiúsculas/minúsculas
             },
           },
           {
             cpf: {
-              contains: SearchPaginationDto?.term,
+              contains: term,
               mode: 'insensitive', // <-- idem para CPF
             },
           },
         ],
       },
-      take: limit,
-      skip: offset,
+      take: 10,
+      skip: 0,
       orderBy: { full_name: 'asc' },
       select: {
         id: true,

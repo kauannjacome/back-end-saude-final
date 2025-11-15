@@ -21,9 +21,9 @@ export class PatientController {
   @Get('search')
   search(
     @Query('term') term: string,
-    @Query() SearchPaginationDto: SearchPaginationDto
+
   ) {
-    return this.patientService.search(Number(1), SearchPaginationDto);
+    return this.patientService.search(Number(1),  term);
   }
 
 
