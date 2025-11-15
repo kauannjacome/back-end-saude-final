@@ -42,18 +42,23 @@ export class SeedsService {
     for (const row of rows) {
       queue.add(async () => {
         try {
+          // Ignorar pacientes falecidos ou inativos
           if (Number(row.st_faleceu) === 1 || Number(row.st_ativo_para_exibicao) === 0) {
             this.logger.warn(
               `Ignorado CPF ${row.nu_cpf}: st_faleceu=${row.st_faleceu}, st_ativo_para_exibicao=${row.st_ativo_para_exibicao}`,
             );
             return;
           }
+
           await this.prisma.patient.create({
             data: {
               subscriber_id: subscriberId,
               cpf: row.nu_cpf || '',
               cns: row.nu_cns || null,
-              full_name: row.no_cidadao || '',
+
+              // ✔ full_name corrigido
+              full_name: this.formatName(row.no_cidadao || ''),
+
               social_name: row.no_social || null,
 
               gender: this.mapGender(row.no_sexo),
@@ -124,7 +129,7 @@ export class SeedsService {
 
     try {
       const iso = this.brToIso(value);
-      const date = fromZonedTime(iso, 'Etc/GMT+3'); // <-- UTC-3 fixo
+      const date = fromZonedTime(iso, 'Etc/GMT+3');
       return isNaN(date.getTime()) ? new Date() : date;
     } catch {
       return new Date();
@@ -136,7 +141,7 @@ export class SeedsService {
 
     try {
       const iso = this.brToIso(value);
-      const date = fromZonedTime(iso, 'Etc/GMT+3'); // <-- UTC-3 fixo
+      const date = fromZonedTime(iso, 'Etc/GMT+3');
       return isNaN(date.getTime()) ? null : date;
     } catch {
       return null;
@@ -165,5 +170,26 @@ export class SeedsService {
       '5': 'indigena',
     };
     return mapping[code ?? ''] ?? 'nao_informado';
+  }
+
+  // ---------------------------
+  //   FORMATAÇÃO DO NOME
+  // ---------------------------
+  private formatName(fullName: string): string {
+    if (!fullName) return fullName;
+
+    const lowerWords = ['de', 'da', 'do', 'das', 'dos'];
+
+    return fullName
+      .toLowerCase()
+      .split(' ')
+      .filter((w) => w.trim() !== '')
+      .map((word, index) => {
+        if (index > 0 && lowerWords.includes(word)) {
+          return word;
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
   }
 }
