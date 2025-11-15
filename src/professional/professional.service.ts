@@ -21,10 +21,7 @@ export class ProfessionalService {
     console.log('📥 [ProfessionalService.search] term:', term);
 
     try {
-      if (!term || term.trim() === '') {
-        console.log('⚠️ Termo vazio — retornando lista vazia');
-        return [];
-      }
+
 
       const where: Prisma.professionalWhereInput = {
         subscriber_id,
