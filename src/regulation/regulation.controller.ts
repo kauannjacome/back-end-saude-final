@@ -60,18 +60,6 @@ export class RegulationController {
   }
 
 
-  @Get('request/:id')
-  async requestPdf(@Param('id') id: string, @Res() res: Response) {
-    const buffer = await this.regulationService.requestPdf(Number(id));
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="regulamento_${id}.pdf"`,
-      'Content-Length': buffer.length,
-    });
-
-    res.end(buffer);
-  }
   @Patch('status/:id')
   updateStatus(
     @Param('id') id: string,
