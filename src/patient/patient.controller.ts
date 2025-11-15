@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { PatientService } from './patient.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { PaginationDto } from './dto/pagination-dto';
 
 @Controller('patient')
 export class PatientController {
@@ -20,8 +21,9 @@ export class PatientController {
   @Get('search')
   search(
     @Query('term') term: string,
+    @Query() paginationDto: PaginationDto
   ) {
-    return this.patientService.search(Number(1), term);
+    return this.patientService.search(Number(1), term,paginationDto);
   }
 
 

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { PaginationDto } from './dto/pagination-dto';
 
 @Injectable()
 export class PatientService {
@@ -29,10 +30,12 @@ async create(createPatientDto: CreatePatientDto) {
     });
   }
 
-  async search(subscriber_id: number, term: string) {
+  async search(subscriber_id: number, term: string, paginationDto?: PaginationDto) {
    console.log('📥 subscriber_id:', subscriber_id);
   console.log('📥 term:', term);
+    const { limit = 10, offset = 0 } = paginationDto ?? {};
   return this.prisma.patient.findMany({
+
     where: {
       subscriber_id,
       deleted_at: null,
@@ -51,6 +54,8 @@ async create(createPatientDto: CreatePatientDto) {
         },
       ],
     },
+    take: limit,
+    skip: offset,
     orderBy: { full_name: 'asc' },
         select: {
       id: true,
