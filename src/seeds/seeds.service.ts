@@ -9,7 +9,7 @@ import PQueue from 'p-queue';
 export class SeedsService {
   private readonly logger = new Logger(SeedsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async csvPerson(createSeedDto: any, file: Express.Multer.File) {
     const csv = file.buffer.toString('utf-8');
@@ -42,6 +42,12 @@ export class SeedsService {
     for (const row of rows) {
       queue.add(async () => {
         try {
+          if (Number(row.st_faleceu) === 1 || Number(row.st_ativo_para_exibicao) === 0) {
+            this.logger.warn(
+              `Ignorado CPF ${row.nu_cpf}: st_faleceu=${row.st_faleceu}, st_ativo_para_exibicao=${row.st_ativo_para_exibicao}`,
+            );
+            return;
+          }
           await this.prisma.patient.create({
             data: {
               subscriber_id: subscriberId,
