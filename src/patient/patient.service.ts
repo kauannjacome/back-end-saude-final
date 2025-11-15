@@ -80,6 +80,8 @@ async create(createPatientDto: CreatePatientDto) {
       naturalness: true,
       marital_status: true,
       blood_type: true,
+      created_at:true,
+      updated_at:true
     },
   });
   
