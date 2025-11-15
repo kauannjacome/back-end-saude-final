@@ -12,6 +12,12 @@ export class ProfessionalController {
     return this.professionalService.create(createProfessionalDto);
   }
 
+  @Get('search/simple')
+  searchSimple(@Query('term') term: string) {
+    return this.professionalService.searchSimple(1, term);
+  }
+
+
   @Get('search')
   search(
 

@@ -5,19 +5,19 @@ import { UpdateUnitDto } from './dto/update-unit.dto';
 
 @Controller('unit')
 export class UnitController {
-  constructor(private readonly unitService: UnitService) {}
+  constructor(private readonly unitService: UnitService) { }
 
   @Post()
   create(@Body() createUnitDto: CreateUnitDto) {
     return this.unitService.create(createUnitDto);
   }
   // 🔍 Endpoint de busca
-@Get('search')
-search(
-  @Query('term') term: string,
-) {
-  return this.unitService.search(Number(1), term);
-}
+  @Get('search')
+  search(
+    @Query('term') term: string,
+  ) {
+    return this.unitService.search(Number(1), term);
+  }
 
 
   @Get()

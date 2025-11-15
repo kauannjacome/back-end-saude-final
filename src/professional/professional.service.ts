@@ -6,7 +6,7 @@ import { UpdateProfessionalDto } from './dto/update-professional.dto';
 
 @Injectable()
 export class ProfessionalService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // ✅ CRIAR PROFISSIONAL
   async create(createProfessionalDto: CreateProfessionalDto) {
@@ -15,7 +15,27 @@ export class ProfessionalService {
     });
   }
 
-  // ✅ NOVA FUNÇÃO SEARCH
+async searchSimple(subscriber_id: number, term?: string) {
+  const where: Prisma.professionalWhereInput = {
+    subscriber_id,
+    deleted_at: null,
+    OR: [
+      { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
+      { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
+    ],
+  };
+
+  return this.prisma.professional.findMany({
+    where,
+    orderBy: { name: 'asc' },
+
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+}
+
   async search(subscriber_id: number, term?: string) {
     console.log('📥 [ProfessionalService.search] subscriber_id:', subscriber_id);
     console.log('📥 [ProfessionalService.search] term:', term);
@@ -51,10 +71,10 @@ export class ProfessionalService {
       console.log(`✅ ${results.length} profissionais encontrados`);
       return results;
     } catch (error) {
-        console.error('❌ Erro detalhado no ProfessionalService.search:');
-  console.error('Mensagem:', error.message);
-  console.error('Stack:', error.stack);
-  console.error('Detalhes Prisma:', error);
+      console.error('❌ Erro detalhado no ProfessionalService.search:');
+      console.error('Mensagem:', error.message);
+      console.error('Stack:', error.stack);
+      console.error('Detalhes Prisma:', error);
       console.error('❌ Erro no ProfessionalService.search:', error);
       throw new HttpException(
         { message: 'Erro ao buscar profissionais', detail: error.message },
