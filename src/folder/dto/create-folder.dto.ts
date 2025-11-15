@@ -29,17 +29,6 @@ export class CreateFolderDto {
   @IsDateString()
   end_date?: string;
 
-  @IsOptional()
-  @IsInt()
-  care_id?: number;
-
-  @IsOptional()
-  @IsInt()
-  group_id?: number;
-
-  @IsOptional()
-  @IsInt()
-  sub_group_id?: number;
 
   @IsOptional()
   @IsInt()
