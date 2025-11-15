@@ -1,13 +1,12 @@
 import { IsString, IsOptional, IsEnum, IsInt, IsDateString } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { folder_type } from '@prisma/client';
+
 
 export class CreateFolderDto {
   @IsString()
   name: string;
 
-  @IsEnum(folder_type)
-  type: folder_type;
+
 
   @IsOptional()
   @IsString()
