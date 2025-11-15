@@ -66,8 +66,8 @@ export class SeedsService {
 
               email: row.ds_email || null,
               postal_code: row.ds_cep || null,
-              state: row.co_uf || null,
-              city: row.co_localidade_endereco || null,
+              state:  null,
+              city:  null,
               address: row.ds_logradouro || null,
               number: row.nu_numero || null,
               complement: row.ds_complemento || null,
