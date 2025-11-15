@@ -1,16 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { fromZonedTime } from 'date-fns-tz';
 
 import { parse } from 'fast-csv';
 import PQueue from 'p-queue';
-
-// ---- DAYJS ----
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 @Injectable()
 export class SeedsService {
@@ -109,18 +102,37 @@ export class SeedsService {
   // ---------------------------
   //   TRATAMENTO DE DATAS (BR)
   // ---------------------------
+
+  // Converte DD/MM/YYYY → YYYY-MM-DD
+  private brToIso(value: string): string {
+    if (value.includes('-')) return value; // já é ISO
+
+    const [d, m, y] = value.split('/');
+    return `${y}-${m}-${d}`;
+  }
+
   private brDate(value: string | null): Date {
     if (!value) return new Date();
 
-    const date = dayjs.tz(value, 'America/Sao_Paulo').toDate();
-    return isNaN(date.getTime()) ? new Date() : date;
+    try {
+      const iso = this.brToIso(value); // corrige formato BR
+      const date = fromZonedTime(iso, 'America/Sao_Paulo');
+      return isNaN(date.getTime()) ? new Date() : date;
+    } catch {
+      return new Date();
+    }
   }
 
   private brNullableDate(value: string | null): Date | null {
     if (!value) return null;
 
-    const date = dayjs.tz(value, 'America/Sao_Paulo').toDate();
-    return isNaN(date.getTime()) ? null : date;
+    try {
+      const iso = this.brToIso(value);
+      const date = fromZonedTime(iso, 'America/Sao_Paulo');
+      return isNaN(date.getTime()) ? null : date;
+    } catch {
+      return null;
+    }
   }
 
   // ---------------------------
