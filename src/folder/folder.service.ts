@@ -18,6 +18,7 @@ export class FolderService {
       },
     });
   }
+
   async search(subscriber_id: number, term: string) {
     console.log('📥 subscriber_id:', subscriber_id);
     console.log('📥 term:', term);
@@ -51,6 +52,22 @@ export class FolderService {
 
         regulations: true,
         responsible: true,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  
+  async findFolderAllRegulation(folder_id: number) {
+    return this.prisma.regulation.findMany({
+      where: { folder_id, deleted_at: null },
+      include: {
+        patient: true,
+        cares: {
+          include: {
+            care: true,
+          },
+        },
       },
       orderBy: { created_at: 'desc' },
     });
