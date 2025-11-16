@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "patient" ALTER COLUMN "gender" DROP NOT NULL,
-ALTER COLUMN "race" DROP NOT NULL;

@@ -11,12 +11,6 @@ CREATE TYPE "unit_measure" AS ENUM ('mg', 'g', 'mcg', 'kg', 'ml', 'l', 'amp', 'c
 CREATE TYPE "priority" AS ENUM ('eletivo', 'urgencia', 'emergencia');
 
 -- CreateEnum
-CREATE TYPE "model" AS ENUM ('declaration', 'authorize', 'provider', 'patient');
-
--- CreateEnum
-CREATE TYPE "folder_type" AS ENUM ('procedimento', 'grupo', 'sub_grupo');
-
--- CreateEnum
 CREATE TYPE "sex" AS ENUM ('masculino', 'feminino', 'outro', 'nao_informado');
 
 -- CreateEnum
@@ -27,6 +21,9 @@ CREATE TYPE "relationship" AS ENUM ('amigo_a', 'genitor_a', 'cuidador_a', 'namor
 
 -- CreateEnum
 CREATE TYPE "resource_origin" AS ENUM ('nao_especificado', 'municipal', 'estadual', 'federal');
+
+-- CreateEnum
+CREATE TYPE "type_declaration" AS ENUM ('requerimento_1', 'requerimento_2', 'residencia_pec', 'residencia_cadsus', 'atualizacao_cadsus', 'ajuda_de_custo', 'exame_alto_custo', 'autorizacao', 'desistencia', 'aih', 'transporte', 'cer', 'medicamento_continuo', 'assistencia_farmaceutica');
 
 -- CreateTable
 CREATE TABLE "subscriber" (
@@ -148,8 +145,8 @@ CREATE TABLE "patient" (
     "cns" TEXT,
     "full_name" TEXT NOT NULL,
     "social_name" TEXT,
-    "gender" TEXT NOT NULL,
-    "race" TEXT NOT NULL,
+    "gender" TEXT,
+    "race" TEXT,
     "sex" TEXT,
     "birth_date" TIMESTAMP(3) NOT NULL,
     "death_date" TIMESTAMP(3),
@@ -194,7 +191,7 @@ CREATE TABLE "professional" (
     "birth_date" TIMESTAMP(3),
     "phone_number" TEXT,
     "email" TEXT,
-    "role" "role",
+    "role" "role" DEFAULT 'usuario',
     "password_hash" TEXT,
     "is_password_temp" BOOLEAN NOT NULL DEFAULT false,
     "number_try" INTEGER DEFAULT 0,
@@ -219,15 +216,16 @@ CREATE TABLE "regulation" (
     "responsible_id" INTEGER,
     "request_date" TIMESTAMP(3),
     "scheduled_date" TIMESTAMP(3),
-    "declaration_date" TIMESTAMP(3),
     "status" "status",
     "notes" TEXT,
+    "justification" TEXT,
     "url_requirement" TEXT,
     "url_pre_document" TEXT,
     "url_current_document" TEXT,
     "folder_id" INTEGER,
     "relationship" "relationship",
     "priority" "priority" DEFAULT 'eletivo',
+    "type_declaration" "type_declaration",
     "requesting_professional" TEXT,
     "creator_id" INTEGER,
     "analyzed_id" INTEGER,
@@ -381,13 +379,10 @@ CREATE UNIQUE INDEX "care_regulation_care_id_regulation_id_key" ON "care_regulat
 ALTER TABLE "unit" ADD CONSTRAINT "unit_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_actor_id_fkey" FOREIGN KEY ("actor_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "care" ADD CONSTRAINT "care_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "care" ADD CONSTRAINT "care_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "group"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -396,13 +391,16 @@ ALTER TABLE "care" ADD CONSTRAINT "care_group_id_fkey" FOREIGN KEY ("group_id") 
 ALTER TABLE "care" ADD CONSTRAINT "care_professional_id_fkey" FOREIGN KEY ("professional_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "care" ADD CONSTRAINT "care_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "care" ADD CONSTRAINT "care_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "supplier"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "folder" ADD CONSTRAINT "folder_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "folder" ADD CONSTRAINT "folder_responsible_id_fkey" FOREIGN KEY ("responsible_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "folder" ADD CONSTRAINT "folder_responsible_id_fkey" FOREIGN KEY ("responsible_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "folder" ADD CONSTRAINT "folder_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "group" ADD CONSTRAINT "group_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -414,28 +412,28 @@ ALTER TABLE "patient" ADD CONSTRAINT "patient_subscriber_id_fkey" FOREIGN KEY ("
 ALTER TABLE "professional" ADD CONSTRAINT "professional_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "regulation" ADD CONSTRAINT "regulation_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "regulation" ADD CONSTRAINT "regulation_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "patient"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "regulation" ADD CONSTRAINT "regulation_responsible_id_fkey" FOREIGN KEY ("responsible_id") REFERENCES "patient"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "regulation" ADD CONSTRAINT "regulation_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "folder"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "regulation" ADD CONSTRAINT "regulation_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "supplier"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "regulation" ADD CONSTRAINT "regulation_analyzed_id_fkey" FOREIGN KEY ("analyzed_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "regulation" ADD CONSTRAINT "regulation_creator_id_fkey" FOREIGN KEY ("creator_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "regulation" ADD CONSTRAINT "regulation_analyzed_id_fkey" FOREIGN KEY ("analyzed_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "regulation" ADD CONSTRAINT "regulation_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "folder"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "regulation" ADD CONSTRAINT "regulation_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "patient"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "regulation" ADD CONSTRAINT "regulation_printer_id_fkey" FOREIGN KEY ("printer_id") REFERENCES "professional"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "regulation" ADD CONSTRAINT "regulation_responsible_id_fkey" FOREIGN KEY ("responsible_id") REFERENCES "patient"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "regulation" ADD CONSTRAINT "regulation_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "regulation" ADD CONSTRAINT "regulation_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "supplier"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "supplier" ADD CONSTRAINT "supplier_subscriber_id_fkey" FOREIGN KEY ("subscriber_id") REFERENCES "subscriber"("id") ON DELETE CASCADE ON UPDATE CASCADE;

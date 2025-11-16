@@ -6,7 +6,6 @@ import {
   priority,
   unit_measure,
   resource_origin,
-  folder_type,
   relationship,
   audit_action,
 } from '@prisma/client'

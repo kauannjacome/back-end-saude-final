@@ -72,29 +72,30 @@ model audit_log {
 }
 
 model care {
-  id              Int               @id @default(autoincrement())
-  uuid            String            @unique @default(uuid())
-  subscriber_id   Int
-  name            String
-  acronym         String?
-  description     String?
-  status          status?
-  resource        resource_origin?  @default(nao_especificado)
-  unit_measure    unit_measure
-  priority        priority?
-  value           Float?
-  amount          Int?
-  group_id        Int?
-  professional_id Int?
-  supplier_id     Int?
-  created_at      DateTime          @default(now())
-  updated_at      DateTime          @updatedAt
-  deleted_at      DateTime?
-  group           group?            @relation(fields: [group_id], references: [id])
-  professional    professional?     @relation(fields: [professional_id], references: [id])
-  subscriber      subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  supplier        supplier?         @relation(fields: [supplier_id], references: [id])
-  regulations     care_regulation[]
+  id               Int               @id @default(autoincrement())
+  uuid             String            @unique @default(uuid())
+  subscriber_id    Int
+  name             String
+  acronym          String?
+  description      String?
+  status           status?
+  resource         resource_origin?  @default(nao_especificado)
+  unit_measure     unit_measure
+  priority         priority?
+  type_declaration type_declaration?
+  value            Float?
+  amount           Int?
+  group_id         Int?
+  professional_id  Int?
+  supplier_id      Int?
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  deleted_at       DateTime?
+  group            group?            @relation(fields: [group_id], references: [id])
+  professional     professional?     @relation(fields: [professional_id], references: [id])
+  subscriber       subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  supplier         supplier?         @relation(fields: [supplier_id], references: [id])
+  regulations      care_regulation[]
 
   @@index([subscriber_id])
   @@index([group_id])
@@ -193,7 +194,7 @@ model professional {
   birth_date             DateTime?
   phone_number           String?
   email                  String?
-  role                   role?
+  role                   role?        @default(usuario)
   password_hash          String?
   is_password_temp       Boolean      @default(false)
   number_try             Int?         @default(0)
@@ -234,7 +235,7 @@ model regulation {
   folder_id               Int?
   relationship            relationship?
   priority                priority?         @default(eletivo)
-  type_declaration        type_declaration? 
+  type_declaration        type_declaration?
   requesting_professional String?
   creator_id              Int?
   analyzed_id             Int?
@@ -342,19 +343,6 @@ enum priority {
   eletivo
   urgencia
   emergencia
-}
-
-enum model {
-  declaration
-  authorize
-  provider
-  patient
-}
-
-enum folder_type {
-  procedimento
-  grupo
-  sub_grupo
 }
 
 enum sex {
