@@ -104,6 +104,7 @@ export class RegulationService {
   }
 
   async findOnePublicPerson(uuid: string) {
+    console.log(uuid)
     const regulation = await this.prisma.regulation.findUnique({
       where: { uuid },
       include: {
