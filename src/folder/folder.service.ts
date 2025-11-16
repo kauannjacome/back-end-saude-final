@@ -58,24 +58,31 @@ export class FolderService {
   }
 
   
-  async findFolderAllRegulation(folder_id: number) {
-
-
-
-    return this.prisma.regulation.findMany({
-      where: { folder_id, deleted_at: null },
-      include: {
-        patient: true,
-        folder:true,
-        cares: {
-          include: {
-            care: true,
+async findFolderAllRegulation(folder_id: number) {
+  const folder = await this.prisma.folder.findUnique({
+    where: { id: folder_id },
+    include: {
+      responsible: true,
+      regulations: {
+        where: { deleted_at: null },
+        orderBy: { created_at: 'desc' },
+        include: {
+          patient: true,
+          cares: {
+            include: { care: true },
           },
         },
       },
-      orderBy: { created_at: 'desc' },
-    });
+    },
+  });
+
+  if (!folder) {
+    throw new NotFoundException(`Folder #${folder_id} not found`);
   }
+
+  return folder;
+}
+
 
   async findOne(id: number) {
     const folder = await this.prisma.folder.findUnique({
