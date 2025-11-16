@@ -41,7 +41,7 @@ export class RegulationController {
     return this.regulationService.findAll(Number(subscriber_id));
   }
 
-  @Get('public/person/:uuid')
+  @Get('mobile/person/:uuid')
   findOnePublicPerson(@Param('uuid') uuid: string) {
     return this.regulationService.findOnePublicPerson(uuid);
   }
