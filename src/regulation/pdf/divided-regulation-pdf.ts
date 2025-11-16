@@ -149,7 +149,7 @@ export async function generateRegulationPdf(
     const tableY = doc.y;
 
     // === QR Code ===
-    const qrLink = `${process.env.LINK_BASE_QR_CODE || 'https://exemplo.com'}/auth-monitoring/${data.uuid}`;
+    const qrLink = `${process.env.LINK_BASE_QR_CODE || 'https://www.saude.simplescity.com.br/'}/mobile/person/regulation/${data.uuid}`;
     const qrDataUrl = await QRCode.toDataURL(qrLink);
     const qrBuffer = Buffer.from(qrDataUrl.replace(/^data:image\/png;base64,/, ''), 'base64');
 
