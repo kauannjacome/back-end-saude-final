@@ -117,8 +117,8 @@ export async function folderPdf(
 
   // === QR Code ===
   const qrLink = `${
-    process.env.LINK_BASE_QR_CODE || 'https://exemplo.com'
-  }/auth-monitoring/${data.uuid}`;
+    process.env.LINK_BASE_QR_CODE || 'https://www.saude.simplescity.com.br'
+  }/mobile/folder/regulation/${data.uuid}`;
   const qrDataUrl = await QRCode.toDataURL(qrLink);
   const qrBuffer = Buffer.from(
     qrDataUrl.replace(/^data:image\/png;base64,/, ''),
