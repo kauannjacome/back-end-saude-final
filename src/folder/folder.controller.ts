@@ -5,7 +5,7 @@ import { UpdateFolderDto } from './dto/update-folder.dto';
 
 @Controller('folder')
 export class FolderController {
-  constructor(private readonly folderService: FolderService) {}
+  constructor(private readonly folderService: FolderService) { }
 
   @Post()
   create(@Body() createFolderDto: CreateFolderDto) {
@@ -14,10 +14,10 @@ export class FolderController {
   }
 
   // 🔍 Endpoint de busca
-@Get('search')
-search( @Query('term') term: string) {
-  return this.folderService.search(Number(1), term);
-}
+  @Get('search')
+  search(@Query('term') term: string) {
+    return this.folderService.search(Number(1), term);
+  }
 
 
   @Get()
@@ -28,6 +28,11 @@ search( @Query('term') term: string) {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.folderService.findOne(+id);
+  }
+
+  @Get('all/regulation/:id')
+  findFolderAllRegulation(@Param('id') id: string) {
+    return this.folderService.findFolderAllRegulation(+id);
   }
 
   @Patch(':id')
