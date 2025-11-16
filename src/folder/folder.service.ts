@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
+import { folderPdf } from './pdf/folder-pdf';
 
 @Injectable()
 export class FolderService {
@@ -57,79 +58,90 @@ export class FolderService {
     });
   }
 
-  
-async findFolderAllRegulation(folder_id: number) {
-  const folder = await this.prisma.folder.findUnique({
-    where: { id: folder_id },
-    select: {
-      id: true,
-      uuid: true,
-      subscriber_id: true,
-      name: true,
-      id_code: true,
-      description: true,
-      responsible_id: true,
-      start_date: true,
-      end_date: true,
-      created_at: true,
-      updated_at: true,
 
-      responsible: {
-        select: {
-          id: true,
-          name: true,
-          cargo: true,
-          role: true,
-        },
-      },
+  async findFolderAllRegulation(uuid: string) {
+    const folder = await this.prisma.folder.findUnique({
+      where: { uuid },
+      select: {
+        id: true,
+        uuid: true,
+        subscriber_id: true,
+        name: true,
+        id_code: true,
+        description: true,
+        responsible_id: true,
+        start_date: true,
+        end_date: true,
+        created_at: true,
+        updated_at: true,
 
-      regulations: {
-        where: { deleted_at: null },
-        orderBy: { created_at: 'desc' },
-        select: {
-          id_code: true,
-          patient_id: true,
-          status: true,
-          notes: true,
-          justification: true,
-          priority: true,
-          type_declaration: true,
-
-          patient: {
-            select: {
-              cpf: true,
-              cns: true,
-              full_name: true,
-              social_name: true,
-            },
+        responsible: {
+          select: {
+            id: true,
+            name: true,
+            cargo: true,
+            role: true,
           },
+        },
 
-          cares: {
-            select: {
-              id: true,
-              care_id: true,
-              regulation_id: true,
-              quantity: true,
-              care: {
-                select: {
-                  name: true,
+        regulations: {
+          where: { deleted_at: null },
+          orderBy: { created_at: 'desc' },
+          select: {
+            id_code: true,
+            patient_id: true,
+            status: true,
+            notes: true,
+            justification: true,
+            priority: true,
+            type_declaration: true,
+
+            patient: {
+              select: {
+                cpf: true,
+                cns: true,
+                full_name: true,
+                social_name: true,
+              },
+            },
+
+            cares: {
+              select: {
+                id: true,
+                care_id: true,
+                regulation_id: true,
+                quantity: true,
+                care: {
+                  select: {
+                    name: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-  });
+    });
 
-  if (!folder) {
-    throw new NotFoundException(`Folder #${folder_id} not found`);
+    if (!folder) {
+      throw new NotFoundException(`Folder #${uuid} not found`);
+    }
+
+    return folder;
   }
 
-  return folder;
-}
+  async folderPdfService(id: number) {
 
 
+    const folder = await this.prisma.folder.findUnique({
+      where: { id },
+      include: { regulations: true, responsible: true,subscriber:true },
+    });
+
+    // const pdfBuffer = await generateRegulationPdf(regulation, copies);
+    const pdfBuffer = await folderPdf(folder);
+    return pdfBuffer; // você pode retornar direto ou salvar num arquivo temporário
+  }
 
   async findOne(id: number) {
     const folder = await this.prisma.folder.findUnique({

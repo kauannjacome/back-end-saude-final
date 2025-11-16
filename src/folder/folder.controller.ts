@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res } from '@nestjs/common';
+import type { Response } from 'express'; 
 import { FolderService } from './folder.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
@@ -30,9 +31,21 @@ export class FolderController {
     return this.folderService.findOne(+id);
   }
 
-  @Get('all/regulation/:id')
-  findFolderAllRegulation(@Param('id') id: string) {
-    return this.folderService.findFolderAllRegulation(+id);
+  @Get('all/regulation/:uuid')
+  findFolderAllRegulation(@Param('uuid') uuid: string) {
+    return this.folderService.findFolderAllRegulation(uuid);
+  }
+
+  @Get('pdf/:id')
+  async folderPdf(@Param('id') id: string, @Res() res: Response) {
+    const buffer = await this.folderService.folderPdfService(Number(id));
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="regulamento_${id}.pdf"`,
+      'Content-Length': buffer.length,
+    });
+
+    res.end(buffer);
   }
 
   @Patch(':id')
