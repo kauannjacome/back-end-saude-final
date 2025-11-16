@@ -59,10 +59,14 @@ export class FolderService {
 
   
   async findFolderAllRegulation(folder_id: number) {
+
+
+
     return this.prisma.regulation.findMany({
       where: { folder_id, deleted_at: null },
       include: {
         patient: true,
+        folder:true,
         cares: {
           include: {
             care: true,
