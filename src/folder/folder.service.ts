@@ -61,15 +61,61 @@ export class FolderService {
 async findFolderAllRegulation(folder_id: number) {
   const folder = await this.prisma.folder.findUnique({
     where: { id: folder_id },
-    include: {
-      responsible: true,
+    select: {
+      id: true,
+      uuid: true,
+      subscriber_id: true,
+      name: true,
+      id_code: true,
+      description: true,
+      responsible_id: true,
+      start_date: true,
+      end_date: true,
+      created_at: true,
+      updated_at: true,
+
+      responsible: {
+        select: {
+          id: true,
+          name: true,
+          cargo: true,
+          role: true,
+        },
+      },
+
       regulations: {
         where: { deleted_at: null },
         orderBy: { created_at: 'desc' },
-        include: {
-          patient: true,
+        select: {
+          id_code: true,
+          patient_id: true,
+          status: true,
+          notes: true,
+          justification: true,
+          priority: true,
+          type_declaration: true,
+
+          patient: {
+            select: {
+              cpf: true,
+              cns: true,
+              full_name: true,
+              social_name: true,
+            },
+          },
+
           cares: {
-            include: { care: true },
+            select: {
+              id: true,
+              care_id: true,
+              regulation_id: true,
+              quantity: true,
+              care: {
+                select: {
+                  name: true,
+                },
+              },
+            },
           },
         },
       },
@@ -82,6 +128,7 @@ async findFolderAllRegulation(folder_id: number) {
 
   return folder;
 }
+
 
 
   async findOne(id: number) {
