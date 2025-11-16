@@ -27,7 +27,7 @@ export class RegulationController {
 
   // 🔍 Endpoint de busca
   @Get('search')
-  search( @Query('term') term: string) {
+  search(@Query('term') term: string) {
     return this.regulationService.search(Number(1), term);
   }
   @Get('by-patient/:patient_id')
@@ -39,6 +39,11 @@ export class RegulationController {
   @Get()
   findAll(@Query('subscriber_id') subscriber_id: number) {
     return this.regulationService.findAll(Number(subscriber_id));
+  }
+
+  @Get('public/person/:uuid')
+  findOnePublicPerson(@Param('uuid') uuid: string) {
+    return this.regulationService.findOnePublicPerson(uuid);
   }
 
   @Get(':id')

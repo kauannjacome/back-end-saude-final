@@ -103,6 +103,26 @@ export class RegulationService {
     });
   }
 
+  async findOnePublicPerson(uuid: string) {
+    const regulation = await this.prisma.regulation.findUnique({
+      where: { uuid },
+      include: {
+        patient: true,
+        folder: true,
+        supplier: true,
+        creator: true,
+        analyzer: true,
+        printer: true,
+        cares: {
+          include: { care: true },
+        },
+      },
+    });
+
+    if (!regulation)
+      throw new NotFoundException(`Regulation #${uuid} not found`);
+    return regulation;
+  }
   async findOne(id: number) {
     const regulation = await this.prisma.regulation.findUnique({
       where: { id },
