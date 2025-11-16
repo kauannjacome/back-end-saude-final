@@ -43,10 +43,6 @@ export class RegulationController {
 
   @Get('public/person/:uuid')
   findOnePublicPerson(@Param('uuid') uuid: string) {
-    console.log("-------------------------------------------------")
-    console.log("controller")
-    console.log(uuid)
-    console.log("-------------------------------------------------")
     return this.regulationService.findOnePublicPerson(uuid);
   }
 

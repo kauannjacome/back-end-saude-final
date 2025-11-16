@@ -104,11 +104,6 @@ export class RegulationService {
   }
 
   async findOnePublicPerson(uuid: string) {
-    console.log("************************************")
-    console.log("services")
-    console.log(uuid)
-    console.log("************************************")
-
     const regulation = await this.prisma.regulation.findUnique({
       where: {
         uuid,
@@ -116,20 +111,11 @@ export class RegulationService {
       },
       include: {
         patient: true,
-        folder: true,
-        supplier: true,
-        creator: true,
-        analyzer: true,
-        printer: true,
         cares: {
           include: { care: true },
         },
       },
     });
-        console.log("************************************")
-            console.log("regulation")
-    console.log(regulation)
-        console.log("************************************")
     if (!regulation)
       throw new NotFoundException(`Regulation #${uuid} not found`);
     return regulation;
