@@ -37,6 +37,15 @@ export class SubscriberService {
     return this.prisma.subscriber.findMany({
       where: { deleted_at: null },
       orderBy: { created_at: 'desc' },
+      select: {
+        id:true,
+        uuid: true,
+        name: true,
+        municipality_name: true,
+        cnpj: true,
+        // se quiser incluir created_at também:
+        // created_at: true,
+      },
     });
   }
 
