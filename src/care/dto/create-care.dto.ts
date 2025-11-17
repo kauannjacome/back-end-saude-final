@@ -27,9 +27,6 @@ export class CreateCareDto {
   @IsString()
   description?: string;
 
-  @IsOptional()
-  @IsString()
-  authorization_id?: string;
 
   @IsOptional()
   @IsEnum(status)
@@ -63,14 +60,7 @@ export class CreateCareDto {
   professional_id?: number;
 
   @IsOptional()
-  @IsDateString()
-  created_at?: Date;
-
-  @IsOptional()
-  @IsDateString()
-  updated_at?: Date;
-
-  @IsOptional()
-  @IsDateString()
-  deleted_at?: Date;
+  @IsInt()
+  supplier_id?: number;
+  
 }

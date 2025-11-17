@@ -12,4 +12,16 @@ export class CreateSupplierDto {
 
   @IsInt()
   subscriber_id: number;
+
+  @IsOptional()
+  @IsString()
+  postal_code?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
 }
