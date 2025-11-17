@@ -15,7 +15,10 @@ export class CareService {
     console.log(createCareDto)
     try {
       return await this.prisma.care.create({
-        data: createCareDto,
+        data: {
+          ...createCareDto,
+          subscriber_id: 1,
+        }
       });
     } catch (error) {
       if (

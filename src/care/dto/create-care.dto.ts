@@ -3,18 +3,11 @@ import {
   IsOptional,
   IsNumber,
   IsEnum,
-  IsUUID,
-  IsDateString,
   IsInt,
-  IsPositive,
-  IsNumberString,
 } from 'class-validator';
-import { status, resource_origin, unit_measure, priority } from '@prisma/client';
+import { status, resource_origin, unit_measure, priority, type_declaration } from '@prisma/client';
 
 export class CreateCareDto {
-  @IsInt()
-  @IsPositive()
-  subscriber_id: number;
 
   @IsString()
   name: string;
@@ -44,6 +37,10 @@ export class CreateCareDto {
   priority?: priority;
 
   @IsOptional()
+  @IsEnum(type_declaration)  
+  type_declaration?: type_declaration;
+
+  @IsOptional()
   @IsNumber()
   value?: number;
 
@@ -62,5 +59,5 @@ export class CreateCareDto {
   @IsOptional()
   @IsInt()
   supplier_id?: number;
-  
+
 }
