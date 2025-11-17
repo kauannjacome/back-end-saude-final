@@ -273,6 +273,9 @@ model supplier {
   name          String
   trade_name    String
   cnpj          String
+  postal_code   String?
+  city          String?
+  state         String?
   created_at    DateTime     @default(now())
   updated_at    DateTime     @updatedAt
   deleted_at    DateTime?
