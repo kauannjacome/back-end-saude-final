@@ -18,7 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "heroku-postbuild": "NODE_ENV=dev npm install --omit --no-shrinkwrap && npm run build"
+    "heroku-postbuild": "npm run prisma:generate && npm run build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.922.0",
@@ -97,8 +97,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "engines": {
-  "node": "20.x",
-  "npm": "10.x"
-}
-
+    "node": "20.x",
+    "npm": "10.x"
+  }
 }
