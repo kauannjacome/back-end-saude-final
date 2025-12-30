@@ -25,6 +25,7 @@ export class ProfessionalService {
       deleted_at: null,
       OR: [
         { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
+        { name_normalized: { contains: term, mode: Prisma.QueryMode.insensitive } },
         { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
       ],
     };
@@ -55,6 +56,7 @@ export class ProfessionalService {
         deleted_at: null,
         OR: [
           { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
+          { name_normalized: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { email: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { cargo: { contains: term, mode: Prisma.QueryMode.insensitive } },
@@ -129,7 +131,12 @@ export class ProfessionalService {
     await this.findOne(id);
     return this.prisma.professional.update({
       where: { id },
-      data: updateProfessionalDto,
+      data: {
+        ...updateProfessionalDto,
+        ...(updateProfessionalDto.name && {
+          name_normalized: normalizeText(updateProfessionalDto.name),
+        }),
+      },
     });
   }
 

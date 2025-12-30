@@ -57,6 +57,7 @@ export class CareService {
         deleted_at: null,
         OR: [
           { name: { contains: term, mode: 'insensitive' } },   // ✅ ignora maiúsculas/minúsculas
+          { name_normalized: { contains: term, mode: 'insensitive' } }, 
           { acronym: { contains: term, mode: 'insensitive' } } // ✅ idem
         ],
       },
@@ -101,7 +102,12 @@ export class CareService {
 
     return this.prisma.care.update({
       where: { id },
-      data: updateCareDto,
+     data: {
+      ...updateCareDto,
+      ...(updateCareDto.name && {
+        name_normalized: normalizeText(updateCareDto.name),
+      }),
+    },
     });
   }
 

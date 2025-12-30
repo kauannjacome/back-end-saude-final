@@ -41,6 +41,12 @@ export class PatientService {
         deleted_at: null,
         OR: [
           {
+            name_normalized: {
+              contains: term,
+              mode: 'insensitive',
+            }
+          },
+          {
             full_name: {
               contains: term,
               mode: 'insensitive', // <-- ignora maiúsculas/minúsculas
@@ -106,7 +112,12 @@ export class PatientService {
     await this.findOne(id);
     return this.prisma.patient.update({
       where: { id },
-      data: updatePatientDto,
+      data: {
+        ...updatePatientDto,
+        ...(updatePatientDto.full_name && {
+          name_normalized: normalizeText(updatePatientDto.full_name),
+        }),
+      },
     });
   }
 
