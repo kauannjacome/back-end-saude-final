@@ -5,7 +5,7 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 
 @Controller('group')
 export class GroupController {
-  constructor(private readonly groupService: GroupService) {}
+  constructor(private readonly groupService: GroupService) { }
 
   @Post()
   create(@Body() createGroupDto: CreateGroupDto) {
@@ -13,10 +13,16 @@ export class GroupController {
   }
 
   // 🔍 Endpoint de busca
-@Get('search')
-search( @Query('term') term: string) {
-  return this.groupService.search(Number(1), term);
-}
+  @Get('search')
+  search(@Query('term') term: string) {
+    return this.groupService.search(Number(1), term);
+  }
+  // 🔍 Endpoint de busca
+  @Get('search')
+  findMinimal(@Query('term') term: string) {
+    return this.groupService.search(Number(1), term);
+  }
+
 
 
   @Get()

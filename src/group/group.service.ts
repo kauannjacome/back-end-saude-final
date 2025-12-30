@@ -35,6 +35,28 @@ export class GroupService {
     });
   }
 
+    async findMinimal(subscriber_id: number, term: string) {
+    console.log('📥 subscriber_id:', subscriber_id);
+    console.log('📥 term:', term);
+
+    return this.prisma.group.findMany({
+      where: {
+        subscriber_id,
+        deleted_at: null,
+        OR: [
+          { name: { contains: term, mode: 'insensitive' } },
+          { description: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+      include: {
+        cares: { select: { name: true } },
+      },
+      take: 10,
+      skip: 0,
+      orderBy: { name: 'asc' },
+    });
+  }
+
   async findAll(subscriber_id: number) {
     return this.prisma.group.findMany({
       where: { subscriber_id, deleted_at: null },
