@@ -1,13 +1,12 @@
 // prisma.config.ts
-import "dotenv/config"; // <-- importante: carrega as variáveis do .env
+import { defineConfig } from 'prisma/config';
 
-export default {
-  schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-  },
-  engine: "classic",
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+
   datasource: {
-    url: process.env.DATABASE_URL, // usa a variável carregada do .env
+    db: {
+      url: process.env.DATABASE_URL!,
+    },
   },
-};
+});
