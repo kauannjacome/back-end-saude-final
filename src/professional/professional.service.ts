@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client'; // 👈 IMPORTANTE!
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
+import { normalizeText } from '../common/utils/normalize-text';
 
 @Injectable()
 export class ProfessionalService {
@@ -11,7 +12,10 @@ export class ProfessionalService {
   // ✅ CRIAR PROFISSIONAL
   async create(createProfessionalDto: CreateProfessionalDto) {
     return this.prisma.professional.create({
-      data: createProfessionalDto,
+      data: {
+        ...createProfessionalDto,
+        name_normalized: normalizeText(createProfessionalDto.name),
+      },
     });
   }
 

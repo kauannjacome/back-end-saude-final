@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-    url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model subscriber {
@@ -76,6 +76,7 @@ model care {
   uuid             String            @unique @default(uuid())
   subscriber_id    Int
   name             String
+  name_normalized  String?
   acronym          String?
   description      String?
   status           status?
@@ -144,6 +145,7 @@ model patient {
   cpf                    String
   cns                    String?
   full_name              String
+  name_normalized        String?
   social_name            String?
   gender                 String?
   race                   String?
@@ -189,6 +191,7 @@ model professional {
   subscriber_id          Int
   cpf                    String
   name                   String?
+  name_normalized        String?
   cargo                  String?
   sex                    sex?
   birth_date             DateTime?

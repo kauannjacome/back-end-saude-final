@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
-import {  SearchPaginationDto } from './dto/search-pagination-dto';
-
+import { SearchPaginationDto } from './dto/search-pagination-dto';
+import { normalizeText } from 'src/common/utils/normalize-text';
 @Injectable()
 export class PatientService {
   constructor(private prisma: PrismaService) { }
@@ -12,6 +12,7 @@ export class PatientService {
     return this.prisma.patient.create({
       data: {
         ...createPatientDto,
+        name_normalized: normalizeText(createPatientDto.full_name),
         subscriber_id: 1,
         birth_date: new Date(createPatientDto.birth_date),
         accepted_terms_at: createPatientDto.accepted_terms_at
@@ -30,7 +31,7 @@ export class PatientService {
     });
   }
 
-  async search(subscriber_id: number,  term?: string) {
+  async search(subscriber_id: number, term?: string) {
     console.log('📥 subscriber_id:', subscriber_id);
 
     return this.prisma.patient.findMany({

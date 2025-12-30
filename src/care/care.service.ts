@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateCareDto } from './dto/create-care.dto';
 import { UpdateCareDto } from './dto/update-care.dto';
 import { Prisma } from '@prisma/client';
+import { normalizeText } from '../common/utils/normalize-text';
 
 @Injectable()
 export class CareService {
@@ -18,6 +19,7 @@ export class CareService {
         data: {
           ...createCareDto,
           subscriber_id: 1,
+          name_normalized: normalizeText(createCareDto.name),
         }
       });
     } catch (error) {
