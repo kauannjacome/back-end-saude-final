@@ -37,7 +37,30 @@ export class SupplierService {
     });
   }
 
+  async searchSimples(subscriber_id: number, term: string) {
+    console.log('📥 subscriber_id:', subscriber_id);
+    console.log('📥 term:', term);
 
+    return this.prisma.supplier.findMany({
+      where: {
+        subscriber_id,
+        deleted_at: null,
+        OR: [
+          { name: { contains: term, mode: 'insensitive' } },
+          { trade_name: { contains: term, mode: 'insensitive' } },
+          { cnpj: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+      include: {
+        regulations: {
+          select: { id: true, id_code: true, status: true },
+        },
+      },
+      take: 10,
+      skip: 0,
+      orderBy: { name: 'asc' },
+    });
+  }
   async findAll(subscriber_id: number) {
     return this.prisma.supplier.findMany({
       where: { subscriber_id, deleted_at: null },

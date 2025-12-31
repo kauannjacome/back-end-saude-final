@@ -5,7 +5,7 @@ import { UpdateSupplierDto } from './dto/update-supplier.dto';
 
 @Controller('supplier')
 export class SupplierController {
-  constructor(private readonly supplierService: SupplierService) {}
+  constructor(private readonly supplierService: SupplierService) { }
 
   @Post()
   create(@Body() createSupplierDto: CreateSupplierDto) {
@@ -13,13 +13,19 @@ export class SupplierController {
   }
 
   // 🔍 Endpoint de busca
-@Get('search')
-search(
-  @Query('term') term: string,
-) {
-  return this.supplierService.search(Number(1), term);
-}
+  @Get('search')
+  search(
+    @Query('term') term: string,
+  ) {
+    return this.supplierService.search(Number(1), term);
+  }
 
+  @Get('search/simples')
+  searchSimples(
+    @Query('term') term: string,
+  ) {
+    return this.supplierService.searchSimples(Number(1), term);
+  }
 
   @Get()
   findAll(@Query('subscriber_id') subscriber_id: number) {
