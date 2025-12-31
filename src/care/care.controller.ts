@@ -9,6 +9,7 @@ export class CareController {
 
   @Post()
   create(@Body() createCareDto: CreateCareDto) {
+    console.log(CreateCareDto)
     return this.careService.create(createCareDto);
   }
   // 🔍 Endpoint de busca
@@ -16,6 +17,7 @@ export class CareController {
   search(
     @Query('term') term: string,
   ) {
+    console.log(term)
     return this.careService.search(1, term);
   }
 
@@ -31,6 +33,7 @@ export class CareController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCareDto: UpdateCareDto) {
+    console.log(UpdateCareDto)
     return this.careService.update(+id, updateCareDto);
   }
 
