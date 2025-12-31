@@ -18,7 +18,7 @@ export class GroupController {
     return this.groupService.search(Number(1), term);
   }
   // 🔍 Endpoint de busca
-  @Get('search/simples]')
+  @Get('search/simples')
   findMinimal(@Query('term') term: string) {
     return this.groupService.search(Number(1), term);
   }
