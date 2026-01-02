@@ -161,19 +161,83 @@ export class ProfessionalService {
     return professional;
   }
 
-  // ✅ ATUALIZAR
-  async update(id: number, updateProfessionalDto: UpdateProfessionalDto) {
-    await this.findOne(id);
-    return this.prisma.professional.update({
+// ✅ ATUALIZAR
+async update(id: number, updateProfessionalDto: UpdateProfessionalDto) {
+  try {
+    const professional = await this.prisma.professional.findUnique({
       where: { id },
-      data: {
-        ...updateProfessionalDto,
-        ...(updateProfessionalDto.name && {
-          name_normalized: normalizeText(updateProfessionalDto.name),
-        }),
+    });
+
+    if (!professional) {
+      throw new HttpException(
+        'Profissional não encontrado!',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const dataProfessional: any = {
+      subscriber_id: updateProfessionalDto.subscriber_id ?? professional.subscriber_id,
+      cpf: updateProfessionalDto.cpf ?? professional.cpf,
+
+      name: updateProfessionalDto.name ?? professional.name,
+      name_normalized: updateProfessionalDto.name
+        ? normalizeText(updateProfessionalDto.name)
+        : professional.name_normalized,
+
+      cargo: updateProfessionalDto.cargo ?? professional.cargo,
+      sex: updateProfessionalDto.sex ?? professional.sex,
+
+      birth_date: updateProfessionalDto.birth_date
+        ? new Date(updateProfessionalDto.birth_date)
+        : professional.birth_date,
+
+      phone_number: updateProfessionalDto.phone_number ?? professional.phone_number,
+      email: updateProfessionalDto.email ?? professional.email,
+
+      role: updateProfessionalDto.role ?? professional.role,
+
+      accepted_terms:
+        updateProfessionalDto.accepted_terms ?? professional.accepted_terms,
+
+      accepted_terms_at: updateProfessionalDto.accepted_terms_at
+        ? new Date(updateProfessionalDto.accepted_terms_at)
+        : professional.accepted_terms_at,
+
+      accepted_terms_version:
+        updateProfessionalDto.accepted_terms_version ??
+        professional.accepted_terms_version,
+    };
+
+    // 🔐 Atualiza senha apenas se enviada
+    if (updateProfessionalDto.password_hash) {
+      dataProfessional.password_hash =
+        await this.hashingService.hash(updateProfessionalDto.password_hash);
+
+      dataProfessional.is_password_temp = false;
+      dataProfessional.number_try = 0;
+      dataProfessional.is_blocked = false;
+    }
+
+    return await this.prisma.professional.update({
+      where: { id },
+      data: dataProfessional,
+      select: {
+        id: true,
+        uuid: true,
+        name: true,
+        email: true,
+        role: true,
+        updated_at: true,
       },
     });
+  } catch (err) {
+    console.error(err);
+    throw new HttpException(
+      'Falha ao atualizar profissional!',
+      HttpStatus.BAD_REQUEST,
+    );
   }
+}
 
   // ✅ REMOVER (soft delete)
   async remove(id: number) {

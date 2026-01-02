@@ -45,17 +45,6 @@ export class CreateProfessionalDto {
   @IsString()
   password_hash: string;
 
-  @IsOptional()
-  @IsBoolean()
-  is_password_temp?: boolean;
-
-  @IsOptional()
-  @IsInt()
-  number_try?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  is_blocked?: boolean;
 
   @IsOptional()
   @IsBoolean()
