@@ -42,9 +42,8 @@ export class CreateProfessionalDto {
   @IsEnum(role)
   role?: role;
 
-  @IsOptional()
   @IsString()
-  password_hash?: string;
+  password_hash: string;
 
   @IsOptional()
   @IsBoolean()

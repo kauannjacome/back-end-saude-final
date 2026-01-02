@@ -4,20 +4,55 @@ import { Prisma } from '@prisma/client'; // 👈 IMPORTANTE!
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 import { normalizeText } from '../common/utils/normalize-text';
+import { HashingServiceProtocol } from '../auth/hash/hashing.service';
 
 @Injectable()
 export class ProfessionalService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private readonly hashingService: HashingServiceProtocol) { }
 
-  // ✅ CRIAR PROFISSIONAL
+  // ✅ CRIAR PROFISSIONAL (alinhado ao CreateProfessionalDto)
   async create(createProfessionalDto: CreateProfessionalDto) {
+    const passwordHash = await this.hashingService.hash(createProfessionalDto.password_hash)
+
     return this.prisma.professional.create({
       data: {
-        ...createProfessionalDto,
-        name_normalized: normalizeText(createProfessionalDto.name),
+        subscriber_id: createProfessionalDto.subscriber_id,
+        cpf: createProfessionalDto.cpf,
+
+        name: createProfessionalDto.name,
+        name_normalized: createProfessionalDto.name
+          ? normalizeText(createProfessionalDto.name)
+          : null,
+
+        cargo: createProfessionalDto.cargo,
+        sex: createProfessionalDto.sex,
+
+        birth_date: createProfessionalDto.birth_date
+          ? new Date(createProfessionalDto.birth_date)
+          : null,
+
+        phone_number: createProfessionalDto.phone_number,
+        email: createProfessionalDto.email,
+
+        role: createProfessionalDto.role,
+        password_hash: passwordHash,
+
+        is_password_temp: false,
+        number_try: 0,
+        is_blocked: false,
+
+        accepted_terms: createProfessionalDto.accepted_terms,
+        accepted_terms_at: createProfessionalDto.accepted_terms_at
+          ? new Date(createProfessionalDto.accepted_terms_at)
+          : null,
+
+        accepted_terms_version: createProfessionalDto.accepted_terms_version,
       },
     });
   }
+
 
   async searchSimple(subscriber_id: number, term?: string) {
     const where: Prisma.professionalWhereInput = {

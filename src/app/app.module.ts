@@ -16,6 +16,7 @@ import { UploadModule } from '../upload/upload.module';
 import { ReportModule } from '../report/report.module';
 import { DeclarationModule } from '../declaration/declaration.module';
 import { SeedsModule } from '../seeds/seeds.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
@@ -32,7 +33,8 @@ import { SeedsModule } from '../seeds/seeds.module';
     UploadModule,
     ReportModule,
     DeclarationModule,
-    SeedsModule
+    SeedsModule,
+    AuthModule
 
 
    ],
