@@ -1,31 +1,45 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
 
 @Injectable()
 export class SupplierService {
-  constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(SupplierService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createSupplierDto: CreateSupplierDto) {
     return this.prisma.supplier.create({
       data: createSupplierDto,
     });
   }
-  async search(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
+
+  async search(subscriber_id: number, term?: string) {
+    const searchTerm = term?.trim();
+    const whereClause: {
+      subscriber_id: number;
+      deleted_at: null;
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        trade_name?: { contains: string; mode: 'insensitive' };
+        cnpj?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { trade_name: { contains: searchTerm, mode: 'insensitive' } },
+        { cnpj: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
 
     return this.prisma.supplier.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { trade_name: { contains: term, mode: 'insensitive' } },
-          { cnpj: { contains: term, mode: 'insensitive' } },
-        ],
-      },
+      where: whereClause,
       include: {
         regulations: {
           select: { id: true, id_code: true, status: true },
@@ -37,20 +51,31 @@ export class SupplierService {
     });
   }
 
-  async searchSimples(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
+  async searchSimples(subscriber_id: number, term?: string) {
+    const searchTerm = term?.trim();
+    const whereClause: {
+      subscriber_id: number;
+      deleted_at: null;
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        trade_name?: { contains: string; mode: 'insensitive' };
+        cnpj?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { trade_name: { contains: searchTerm, mode: 'insensitive' } },
+        { cnpj: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
 
     return this.prisma.supplier.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { trade_name: { contains: term, mode: 'insensitive' } },
-          { cnpj: { contains: term, mode: 'insensitive' } },
-        ],
-      },
+      where: whereClause,
       include: {
         regulations: {
           select: { id: true, id_code: true, status: true },
@@ -75,7 +100,9 @@ export class SupplierService {
       include: { regulations: true },
     });
 
-    if (!supplier) throw new NotFoundException(`Supplier #${id} not found`);
+    if (!supplier) {
+      throw new NotFoundException(`Supplier with ID ${id} not found`);
+    }
     return supplier;
   }
 

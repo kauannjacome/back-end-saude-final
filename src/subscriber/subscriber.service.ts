@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSubscriberDto } from './dto/create-subscriber.dto';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
 
 @Injectable()
 export class SubscriberService {
-  constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(SubscriberService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createSubscriberDto: CreateSubscriberDto) {
     return this.prisma.subscriber.create({
@@ -13,19 +15,33 @@ export class SubscriberService {
     });
   }
 
-  async search(term: string) {
-    console.log('📥 term:', term);
+  async search(term?: string) {
+    const searchTerm = term?.trim();
+    const whereClause: {
+      deleted_at: null;
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        municipality_name?: { contains: string; mode: 'insensitive' };
+        email?: { contains: string; mode: 'insensitive' };
+        cnpj?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
+      deleted_at: null,
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        {
+          municipality_name: { contains: searchTerm, mode: 'insensitive' },
+        },
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+        { cnpj: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
 
     return this.prisma.subscriber.findMany({
-      where: {
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { municipality_name: { contains: term, mode: 'insensitive' } },
-          { email: { contains: term, mode: 'insensitive' } },
-          { cnpj: { contains: term, mode: 'insensitive' } },
-        ],
-      },
+      where: whereClause,
       take: 10,
       skip: 0,
       orderBy: { name: 'asc' },
@@ -55,7 +71,7 @@ export class SubscriberService {
     });
 
     if (!subscriber) {
-      throw new NotFoundException(`Subscriber #${id} não encontrado.`);
+      throw new NotFoundException(`Subscriber with ID ${id} not found`);
     }
 
     return subscriber;
@@ -64,7 +80,7 @@ export class SubscriberService {
   async update(id: number, updateSubscriberDto: UpdateSubscriberDto) {
     const subscriber = await this.prisma.subscriber.findUnique({ where: { id } });
     if (!subscriber) {
-      throw new NotFoundException(`Subscriber #${id} não encontrado.`);
+      throw new NotFoundException(`Subscriber with ID ${id} not found`);
     }
 
     return this.prisma.subscriber.update({
@@ -76,7 +92,7 @@ export class SubscriberService {
   async remove(id: number) {
     const subscriber = await this.prisma.subscriber.findUnique({ where: { id } });
     if (!subscriber) {
-      throw new NotFoundException(`Subscriber #${id} não encontrado.`);
+      throw new NotFoundException(`Subscriber with ID ${id} not found`);
     }
 
     // Soft delete (recomendado)

@@ -25,25 +25,18 @@ export class UploadController {
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async upload(@UploadedFile() file: Express.Multer.File) {
-    if (!file) throw new Error('Nenhum arquivo foi enviado.');
-
-    console.log('Arquivo recebido:', file.originalname);
+    if (!file) {
+      throw new BadRequestException('Nenhum arquivo foi enviado');
+    }
     return await this.uploadService.uploadFile(file, 'certificados');
   }
 
-    @Post('/requirement')
+  @Post('/requirement')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadRequirement(
-    @UploadedFile() file: Express.Multer.File,
-
-  ) {
-    console.log("chegou aqui")
-    if (!file) throw new Error('Nenhum arquivo foi enviado.');
-
-
-    console.log('Arquivo recebido:', file.originalname);
-;
-
+  async uploadRequirement(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Nenhum arquivo foi enviado');
+    }
     return await this.uploadService.uploadRequirement(file, 1);
   }
 
@@ -59,16 +52,16 @@ export class UploadController {
     @UploadedFile() file: Express.Multer.File,
     @Body() body: UpdateUploadDto,
   ) {
-    if (!file) throw new Error('Nenhum arquivo foi enviado.');
+    if (!file) {
+      throw new BadRequestException('Nenhum arquivo foi enviado');
+    }
 
     const tipo = body.tipo || TipoArquivo.ESTADUAL;
     const idNum = Number(body.id);
 
-    if (isNaN(idNum)) throw new Error('O parâmetro "id" deve ser um número válido.');
-
-    console.log('Arquivo recebido:', file.originalname);
-    console.log('Tipo recebido:', tipo);
-    console.log('ID recebido:', idNum);
+    if (isNaN(idNum)) {
+      throw new BadRequestException('O parâmetro "id" deve ser um número válido');
+    }
 
     return await this.uploadService.uploadImage(file, tipo, idNum);
   }
@@ -79,18 +72,18 @@ export class UploadController {
    */
   @Get('download-url')
   async getDownloadUrl(@Query('key') key: string) {
-    if (!key) throw new Error('O parâmetro "key" é obrigatório.');
+    if (!key) {
+      throw new BadRequestException('O parâmetro "key" é obrigatório');
+    }
     return await this.uploadService.getDownloadUrl(key);
   }
 
-    @Get('document')
+  @Get('document')
   async getDocumentUrl(@Query() query: getDocumentUrl) {
     const { type, id } = query;
-    console.log(query)
 
-    // Garantir que o id venha como número (DTO faz isso, mas reforçamos)
     if (!type || !id) {
-      throw new BadRequestException('Parâmetros "type" e "id" são obrigatórios.');
+      throw new BadRequestException('Parâmetros "type" e "id" são obrigatórios');
     }
 
     return this.uploadService.getDocumentUrl(type, id);

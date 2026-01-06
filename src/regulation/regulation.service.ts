@@ -1,15 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { status } from '@prisma/client';
+import { customAlphabet } from 'nanoid';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRegulationDto } from './dto/create-regulation.dto';
 import { UpdateRegulationDto } from './dto/update-regulation.dto';
 import { generateRegulationPdf } from './pdf/divided-regulation-pdf';
 import { PageRegulationPdf } from './pdf/page-regulation-pdf';
-import { customAlphabet } from 'nanoid'
-import { status } from '@prisma/client';
 
 @Injectable()
 export class RegulationService {
-  constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(RegulationService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createRegulationDto: CreateRegulationDto) {
     const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUXYZ', 10)
@@ -60,20 +62,36 @@ export class RegulationService {
     });
   }
 
-  async search(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
+  async search(subscriber_id: number, term?: string) {
+    const searchTerm = term?.trim();
+    const whereClause: {
+      subscriber_id: number;
+      deleted_at: null;
+      OR?: Array<{
+        id_code?: { contains: string; mode: 'insensitive' };
+        notes?: { contains: string; mode: 'insensitive' };
+        requesting_professional?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { id_code: { contains: searchTerm, mode: 'insensitive' } },
+        { notes: { contains: searchTerm, mode: 'insensitive' } },
+        {
+          requesting_professional: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
 
     return this.prisma.regulation.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { id_code: { contains: term, mode: 'insensitive' } },
-          { notes: { contains: term, mode: 'insensitive' } },
-          { requesting_professional: { contains: term, mode: 'insensitive' } },
-        ],
-      },
+      where: whereClause,
       include: {
         patient: { select: { full_name: true } },
         supplier: { select: { name: true } },

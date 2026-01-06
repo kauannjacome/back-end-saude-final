@@ -1,44 +1,41 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { SignInDto } from './dto/signin.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { HashingServiceProtocol } from './hash/hashing.service';
-import jwtConfig from './config/jwt.config';
-import type { ConfigType } from '@nestjs/config';
+import {
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-
+import { PrismaService } from 'src/prisma/prisma.service';
+import jwtConfig from './config/jwt.config';
+import { SignInDto } from './dto/signin.dto';
+import { HashingServiceProtocol } from './hash/hashing.service';
 
 @Injectable()
 export class AuthService {
 
-  constructor(
-    private prisma: PrismaService,
-    private readonly hashingService: HashingServiceProtocol,
 
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly hashingService: HashingServiceProtocol,
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
-    private readonly jwtService: JwtService
-  ) {
-    console.log("--------------------------")
-    console.log(jwtConfiguration)
-    console.log("--------------------------")
-  }
+    private readonly jwtService: JwtService,
+  ) {}
 
   async authenticate(signInDto: SignInDto) {
-
     const professional = await this.prisma.professional.findFirst({
       where: {
-        email: signInDto.email
-      }
-    })
+        email: signInDto.email.toLowerCase().trim(),
+      },
+    });
 
     if (!professional) {
-      throw new HttpException("Falha ao fazer o login", HttpStatus.UNAUTHORIZED)
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     if (!professional.password_hash) {
-      throw new HttpException(
+      throw new UnauthorizedException(
         'Usuário não possui senha cadastrada',
-        HttpStatus.UNAUTHORIZED,
       );
     }
 
@@ -48,42 +45,37 @@ export class AuthService {
     );
 
     if (!passwordIsValid) {
-      throw new HttpException("Senha/Usuário incorretos", HttpStatus.UNAUTHORIZED)
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const subscriber = await this.prisma.subscriber.findFirst({
+    const subscriber = await this.prisma.subscriber.findUnique({
       where: {
-        id: professional.subscriber_id
-      }
-    })
+        id: professional.subscriber_id,
+      },
+    });
 
     const token = await this.jwtService.signAsync(
       {
         user_id: professional.id,
         sub_id: professional.subscriber_id,
-        role: professional.role
+        role: professional.role,
       },
       {
         secret: this.jwtConfiguration.secret,
-        expiresIn: "30d",
+        expiresIn: this.jwtConfiguration.expiresIn || '30d',
         audience: this.jwtConfiguration.audience,
-        issuer: this.jwtConfiguration.issuer
-      }
-    )
+        issuer: this.jwtConfiguration.issuer,
+      },
+    );
 
     return {
       id: professional.id,
       name: professional.name,
       email: professional.email,
-      nome_sub:subscriber?.name,
+      nome_sub: subscriber?.name,
       role: professional.role,
-      play_sub:subscriber?.payment,
-      token:token
-
-    }
-
-
+      play_sub: subscriber?.payment,
+      token,
+    };
   }
-
-
 }

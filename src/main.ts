@@ -1,21 +1,41 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.enableCors({
-    origin: '*', // permite qualquer origem
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: false, // deve ser false se origin for '*'
+  const logger = new Logger('Bootstrap');
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
+
+  // CORS configuration - considerar usar variável de ambiente para origins permitidas
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || '*';
+  app.enableCors({
+    origin: allowedOrigins,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: allowedOrigins !== '*',
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
+  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,            // Remove campos que não estão no DTO
-      forbidNonWhitelisted: true, // (Opcional) Lança erro se vier campo que não está no DTO
-      transform: true,            // Converte tipos (string para number, etc)
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
-  await app.listen(process.env.PORT ?? 3000);
+
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  logger.log(`Application is running on: http://localhost:${port}`);
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  const logger = new Logger('Bootstrap');
+  logger.error('Error starting the application', error);
+  process.exit(1);
+});

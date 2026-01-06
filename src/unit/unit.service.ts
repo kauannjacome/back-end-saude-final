@@ -1,29 +1,37 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
 
 @Injectable()
 export class UnitService {
-  constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(UnitService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createUnitDto: CreateUnitDto) {
     return this.prisma.unit.create({
       data: createUnitDto,
     });
   }
-  async search(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
+
+  async search(subscriber_id: number, term?: string) {
+    const searchTerm = term?.trim();
+    const whereClause: {
+      subscriber_id: number;
+      deleted_at: null;
+      OR?: Array<{ name: { contains: string; mode: 'insensitive' } }>;
+    } = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [{ name: { contains: searchTerm, mode: 'insensitive' } }];
+    }
 
     return this.prisma.unit.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-        ],
-      },
+      where: whereClause,
       take: 10,
       skip: 0,
       orderBy: { name: 'asc' },
@@ -42,7 +50,9 @@ export class UnitService {
       where: { id },
     });
 
-    if (!unit) throw new NotFoundException(`Unit #${id} not found`);
+    if (!unit) {
+      throw new NotFoundException(`Unit with ID ${id} not found`);
+    }
     return unit;
   }
 

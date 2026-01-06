@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { CareService } from './care.service';
 import { CreateCareDto } from './dto/create-care.dto';
 import { UpdateCareDto } from './dto/update-care.dto';
@@ -8,17 +20,17 @@ export class CareController {
   constructor(private readonly careService: CareService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   create(@Body() createCareDto: CreateCareDto) {
-    console.log(CreateCareDto)
     return this.careService.create(createCareDto);
   }
-  // 🔍 Endpoint de busca
+
   @Get('search')
   search(
-    @Query('term') term: string,
+    @Query('subscriber_id', ParseIntPipe) subscriber_id: number,
+    @Query('term') term?: string,
   ) {
-    console.log(term)
-    return this.careService.search(1, term);
+    return this.careService.search(subscriber_id, term);
   }
 
   @Get()
@@ -27,18 +39,21 @@ export class CareController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.careService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.careService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCareDto: UpdateCareDto) {
-    console.log(UpdateCareDto)
-    return this.careService.update(+id, updateCareDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateCareDto: UpdateCareDto,
+  ) {
+    return this.careService.update(id, updateCareDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.careService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.careService.remove(id);
   }
 }

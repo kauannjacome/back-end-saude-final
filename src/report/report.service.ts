@@ -1,12 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
-import { PrismaService } from '../prisma/prisma.service';
 import { ReportFilterPriorityStatusCareDto } from './dto/report-filter-priority-status-care.dto';
 
 @Injectable()
 export class ReportService {
-  constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(ReportService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
   create(createReportDto: CreateReportDto) {
     return 'This action adds a new report';
   }
@@ -16,8 +19,8 @@ export class ReportService {
   }
 
   async getRegulationReport(filters: ReportFilterPriorityStatusCareDto) {
-    const { subscriber_id, status, care_id, priority, start_date, end_date } = filters;
-    console.log(filters)
+    const { subscriber_id, status, care_id, priority, start_date, end_date } =
+      filters;
     // ponto de partida do filtro
     const where: any = {
       deleted_at: null,
@@ -87,8 +90,9 @@ export class ReportService {
       },
     });
 
-    if (!regulation)
-      throw new NotFoundException(`Regulation #${id} not found`);
+    if (!regulation) {
+      throw new NotFoundException(`Regulation with ID ${id} not found`);
+    }
     return regulation;
   }
 

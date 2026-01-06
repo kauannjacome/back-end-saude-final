@@ -1,47 +1,73 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { GroupService } from './group.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 
 @Controller('group')
 export class GroupController {
-  constructor(private readonly groupService: GroupService) { }
+  constructor(private readonly groupService: GroupService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   create(@Body() createGroupDto: CreateGroupDto) {
     return this.groupService.create(createGroupDto);
   }
 
-  // 🔍 Endpoint de busca
   @Get('search')
-  search(@Query('term') term: string) {
-    return this.groupService.search(Number(1), term);
+  search(
+    @Query('subscriber_id', ParseIntPipe) subscriber_id: number,
+    @Query('term') term?: string,
+  ) {
+    return this.groupService.search(subscriber_id, term);
   }
-  // 🔍 Endpoint de busca
+
   @Get('search/simples')
-  findMinimal(@Query('term') term: string) {
-    return this.groupService.search(Number(1), term);
+  findMinimal(
+    @Query('subscriber_id', ParseIntPipe) subscriber_id: number,
+    @Query('term') term?: string,
+  ) {
+    return this.groupService.findMinimal(subscriber_id, term);
   }
-
-
 
   @Get()
-  findAll(@Query('subscriber_id') subscriber_id: number) {
-    return this.groupService.findAll(Number(subscriber_id));
+  findAll(
+    @Query('subscriber_id', new ParseIntPipe({ optional: true }))
+    subscriber_id?: number,
+  ) {
+    if (!subscriber_id) {
+      throw new Error('subscriber_id is required');
+    }
+    return this.groupService.findAll(subscriber_id);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.groupService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.groupService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateGroupDto: UpdateGroupDto) {
-    return this.groupService.update(+id, updateGroupDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateGroupDto: UpdateGroupDto,
+  ) {
+    return this.groupService.update(id, updateGroupDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.groupService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.groupService.remove(id);
   }
 }

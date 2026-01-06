@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ReportService } from './report.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
@@ -6,18 +17,19 @@ import { ReportFilterPriorityStatusCareDto } from './dto/report-filter-priority-
 
 @Controller('report')
 export class ReportController {
-  constructor(private readonly reportService: ReportService) { }
+  constructor(private readonly reportService: ReportService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   create(@Body() createReportDto: CreateReportDto) {
     return this.reportService.create(createReportDto);
   }
-  @Post("generate")
+
+  @Post('generate')
+  @HttpCode(HttpStatus.OK)
   async generateReport(@Body() filters: ReportFilterPriorityStatusCareDto) {
-    console.log("chegou aqui")
     return this.reportService.getRegulationReport(filters);
   }
-
 
   @Get()
   findAll() {
@@ -25,17 +37,21 @@ export class ReportController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reportService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.reportService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateReportDto: UpdateReportDto) {
-    return this.reportService.update(+id, updateReportDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateReportDto: UpdateReportDto,
+  ) {
+    return this.reportService.update(id, updateReportDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reportService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.reportService.remove(id);
   }
 }

@@ -1,6 +1,12 @@
-import { HttpException, Injectable, NotFoundException, HttpStatus } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  NotFoundException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client'; // 👈 IMPORTANTE!
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 import { normalizeText } from '../common/utils/normalize-text';
@@ -8,9 +14,12 @@ import { HashingServiceProtocol } from '../auth/hash/hashing.service';
 
 @Injectable()
 export class ProfessionalService {
+  private readonly logger = new Logger(ProfessionalService.name);
+
   constructor(
-    private prisma: PrismaService,
-    private readonly hashingService: HashingServiceProtocol) { }
+    private readonly prisma: PrismaService,
+    private readonly hashingService: HashingServiceProtocol,
+  ) {}
 
   // ✅ CRIAR PROFISSIONAL (alinhado ao CreateProfessionalDto)
   async create(createProfessionalDto: CreateProfessionalDto) {
@@ -80,27 +89,33 @@ export class ProfessionalService {
   }
 
   async search(subscriber_id: number, term?: string) {
-    console.log('📥 [ProfessionalService.search] subscriber_id:', subscriber_id);
-    console.log('📥 [ProfessionalService.search] term:', term);
-
     try {
-
-
+      const searchTerm = term?.trim();
       const where: Prisma.professionalWhereInput = {
         subscriber_id,
         deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
-          { name_normalized: { contains: term, mode: Prisma.QueryMode.insensitive } },
-          { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
-          { email: { contains: term, mode: Prisma.QueryMode.insensitive } },
-          { cargo: { contains: term, mode: Prisma.QueryMode.insensitive } },
-        ],
       };
 
-      console.log('🔍 Prisma where:', JSON.stringify(where, null, 2));
+      if (searchTerm) {
+        where.OR = [
+          { name: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } },
+          {
+            name_normalized: {
+              contains: searchTerm,
+              mode: Prisma.QueryMode.insensitive,
+            },
+          },
+          { cpf: { contains: searchTerm, mode: Prisma.QueryMode.insensitive } },
+          {
+            email: { contains: searchTerm, mode: Prisma.QueryMode.insensitive },
+          },
+          {
+            cargo: { contains: searchTerm, mode: Prisma.QueryMode.insensitive },
+          },
+        ];
+      }
 
-      const results = await this.prisma.professional.findMany({
+      return await this.prisma.professional.findMany({
         where,
         take: 10,
         skip: 0,
@@ -113,15 +128,8 @@ export class ProfessionalService {
           regulations_printed: true,
         },
       });
-
-      console.log(`✅ ${results.length} profissionais encontrados`);
-      return results;
     } catch (error) {
-      console.error('❌ Erro detalhado no ProfessionalService.search:');
-      console.error('Mensagem:', error.message);
-      console.error('Stack:', error.stack);
-      console.error('Detalhes Prisma:', error);
-      console.error('❌ Erro no ProfessionalService.search:', error);
+      this.logger.error('Error searching professionals', error);
       throw new HttpException(
         { message: 'Erro ao buscar profissionais', detail: error.message },
         HttpStatus.INTERNAL_SERVER_ERROR,

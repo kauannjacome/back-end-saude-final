@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -12,39 +13,34 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import * as path from 'path';
-import { TipoArquivo } from './dto/create-upload.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { TipoArquivo } from './dto/create-upload.dto';
 
 @Injectable()
 export class UploadService {
+  private readonly logger = new Logger(UploadService.name);
   private readonly s3Client: S3Client;
   private readonly bucketName: string;
-  private readonly imageBucket: string;  // bucket de imagens
+  private readonly imageBucket: string;
   private readonly region: string;
-  constructor(private readonly prisma: PrismaService) {
-    // 🔍 Logs de inicialização
-    console.log('🟢 Iniciando UploadService...');
-    console.log('🔧 Lendo variáveis de ambiente:');
-    console.log('  AWS_REGION:', process.env.AWS_REGION);
-    console.log('  S3_BUCKET:', process.env.S3_BUCKET);
-    console.log('  AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? '[OK]' : '[FALTANDO]');
-    console.log('  AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? '[OK]' : '[FALTANDO]');
 
+  constructor(private readonly prisma: PrismaService) {
     this.region = process.env.AWS_REGION || 'us-east-1';
     this.bucketName = process.env.S3_BUCKET as string;
     this.imageBucket = process.env.IMAGE_BUCKET as string;
+
     if (!this.bucketName) {
-      throw new Error('❌ S3_BUCKET não está definido nas variáveis de ambiente!');
+      throw new Error('S3_BUCKET não está definido nas variáveis de ambiente');
     }
 
     if (!this.imageBucket) {
-      throw new Error('❌ IMAGE_BUCKET não está definido no .env');
-    }
-    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-      throw new Error('❌ Credenciais AWS não configuradas corretamente no .env');
+      throw new Error('IMAGE_BUCKET não está definido no .env');
     }
 
-    // ✅ Configuração com endpoint regional forçado
+    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+      throw new Error('Credenciais AWS não configuradas corretamente no .env');
+    }
+
     const endpoint = `https://s3.${this.region}.amazonaws.com`;
 
     this.s3Client = new S3Client({
@@ -57,26 +53,17 @@ export class UploadService {
       },
     });
 
-    console.log('✅ S3 Client configurado com sucesso:');
-    console.log('  Região:', this.region);
-    console.log('  Bucket:', this.bucketName);
-    console.log('  Bucket imagem:', this.imageBucket);
-    console.log('  Endpoint:', endpoint);
+    this.logger.log('S3 Client configurado com sucesso');
+    this.logger.debug(`Region: ${this.region}, Bucket: ${this.bucketName}`);
   }
 
   /**
    * Upload genérico de arquivo para o S3
    */
   async uploadFile(file: Express.Multer.File, folder: string) {
-    console.log('📤 Iniciando upload genérico...');
-    console.log('  Nome original:', file.originalname);
-    console.log('  Pasta destino:', folder);
-
     try {
       const fileExt = path.extname(file.originalname).toLowerCase();
       const key = `${folder}/${randomUUID()}${fileExt}`;
-
-      console.log('🗝️  Key gerada:', key);
 
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -88,8 +75,7 @@ export class UploadService {
       await this.s3Client.send(command);
 
       const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
-      console.log('✅ Upload concluído com sucesso!');
-      console.log('  URL:', url);
+      this.logger.log(`Upload concluído: ${file.originalname} -> ${key}`);
 
       return {
         message: 'Upload realizado com sucesso!',
@@ -97,12 +83,7 @@ export class UploadService {
         url,
       };
     } catch (error) {
-      console.error('❌ Erro detalhado no upload para o S3:');
-      console.error('  Código:', error?.Code || error?.name);
-      console.error('  Mensagem:', error?.message);
-      console.error('  Endpoint:', error?.Endpoint);
-      console.error('  Região retornada:', error?.$response?.headers?.['x-amz-bucket-region']);
-      console.error('  Stack:', error?.stack);
+      this.logger.error('Erro no upload para o S3', error);
 
       throw new InternalServerErrorException(
         'Falha ao enviar o arquivo para o S3. Tente novamente mais tarde.',

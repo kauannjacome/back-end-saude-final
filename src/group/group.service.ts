@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 
 @Injectable()
 export class GroupService {
-  constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(GroupService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createGroupDto: CreateGroupDto) {
     return this.prisma.group.create({
@@ -13,19 +15,29 @@ export class GroupService {
     });
   }
 
-  async search(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
+  async search(subscriber_id: number, term?: string) {
+    const searchTerm = term?.trim();
+    const whereClause: {
+      subscriber_id: number;
+      deleted_at: null;
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
 
     return this.prisma.group.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { description: { contains: term, mode: 'insensitive' } },
-        ],
-      },
+      where: whereClause,
       include: {
         cares: { select: { name: true } },
       },
@@ -35,19 +47,29 @@ export class GroupService {
     });
   }
 
-    async findMinimal(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
+  async findMinimal(subscriber_id: number, term?: string) {
+    const searchTerm = term?.trim();
+    const whereClause: {
+      subscriber_id: number;
+      deleted_at: null;
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
 
     return this.prisma.group.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { description: { contains: term, mode: 'insensitive' } },
-        ],
-      },
+      where: whereClause,
       include: {
         cares: { select: { name: true } },
       },
@@ -73,7 +95,9 @@ export class GroupService {
       include: { cares: true },
     });
 
-    if (!group) throw new NotFoundException(`Group #${id} not found`);
+    if (!group) {
+      throw new NotFoundException(`Group with ID ${id} not found`);
+    }
     return group;
   }
 

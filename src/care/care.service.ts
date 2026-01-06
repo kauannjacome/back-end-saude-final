@@ -1,34 +1,42 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCareDto } from './dto/create-care.dto';
 import { UpdateCareDto } from './dto/update-care.dto';
-import { Prisma } from '@prisma/client';
 import { normalizeText } from '../common/utils/normalize-text';
 
 @Injectable()
 export class CareService {
-  constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(CareService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Cria um novo registro de cuidado (care)
    */
   async create(createCareDto: CreateCareDto) {
-    console.log(createCareDto)
     try {
       return await this.prisma.care.create({
         data: {
           ...createCareDto,
-          subscriber_id: 1,
           name_normalized: normalizeText(createCareDto.name),
-        }
+        },
       });
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
-        throw new BadRequestException('Chave estrangeira inválida (ex: subscriber_id, group_id, etc.)');
+        throw new BadRequestException(
+          'Chave estrangeira inválida (ex: subscriber_id, group_id, etc.)',
+        );
       }
+      this.logger.error('Error creating care', error);
       throw error;
     }
   }
@@ -48,19 +56,31 @@ export class CareService {
     });
   }
 
-  async search(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
+  async search(subscriber_id: number, term?: string) {
+    const searchTerm = term?.trim();
+    const whereClause: {
+      subscriber_id: number;
+      deleted_at: null;
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        name_normalized?: { contains: string; mode: 'insensitive' };
+        acronym?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { name_normalized: { contains: searchTerm, mode: 'insensitive' } },
+        { acronym: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
+
     return this.prisma.care.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },   // ✅ ignora maiúsculas/minúsculas
-          { name_normalized: { contains: term, mode: 'insensitive' } }, 
-          { acronym: { contains: term, mode: 'insensitive' } } // ✅ idem
-        ],
-      },
+      where: whereClause,
       take: 10,
       skip: 0,
       orderBy: { name: 'asc' },

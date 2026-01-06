@@ -41,25 +41,7 @@ async function main() {
   // ===========================
   // UNIDADES
   // ===========================
-  const unit1 = await prisma.unit.upsert({
-    where: { uuid: '00000000-0000-0000-0000-000000000001' },
-    update: {},
-    create: {
-      uuid: '00000000-0000-0000-0000-000000000001',
-      name: 'UBS Central',
-      subscriber_id: subscriber1.id,
-    },
-  })
 
-  const unit2 = await prisma.unit.upsert({
-    where: { uuid: '00000000-0000-0000-0000-000000000002' },
-    update: {},
-    create: {
-      uuid: '00000000-0000-0000-0000-000000000002',
-      name: 'Hospital Municipal Norte',
-      subscriber_id: subscriber1.id,
-    },
-  })
 
   // ===========================
   // PROFISSIONAIS
@@ -85,26 +67,7 @@ async function main() {
     },
   })
 
-  const prof2 = await prisma.professional.upsert({
-    where: {
-      subscriber_id_cpf: {
-        subscriber_id: subscriber1.id,
-        cpf: '22222222222',
-      },
-    },
-    update: {},
-    create: {
-      subscriber_id: subscriber1.id,
-      cpf: '22222222222',
-      name: 'Enf. Maria Santos',
-      cargo: 'Enfermeira',
-      sex: sex.feminino,
-      email: 'maria.santos@exemplo.gov.br',
-      role: role.usuario,
-      password_hash: 'hashed_password_user',
-      accepted_terms: true,
-    },
-  })
+
 
   // ===========================
   // PACIENTES
@@ -129,25 +92,6 @@ async function main() {
     },
   })
 
-  const pac2 = await prisma.patient.upsert({
-    where: {
-      subscriber_id_cpf: {
-        subscriber_id: subscriber1.id,
-        cpf: '44444444444',
-      },
-    },
-    update: {},
-    create: {
-      subscriber_id: subscriber1.id,
-      cpf: '44444444444',
-      full_name: 'Ana Souza',
-      gender: 'Feminino',
-      race: 'Branca',
-      birth_date: new Date('1992-07-21'),
-      city: 'São Paulo',
-      state: 'SP',
-    },
-  })
 
   // ===========================
   // GRUPOS / SUBGRUPOS
@@ -163,16 +107,7 @@ async function main() {
     },
   })
 
-  const subGroup1 = await prisma.folder.upsert({
-    where: { uuid: '00000000-0000-0000-0000-000000000011' },
-    update: {},
-    create: {
-      uuid: '00000000-0000-0000-0000-000000000011',
-      subscriber_id: subscriber1.id,
-      name: 'Subgrupo Hematologia',
-      description: 'Exames hematológicos',
-    },
-  })
+
 
   // ===========================
   // CUIDADOS
@@ -197,25 +132,7 @@ async function main() {
     },
   })
 
-  const care2 = await prisma.care.upsert({
-    where: { uuid: '00000000-0000-0000-0000-000000000022' },
-    update: {},
-    create: {
-      uuid: '00000000-0000-0000-0000-000000000022',
-      subscriber_id: subscriber1.id,
-      name: 'Glicemia em Jejum',
-      acronym: 'GLICJ',
-      description: 'Exame de glicose no sangue',
-      status: status.recebido,
-      resource: resource_origin.municipal,
-      unit_measure: unit_measure.un,
-      priority: priority.urgencia,
-      value: 15.0,
-      amount: 1,
-      group_id: group1.id,
-      professional_id: prof2.id,
-    },
-  })
+
 
   // ===========================
   // PASTA

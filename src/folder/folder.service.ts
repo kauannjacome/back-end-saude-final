@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
@@ -6,38 +6,50 @@ import { folderPdf } from './pdf/folder-pdf';
 
 @Injectable()
 export class FolderService {
-  constructor(private prisma: PrismaService) { }
+  private readonly logger = new Logger(FolderService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createFolderDto: CreateFolderDto) {
-    const subscriberMockId = 1;
     return this.prisma.folder.create({
       data: {
         ...createFolderDto,
-        subscriber_id: subscriberMockId,
-        start_date: createFolderDto.start_date ? new Date(createFolderDto.start_date) : null,
-        end_date: createFolderDto.end_date ? new Date(createFolderDto.end_date) : null,
+        start_date: createFolderDto.start_date
+          ? new Date(createFolderDto.start_date)
+          : null,
+        end_date: createFolderDto.end_date
+          ? new Date(createFolderDto.end_date)
+          : null,
       },
     });
   }
 
-  async search(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
+  async search(subscriber_id: number, term?: string) {
+    const searchTerm = term?.trim();
+    const whereClause: {
+      subscriber_id: number;
+      deleted_at: null;
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (searchTerm) {
+      whereClause.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
 
     return this.prisma.folder.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { description: { contains: term, mode: 'insensitive' } },
-        ],
-      },
+      where: whereClause,
       include: {
-
         regulations: true,
         responsible: true,
-
       },
       take: 10,
       skip: 0,
@@ -50,7 +62,6 @@ export class FolderService {
     return this.prisma.folder.findMany({
       where: { subscriber_id, deleted_at: null },
       include: {
-
         regulations: true,
         responsible: true,
       },
@@ -131,25 +142,35 @@ export class FolderService {
   }
 
   async folderPdfService(id: number) {
-
-
     const folder = await this.prisma.folder.findUnique({
       where: { id },
-      include: { regulations: true, responsible: true,subscriber:true },
+      include: {
+        regulations: true,
+        responsible: true,
+        subscriber: true,
+      },
     });
 
-    // const pdfBuffer = await generateRegulationPdf(regulation, copies);
+    if (!folder) {
+      throw new NotFoundException(`Folder with ID ${id} not found`);
+    }
+
     const pdfBuffer = await folderPdf(folder);
-    return pdfBuffer; // você pode retornar direto ou salvar num arquivo temporário
+    return pdfBuffer;
   }
 
   async findOne(id: number) {
     const folder = await this.prisma.folder.findUnique({
       where: { id },
-      include: { regulations: true, responsible: true, },
+      include: {
+        regulations: true,
+        responsible: true,
+      },
     });
 
-    if (!folder) throw new NotFoundException(`Folder #${id} not found`);
+    if (!folder) {
+      throw new NotFoundException(`Folder with ID ${id} not found`);
+    }
     return folder;
   }
 

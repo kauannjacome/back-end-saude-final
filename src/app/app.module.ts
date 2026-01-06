@@ -1,43 +1,42 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from '../auth/auth.module';
 import { AuditLogModule } from '../audit-log/audit-log.module';
 import { CareModule } from '../care/care.module';
+import { DeclarationModule } from '../declaration/declaration.module';
 import { FolderModule } from '../folder/folder.module';
 import { GroupModule } from '../group/group.module';
 import { PatientModule } from '../patient/patient.module';
 import { ProfessionalModule } from '../professional/professional.module';
 import { RegulationModule } from '../regulation/regulation.module';
+import { ReportModule } from '../report/report.module';
+import { SeedsModule } from '../seeds/seeds.module';
 import { SubscriberModule } from '../subscriber/subscriber.module';
 import { SupplierModule } from '../supplier/supplier.module';
 import { UnitModule } from '../unit/unit.module';
 import { UploadModule } from '../upload/upload.module';
-import { ReportModule } from '../report/report.module';
-import { DeclarationModule } from '../declaration/declaration.module';
-import { SeedsModule } from '../seeds/seeds.module';
-import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }),
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    AuthModule,
     AuditLogModule,
     CareModule,
+    DeclarationModule,
     FolderModule,
     GroupModule,
     PatientModule,
     ProfessionalModule,
     RegulationModule,
+    ReportModule,
+    SeedsModule,
     SubscriberModule,
     SupplierModule,
     UnitModule,
     UploadModule,
-    ReportModule,
-    DeclarationModule,
-    SeedsModule,
-    AuthModule
-
-
-   ],
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

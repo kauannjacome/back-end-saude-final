@@ -1,41 +1,65 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { UnitService } from './unit.service';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
 
 @Controller('unit')
 export class UnitController {
-  constructor(private readonly unitService: UnitService) { }
+  constructor(private readonly unitService: UnitService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   create(@Body() createUnitDto: CreateUnitDto) {
     return this.unitService.create(createUnitDto);
   }
-  // 🔍 Endpoint de busca
+
   @Get('search')
   search(
-    @Query('term') term: string,
+    @Query('subscriber_id', ParseIntPipe) subscriber_id: number,
+    @Query('term') term?: string,
   ) {
-    return this.unitService.search(Number(1), term);
+    return this.unitService.search(subscriber_id, term);
   }
-
 
   @Get()
-  findAll(@Query('subscriber_id') subscriber_id: number) {
-    return this.unitService.findAll(Number(subscriber_id));
+  findAll(
+    @Query('subscriber_id', new ParseIntPipe({ optional: true }))
+    subscriber_id?: number,
+  ) {
+    if (!subscriber_id) {
+      throw new Error('subscriber_id is required');
+    }
+    return this.unitService.findAll(subscriber_id);
   }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.unitService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.unitService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUnitDto: UpdateUnitDto) {
-    return this.unitService.update(+id, updateUnitDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUnitDto: UpdateUnitDto,
+  ) {
+    return this.unitService.update(id, updateUnitDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.unitService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.unitService.remove(id);
   }
 }

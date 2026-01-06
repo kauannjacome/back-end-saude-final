@@ -5,7 +5,7 @@ import { UpdateAuditLogDto } from './dto/update-audit-log.dto';
 @Injectable()
 export class AuditLogService {
   create(createAuditLogDto: CreateAuditLogDto) {
-    return 'This action adds a new auditLog';
+    return `This action adds a new auditLog ${createAuditLogDto}`;
   }
 
   findAll() {
@@ -17,7 +17,7 @@ export class AuditLogService {
   }
 
   update(id: number, updateAuditLogDto: UpdateAuditLogDto) {
-    return `This action updates a #${id} auditLog`;
+    return `This action updates a #${id} auditLog ${updateAuditLogDto}`;
   }
 
   remove(id: number) {
