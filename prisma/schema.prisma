@@ -360,6 +360,7 @@ enum sex {
 
 enum role {
   admin
+  admin_local
   usuario
 }
 
