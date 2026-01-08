@@ -27,7 +27,7 @@ export class GroupController {
 
   @Get()
   findAll(@Query('subscriber_id') subscriber_id: number) {
-    return this.groupService.findAll(Number(subscriber_id));
+    return this.groupService.findAll(Number(1));
   }
 
   @Get(':id')
