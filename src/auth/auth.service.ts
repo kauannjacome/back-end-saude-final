@@ -75,10 +75,12 @@ export class AuthService {
       id: professional.id,
       name: professional.name,
       email: professional.email,
-      nome_sub:subscriber?.name,
       role: professional.role,
-      play_sub:subscriber?.payment,
-      token:token
+      nome_sub: subscriber?.name,
+      pay_sub: subscriber?.payment,
+
+
+      token: token
 
     }
 

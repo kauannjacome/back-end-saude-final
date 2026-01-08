@@ -25,7 +25,8 @@ model subscriber {
   state_logo          String?
   municipal_logo      String?
   administration_logo String?
-  payment             Boolean        @default(false)
+  payment             Boolean        @default(true)
+  is_blocked          Boolean        @default(false)
   created_at          DateTime       @default(now())
   updated_at          DateTime       @updatedAt
   deleted_at          DateTime?

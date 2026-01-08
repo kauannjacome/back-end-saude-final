@@ -40,13 +40,15 @@ export class CareService {
     return this.prisma.care.findMany({
       where: { deleted_at: null },
       orderBy: { created_at: 'desc' },
-      include: {
-        subscriber: { select: { name: true } },
-        group: { select: { name: true } },
-        professional: { select: { name: true } },
+      select: {
+        id: true,
+        name: true,
+        acronym:true,
+        description: true,
       },
     });
   }
+
 
   async search(subscriber_id: number, term: string) {
     console.log('📥 subscriber_id:', subscriber_id);
@@ -57,7 +59,7 @@ export class CareService {
         deleted_at: null,
         OR: [
           { name: { contains: term, mode: 'insensitive' } },   // ✅ ignora maiúsculas/minúsculas
-          { name_normalized: { contains: term, mode: 'insensitive' } }, 
+          { name_normalized: { contains: term, mode: 'insensitive' } },
           { acronym: { contains: term, mode: 'insensitive' } } // ✅ idem
         ],
       },
@@ -102,12 +104,12 @@ export class CareService {
 
     return this.prisma.care.update({
       where: { id },
-     data: {
-      ...updateCareDto,
-      ...(updateCareDto.name && {
-        name_normalized: normalizeText(updateCareDto.name),
-      }),
-    },
+      data: {
+        ...updateCareDto,
+        ...(updateCareDto.name && {
+          name_normalized: normalizeText(updateCareDto.name),
+        }),
+      },
     });
   }
 
