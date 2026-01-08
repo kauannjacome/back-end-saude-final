@@ -44,7 +44,6 @@ export class CareService {
         id: true,
         name: true,
         acronym:true,
-        description: true,
       },
     });
   }
