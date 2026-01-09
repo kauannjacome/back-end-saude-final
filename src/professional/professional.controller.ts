@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { ProfessionalService } from './professional.service';
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
+import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
 
 @Controller('professional')
 export class ProfessionalController {
@@ -12,6 +13,7 @@ export class ProfessionalController {
     return this.professionalService.create(createProfessionalDto);
   }
 
+  @UseGuards(AuthTokenGuard)
   @Get('search/simple')
   searchSimple(@Query('term') term: string) {
     return this.professionalService.searchSimple(1, term);
@@ -29,8 +31,8 @@ export class ProfessionalController {
 
 
   @Get()
-  findAll(@Query('subscriber_id') subscriber_id: number) {
-    return this.professionalService.findAll(Number(subscriber_id));
+  findAll() {
+    return this.professionalService.findAll(Number(1));
   }
 
   @Get(':id')
