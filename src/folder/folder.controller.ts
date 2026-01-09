@@ -1,9 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res } from '@nestjs/common';
-import type { Response } from 'express'; 
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { FolderService } from './folder.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
+import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
+import { TokenPayloadParam } from '../auth/param/token-payload.param';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
+@UseGuards(AuthTokenGuard)
 @Controller('folder')
 export class FolderController {
   constructor(private readonly folderService: FolderService) { }
@@ -16,14 +20,14 @@ export class FolderController {
 
   // 🔍 Endpoint de busca
   @Get('search')
-  search(@Query('term') term: string) {
-    return this.folderService.search(Number(1), term);
+  search(@Query('term') term: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.folderService.search(Number(TokenPayload.sub_id), term);
   }
 
 
   @Get()
-  findAll(@Query('subscriber_id') subscriber_id: number) {
-    return this.folderService.findAll(Number(subscriber_id));
+  findAll(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.folderService.findAll(Number(TokenPayload.sub_id));
   }
 
   @Get(':id')

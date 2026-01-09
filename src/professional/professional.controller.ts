@@ -6,6 +6,7 @@ import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
 import { TokenPayloadParam } from '../auth/param/token-payload.param';
 import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
+@UseGuards(AuthTokenGuard)
 @Controller('professional')
 export class ProfessionalController {
   constructor(private readonly professionalService: ProfessionalService) { }
@@ -15,7 +16,6 @@ export class ProfessionalController {
     return this.professionalService.create(createProfessionalDto);
   }
 
-  @UseGuards(AuthTokenGuard)
   @Get('search/simple')
   searchSimple(
     @Query('term') term: string,
@@ -26,17 +26,17 @@ export class ProfessionalController {
 
   @Get('search')
   search(
-
     @Query('term') term: string,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
     console.log('🟢 [GET /professional/search]', { term });
-    return this.professionalService.search(Number(1), term);
+    return this.professionalService.search(Number(TokenPayload.sub_id), term);
   }
 
 
   @Get()
-  findAll() {
-    return this.professionalService.findAll(Number(1));
+  findAll(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.professionalService.findAll(Number(TokenPayload.sub_id));
   }
 
   @Get(':id')

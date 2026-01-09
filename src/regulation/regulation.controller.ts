@@ -8,13 +8,18 @@ import {
   Delete,
   Query,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express'; // ✅ import type
 import { RegulationService } from './regulation.service';
 import { CreateRegulationDto } from './dto/create-regulation.dto';
 import { UpdateRegulationDto } from './dto/update-regulation.dto';
 import { UpdateStatusRegulationDto } from './dto/update-status-regulation.dto';
+import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
+import { TokenPayloadParam } from '../auth/param/token-payload.param';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
+@UseGuards(AuthTokenGuard)
 @Controller('regulation')
 export class RegulationController {
   constructor(private readonly regulationService: RegulationService) { }
@@ -27,8 +32,8 @@ export class RegulationController {
 
   // 🔍 Endpoint de busca
   @Get('search')
-  search(@Query('term') term: string) {
-    return this.regulationService.search(Number(1), term);
+  search(@Query('term') term: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.regulationService.search(Number(TokenPayload.sub_id), term);
   }
   @Get('by-patient/:patient_id')
   findByPatient(@Param('patient_id') patient_id: string) {
@@ -37,8 +42,8 @@ export class RegulationController {
 
 
   @Get()
-  findAll(@Query('subscriber_id') subscriber_id: number) {
-    return this.regulationService.findAll(Number(subscriber_id));
+  findAll(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.regulationService.findAll(Number(TokenPayload.sub_id));
   }
 
   @Get('mobile/person/:uuid')

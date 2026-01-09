@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, UseGuards } from '@nestjs/common';
 import { DeclarationService } from './declaration.service';
 import type { Response } from 'express';
+import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
 
+@UseGuards(AuthTokenGuard)
 @Controller('declaration')
 export class DeclarationController {
   constructor(private readonly declarationService: DeclarationService) { }

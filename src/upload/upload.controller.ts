@@ -7,16 +7,21 @@ import {
   Get,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
 import { TipoArquivo } from './dto/create-upload.dto';
 import { UpdateUploadDto } from './dto/update-upload.dto';
 import { getDocumentUrl } from './dto/get-document-url.dto';
+import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
+import { TokenPayloadParam } from '../auth/param/token-payload.param';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
+@UseGuards(AuthTokenGuard)
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+  constructor(private readonly uploadService: UploadService) { }
 
   /**
    * Upload genérico de arquivos
@@ -31,10 +36,11 @@ export class UploadController {
     return await this.uploadService.uploadFile(file, 'certificados');
   }
 
-    @Post('/requirement')
+  @Post('/requirement')
   @UseInterceptors(FileInterceptor('file'))
   async uploadRequirement(
     @UploadedFile() file: Express.Multer.File,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
 
   ) {
     console.log("chegou aqui")
@@ -42,9 +48,9 @@ export class UploadController {
 
 
     console.log('Arquivo recebido:', file.originalname);
-;
+    ;
 
-    return await this.uploadService.uploadRequirement(file, 1);
+    return await this.uploadService.uploadRequirement(file, Number(TokenPayload.sub_id));
   }
 
 
@@ -83,7 +89,7 @@ export class UploadController {
     return await this.uploadService.getDownloadUrl(key);
   }
 
-    @Get('document')
+  @Get('document')
   async getDocumentUrl(@Query() query: getDocumentUrl) {
     const { type, id } = query;
     console.log(query)

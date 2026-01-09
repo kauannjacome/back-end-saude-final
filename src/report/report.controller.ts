@@ -1,9 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ReportService } from './report.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { ReportFilterPriorityStatusCareDto } from './dto/report-filter-priority-status-care.dto';
+import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
+import { TokenPayloadParam } from '../auth/param/token-payload.param';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
+@UseGuards(AuthTokenGuard)
 @Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) { }
@@ -13,8 +17,9 @@ export class ReportController {
     return this.reportService.create(createReportDto);
   }
   @Post("generate")
-  async generateReport(@Body() filters: ReportFilterPriorityStatusCareDto) {
+  async generateReport(@Body() filters: ReportFilterPriorityStatusCareDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     console.log("chegou aqui")
+    filters.subscriber_id = Number(TokenPayload.sub_id)
     return this.reportService.getRegulationReport(filters);
   }
 

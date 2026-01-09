@@ -1,8 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { UnitService } from './unit.service';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
+import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
+import { TokenPayloadParam } from '../auth/param/token-payload.param';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
+@UseGuards(AuthTokenGuard)
 @Controller('unit')
 export class UnitController {
   constructor(private readonly unitService: UnitService) { }
@@ -15,14 +19,15 @@ export class UnitController {
   @Get('search')
   search(
     @Query('term') term: string,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    return this.unitService.search(Number(1), term);
+    return this.unitService.search(Number(TokenPayload.sub_id), term);
   }
 
 
   @Get()
-  findAll(@Query('subscriber_id') subscriber_id: number) {
-    return this.unitService.findAll(Number(subscriber_id));
+  findAll(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.unitService.findAll(Number(TokenPayload.sub_id));
   }
   @Get(':id')
   findOne(@Param('id') id: string) {

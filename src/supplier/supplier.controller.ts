@@ -1,8 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { SupplierService } from './supplier.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
+import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
+import { TokenPayloadParam } from '../auth/param/token-payload.param';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
+@UseGuards(AuthTokenGuard)
 @Controller('supplier')
 export class SupplierController {
   constructor(private readonly supplierService: SupplierService) { }
@@ -16,20 +20,22 @@ export class SupplierController {
   @Get('search')
   search(
     @Query('term') term: string,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    return this.supplierService.search(Number(1), term);
+    return this.supplierService.search(Number(TokenPayload.sub_id), term);
   }
 
   @Get('search/simples')
   searchSimples(
     @Query('term') term: string,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    return this.supplierService.searchSimples(Number(1), term);
+    return this.supplierService.searchSimples(Number(TokenPayload.sub_id), term);
   }
 
   @Get()
-  findAll(@Query('subscriber_id') subscriber_id: number) {
-    return this.supplierService.findAll(Number(subscriber_id));
+  findAll(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.supplierService.findAll(Number(TokenPayload.sub_id));
   }
 
   @Get(':id')

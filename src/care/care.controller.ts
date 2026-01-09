@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { CareService } from './care.service';
 import { CreateCareDto } from './dto/create-care.dto';
 import { UpdateCareDto } from './dto/update-care.dto';
+import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
+import { TokenPayloadParam } from '../auth/param/token-payload.param';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
+@UseGuards(AuthTokenGuard)
 @Controller('care')
 export class CareController {
-  constructor(private readonly careService: CareService) {}
+  constructor(private readonly careService: CareService) { }
 
   @Post()
   create(@Body() createCareDto: CreateCareDto) {
@@ -16,9 +20,10 @@ export class CareController {
   @Get('search')
   search(
     @Query('term') term: string,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
     console.log(term)
-    return this.careService.search(1, term);
+    return this.careService.search(Number(TokenPayload.sub_id), term);
   }
 
   @Get()
