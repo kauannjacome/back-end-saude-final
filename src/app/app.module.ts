@@ -17,9 +17,41 @@ import { ReportModule } from '../report/report.module';
 import { DeclarationModule } from '../declaration/declaration.module';
 import { SeedsModule } from '../seeds/seeds.module';
 import { AuthModule } from '../auth/auth.module';
+import { HealthModule } from '../health/health.module';
+import { LoggerModule } from 'nestjs-pino';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { envSchema } from '../common/env/env';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }),
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: (env) => {
+        const parsed = envSchema.safeParse(env);
+        if (parsed.success === false) {
+          console.error('❌ Mismatched Environment Variables:', parsed.error.format());
+          throw new Error('Invalid environment variables');
+        }
+        return parsed.data;
+      },
+    }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        transport: process.env.NODE_ENV === 'development'
+          ? {
+            target: 'pino-pretty',
+            options: {
+              singleLine: true,
+            },
+          }
+          : undefined,
+      },
+    }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100, // 100 requests per minute
+    }]),
     AuditLogModule,
     CareModule,
     FolderModule,
@@ -34,11 +66,16 @@ import { AuthModule } from '../auth/auth.module';
     ReportModule,
     DeclarationModule,
     SeedsModule,
-    AuthModule
-
-
-   ],
+    AuthModule,
+    HealthModule,
+  ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule { }
