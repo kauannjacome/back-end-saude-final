@@ -3,6 +3,8 @@ import { ProfessionalService } from './professional.service';
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
+import { TokenPayloadParam } from '../auth/param/token-payload.param';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
 @Controller('professional')
 export class ProfessionalController {
@@ -15,8 +17,10 @@ export class ProfessionalController {
 
   @UseGuards(AuthTokenGuard)
   @Get('search/simple')
-  searchSimple(@Query('term') term: string) {
-    return this.professionalService.searchSimple(1, term);
+  searchSimple(
+    @Query('term') term: string,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.professionalService.searchSimple(Number(TokenPayload.sub_id), term);
   }
 
 
