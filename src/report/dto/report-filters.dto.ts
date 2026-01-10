@@ -1,0 +1,70 @@
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsArray } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export enum PriorityEnum {
+  eletivo = 'eletivo',
+  urgencia = 'urgencia',
+  emergencia = 'emergencia',
+}
+
+export enum StatusEnum {
+  recebido = 'recebido',
+  em_andamento = 'em_andamento',
+  aprovado = 'aprovado',
+  autorizado = 'autorizado',
+  reprovado = 'reprovado',
+  removido = 'removido',
+}
+
+export class ReportFilterDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  subscriber_id?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  professional_id?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  unit_id?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  care_id?: number;
+
+  @IsOptional()
+  @IsEnum(StatusEnum)
+  status?: StatusEnum;
+
+  @IsOptional()
+  @IsEnum(PriorityEnum)
+  priority?: PriorityEnum;
+
+  @IsOptional()
+  @IsDateString()
+  start_date?: string;
+
+  @IsOptional()
+  @IsDateString()
+  end_date?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  supplier_id?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  ids?: number[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  take?: number;
+}
