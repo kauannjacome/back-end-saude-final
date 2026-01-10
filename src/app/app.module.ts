@@ -22,6 +22,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { envSchema } from '../common/env/env';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { envSchema } from '../common/env/env';
     SeedsModule,
     AuthModule,
     HealthModule,
+    EmailModule
   ],
   controllers: [AppController],
   providers: [

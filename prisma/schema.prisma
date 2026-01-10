@@ -206,6 +206,8 @@ model professional {
   accepted_terms         Boolean      @default(false)
   accepted_terms_at      DateTime?
   accepted_terms_version String?
+  reset_token            String?
+  reset_token_expiry     DateTime?
   created_at             DateTime     @default(now())
   updated_at             DateTime     @updatedAt
   deleted_at             DateTime?

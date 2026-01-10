@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { HashingServiceProtocol } from './hash/hashing.service';
+import { EmailModule } from 'src/email/email.module';
 import { BcryptService } from './hash/bcrypt.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -14,7 +15,8 @@ import { JwtModule } from '@nestjs/jwt';
   imports: [
     PrismaModule,
     ConfigModule.forFeature(jwtConfig),
-    JwtModule.registerAsync(jwtConfig.asProvider())
+    JwtModule.registerAsync(jwtConfig.asProvider()),
+    EmailModule
   ],
   providers: [
     {

@@ -5,6 +5,7 @@ import { HashingServiceProtocol } from './hash/hashing.service';
 import jwtConfig from './config/jwt.config';
 import type { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { EmailService } from 'src/email/email.service';
 
 
 @Injectable()
@@ -16,7 +17,8 @@ export class AuthService {
 
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly emailService: EmailService
   ) {
     console.log("--------------------------")
     console.log(jwtConfiguration)
@@ -87,5 +89,62 @@ export class AuthService {
 
   }
 
+  async forgotPassword(email: string) {
+    const professional = await this.prisma.professional.findFirst({
+      where: { email }
+    });
 
+    if (!professional) {
+      throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    // Gerar token (UUID simples ou aleatório forte)
+    // Como é link, usar UUID é melhor. A lib `nanoid` ou node nativo `crypto`
+    // Mas para manter simples/compatível, vamos usar um Math.random string mais longo
+    const token = Math.floor(10000000 + Math.random() * 90000000).toString(); // 8 digitos
+
+    // Expira em 1 hora
+    const expiry = new Date();
+    expiry.setHours(expiry.getHours() + 1);
+
+    await this.prisma.professional.update({
+      where: { id: professional.id },
+      data: {
+        reset_token: token,
+        reset_token_expiry: expiry
+      }
+    });
+
+    await this.emailService.sendPasswordRecovery(email, token);
+
+    return { message: 'E-mail de recuperação enviado com sucesso' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const professional = await this.prisma.professional.findFirst({
+      where: {
+        reset_token: token,
+        reset_token_expiry: {
+          gt: new Date() // Expiração maior que agora (não expirado)
+        }
+      }
+    });
+
+    if (!professional) {
+      throw new HttpException('Token inválido ou expirado', HttpStatus.BAD_REQUEST);
+    }
+
+    const passwordHash = await this.hashingService.hash(newPassword);
+
+    await this.prisma.professional.update({
+      where: { id: professional.id },
+      data: {
+        password_hash: passwordHash,
+        reset_token: null,
+        reset_token_expiry: null
+      }
+    });
+
+    return { message: 'Senha alterada com sucesso' };
+  }
 }
