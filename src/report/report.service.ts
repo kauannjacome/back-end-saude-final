@@ -12,7 +12,7 @@ export class ReportService {
 
   // --- Helpers ---
   private buildRegulationWhere(filters: ReportFilterDto) {
-    const { subscriber_id, status, care_id, priority, start_date, end_date, supplier_id, ids } = filters;
+    const { subscriber_id, status, care_id, priority, start_date, end_date, supplier_id, ids, analyzed_id, creator_id } = filters;
     const where: any = { deleted_at: null };
 
     if (subscriber_id) where.subscriber_id = subscriber_id;
@@ -27,6 +27,8 @@ export class ReportService {
     if (status) where.status = status;
     if (priority) where.priority = priority;
     if (supplier_id) where.supplier_id = supplier_id;
+    if (analyzed_id) where.analyzed_id = analyzed_id;
+    if (creator_id) where.creator_id = creator_id;
     if (care_id) where.cares = { some: { care_id } };
 
     // Filtro de Data

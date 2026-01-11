@@ -5,7 +5,8 @@ import { UpdateRegulationDto } from './dto/update-regulation.dto';
 import { generateRegulationPdf } from './pdf/divided-regulation-pdf';
 import { PageRegulationPdf } from './pdf/page-regulation-pdf';
 import { customAlphabet } from 'nanoid'
-import { status } from '@prisma/client';
+import { status, Prisma } from '@prisma/client';
+import { SearchRegulationDto } from './dto/search-regulation.dto';
 
 @Injectable()
 export class RegulationService {
@@ -60,20 +61,79 @@ export class RegulationService {
     });
   }
 
-  async search(subscriber_id: number, term: string) {
+  async search(subscriber_id: number, filters: SearchRegulationDto) {
     console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
+    console.log('📥 filters:', filters);
+
+    const where: Prisma.regulationWhereInput = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (filters.idCode) {
+      where.id_code = { contains: filters.idCode, mode: 'insensitive' };
+    }
+
+    if (filters.notes) {
+      where.notes = { contains: filters.notes, mode: 'insensitive' };
+    }
+
+    if (filters.requestingProfessional) {
+      where.requesting_professional = { contains: filters.requestingProfessional, mode: 'insensitive' };
+    }
+
+    if (filters.patientName) {
+      const normalizedName = filters.patientName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      where.patient = {
+        OR: [
+          { full_name: { contains: filters.patientName, mode: 'insensitive' } },
+          { name_normalized: { contains: normalizedName, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+
+
+    if (filters.priority) {
+      where.priority = filters.priority;
+    }
+
+    if (filters.analyzerId) {
+      where.analyzed_id = filters.analyzerId;
+    }
+
+    if (filters.creatorId) {
+      where.creator_id = filters.creatorId;
+    }
+
+    if (filters.patientId) {
+      where.patient_id = filters.patientId;
+    }
+
+    if (filters.responsibleId) {
+      where.responsible_id = filters.responsibleId;
+    }
+
+    if (filters.careIds && filters.careIds.length > 0) {
+      where.cares = {
+        some: {
+          care_id: { in: filters.careIds },
+        },
+      };
+    }
+
+    if (filters.startDate || filters.endDate) {
+      where.created_at = {};
+      if (filters.startDate) {
+        where.created_at.gte = new Date(filters.startDate);
+      }
+      if (filters.endDate) {
+        where.created_at.lte = new Date(filters.endDate);
+      }
+    }
 
     return this.prisma.regulation.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { id_code: { contains: term, mode: 'insensitive' } },
-          { notes: { contains: term, mode: 'insensitive' } },
-          { requesting_professional: { contains: term, mode: 'insensitive' } },
-        ],
-      },
+      where,
       include: {
         patient: { select: { full_name: true } },
         supplier: { select: { name: true } },

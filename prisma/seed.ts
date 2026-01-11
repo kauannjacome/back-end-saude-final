@@ -189,7 +189,7 @@ async function main() {
       status: status.aprovado,
       resource: resource_origin.municipal,
       unit_measure: unit_measure.un,
-      priority: priority.eletivo,
+
       value: 25.5,
       amount: 1,
       group_id: group1.id,
@@ -209,7 +209,7 @@ async function main() {
       status: status.recebido,
       resource: resource_origin.municipal,
       unit_measure: unit_measure.un,
-      priority: priority.urgencia,
+
       value: 15.0,
       amount: 1,
       group_id: group1.id,
@@ -229,7 +229,7 @@ async function main() {
       name: 'Registros de Hemograma',
 
       description: 'Pasta para arquivamento de hemogramas',
- 
+
       responsible_id: prof1.id,
     },
   })
@@ -387,7 +387,7 @@ async function main() {
       status: status.aprovado,
       resource: resource_origin.estadual,
       unit_measure: unit_measure.un,
-      priority: priority.urgencia,
+
       value: 40.0,
       amount: 1,
       group_id: groupRJ.id,

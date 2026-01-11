@@ -59,6 +59,16 @@ export class ReportFilterDto {
   supplier_id?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  analyzed_id?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  creator_id?: number;
+
+  @IsOptional()
   @IsArray()
   @IsInt({ each: true })
   ids?: number[];

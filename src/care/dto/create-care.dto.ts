@@ -5,7 +5,7 @@ import {
   IsEnum,
   IsInt,
 } from 'class-validator';
-import { status, resource_origin, unit_measure, priority, type_declaration } from '@prisma/client';
+import { status, resource_origin, unit_measure, type_declaration } from '@prisma/client';
 
 export class CreateCareDto {
 
@@ -32,12 +32,10 @@ export class CreateCareDto {
   @IsEnum(unit_measure)
   unit_measure: unit_measure;
 
-  @IsOptional()
-  @IsEnum(priority)
-  priority?: priority;
+
 
   @IsOptional()
-  @IsEnum(type_declaration)  
+  @IsEnum(type_declaration)
   type_declaration?: type_declaration;
 
   @IsOptional()

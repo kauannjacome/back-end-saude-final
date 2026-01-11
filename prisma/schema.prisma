@@ -73,17 +73,17 @@ model audit_log {
 }
 
 model care {
-  id               Int               @id @default(autoincrement())
-  uuid             String            @unique @default(uuid())
-  subscriber_id    Int
-  name             String
-  name_normalized  String?
-  acronym          String?
-  description      String?
-  status           status?
-  resource         resource_origin?  @default(nao_especificado)
-  unit_measure     unit_measure
-  priority         priority?
+  id              Int              @id @default(autoincrement())
+  uuid            String           @unique @default(uuid())
+  subscriber_id   Int
+  name            String
+  name_normalized String?
+  acronym         String?
+  description     String?
+  status          status?
+  resource        resource_origin? @default(nao_especificado)
+  unit_measure    unit_measure
+
   type_declaration type_declaration?
   value            Float?
   amount           Int?

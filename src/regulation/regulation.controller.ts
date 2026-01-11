@@ -15,6 +15,7 @@ import { RegulationService } from './regulation.service';
 import { CreateRegulationDto } from './dto/create-regulation.dto';
 import { UpdateRegulationDto } from './dto/update-regulation.dto';
 import { UpdateStatusRegulationDto } from './dto/update-status-regulation.dto';
+import { SearchRegulationDto } from './dto/search-regulation.dto';
 import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
 import { TokenPayloadParam } from '../auth/param/token-payload.param';
 import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
@@ -32,9 +33,10 @@ export class RegulationController {
 
   // 🔍 Endpoint de busca
   @Get('search')
-  search(@Query('term') term: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    return this.regulationService.search(Number(TokenPayload.sub_id), term);
+  search(@Query() filters: SearchRegulationDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.regulationService.search(Number(TokenPayload.sub_id), filters);
   }
+  
   @Get('by-patient/:patient_id')
   findByPatient(@Param('patient_id') patient_id: string) {
     return this.regulationService.findByPatient(Number(patient_id));
