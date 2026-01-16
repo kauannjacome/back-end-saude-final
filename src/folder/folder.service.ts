@@ -8,12 +8,11 @@ import { folderPdf } from './pdf/folder-pdf';
 export class FolderService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createFolderDto: CreateFolderDto) {
-    const subscriberMockId = 1;
+  async create(createFolderDto: CreateFolderDto, subscriber_id: number) {
     return this.prisma.folder.create({
       data: {
         ...createFolderDto,
-        subscriber_id: subscriberMockId,
+        subscriber_id: subscriber_id,
         start_date: createFolderDto.start_date ? new Date(createFolderDto.start_date) : null,
         end_date: createFolderDto.end_date ? new Date(createFolderDto.end_date) : null,
       },
@@ -135,7 +134,7 @@ export class FolderService {
 
     const folder = await this.prisma.folder.findUnique({
       where: { id },
-      include: { regulations: true, responsible: true,subscriber:true },
+      include: { regulations: true, responsible: true, subscriber: true },
     });
 
     // const pdfBuffer = await generateRegulationPdf(regulation, copies);
@@ -143,9 +142,9 @@ export class FolderService {
     return pdfBuffer; // você pode retornar direto ou salvar num arquivo temporário
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, subscriber_id: number) {
     const folder = await this.prisma.folder.findUnique({
-      where: { id },
+      where: { id, subscriber_id },
       include: { regulations: true, responsible: true, },
     });
 
@@ -153,18 +152,18 @@ export class FolderService {
     return folder;
   }
 
-  async update(id: number, updateFolderDto: UpdateFolderDto) {
-    await this.findOne(id);
+  async update(id: number, updateFolderDto: UpdateFolderDto, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.folder.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: updateFolderDto,
     });
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(id: number, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.folder.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: { deleted_at: new Date() },
     });
   }

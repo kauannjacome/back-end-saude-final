@@ -7,9 +7,12 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 export class GroupService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createGroupDto: CreateGroupDto) {
+  async create(createGroupDto: CreateGroupDto, subscriber_id: number) {
     return this.prisma.group.create({
-      data: createGroupDto,
+      data: {
+        ...createGroupDto,
+        subscriber_id: subscriber_id
+      },
     });
   }
 
@@ -74,9 +77,9 @@ export class GroupService {
   }
 
 
-  async findOne(id: number) {
+  async findOne(id: number, subscriber_id: number) {
     const group = await this.prisma.group.findUnique({
-      where: { id },
+      where: { id, subscriber_id },
       include: { cares: true },
     });
 
@@ -84,18 +87,18 @@ export class GroupService {
     return group;
   }
 
-  async update(id: number, updateGroupDto: UpdateGroupDto) {
-    await this.findOne(id);
+  async update(id: number, updateGroupDto: UpdateGroupDto, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.group.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: updateGroupDto,
     });
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(id: number, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.group.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: { deleted_at: new Date() },
     });
   }

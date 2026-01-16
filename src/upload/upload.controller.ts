@@ -8,6 +8,7 @@ import {
   Query,
   BadRequestException,
   UseGuards,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
@@ -36,22 +37,24 @@ export class UploadController {
     return await this.uploadService.uploadFile(file, 'certificados');
   }
 
-  @Post('/requirement')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadRequirement(
-    @UploadedFile() file: Express.Multer.File,
-    @TokenPayloadParam() TokenPayload: PayloadTokenDto
-
-  ) {
-    console.log("chegou aqui")
-    if (!file) throw new Error('Nenhum arquivo foi enviado.');
-
-
-    console.log('Arquivo recebido:', file.originalname);
-    ;
-
-    return await this.uploadService.uploadRequirement(file, Number(TokenPayload.sub_id));
+@Post('/requirement/:regulationId')
+@UseInterceptors(FileInterceptor('file'))
+async uploadRequirement(
+  @UploadedFile() file: Express.Multer.File,
+  @Param('regulationId') regulationId: string,
+  @TokenPayloadParam() token: PayloadTokenDto,
+) {
+  if (!file) {
+    throw new BadRequestException('Nenhum arquivo foi enviado.');
   }
+
+  return this.uploadService.uploadRequirement(
+    file,
+    Number(token.sub_id),       // userId
+    Number(regulationId),       // regulationId
+  );
+}
+
 
 
   /**

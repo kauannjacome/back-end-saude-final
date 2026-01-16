@@ -1,15 +1,81 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSubscriberDto } from './dto/create-subscriber.dto';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
+import { CreateSubscriberWithAdminDto } from './dto/create-subscriber-with-admin.dto';
+import { HashingServiceProtocol } from '../auth/hash/hashing.service';
 
 @Injectable()
 export class SubscriberService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private readonly hashingService: HashingServiceProtocol
+  ) { }
 
   async create(createSubscriberDto: CreateSubscriberDto) {
     return this.prisma.subscriber.create({
       data: createSubscriberDto,
+    });
+  }
+
+  async createWithAdmin(dto: CreateSubscriberWithAdminDto) {
+    const { subscriber, admin } = dto;
+
+    // 1. Verificar se já existe professional com esse email ou cpf (validação prévia para evitar falha na transação)
+    const existingAdmin = await this.prisma.professional.findFirst({
+      where: {
+        OR: [
+          { email: admin.email },
+          { cpf: admin.cpf }
+        ]
+      }
+    });
+
+    if (existingAdmin) {
+      throw new BadRequestException('Já existe um usuário cadastrado com este E-mail ou CPF.');
+    }
+
+    const existingSubscriber = await this.prisma.subscriber.findUnique({
+      where: { cnpj: subscriber.cnpj }
+    });
+
+    if (existingSubscriber) {
+      throw new BadRequestException('Já existe um assinante com este CNPJ.');
+    }
+
+    // 2. Transação: Criar Subscriber + Professional (Admin)
+    return this.prisma.$transaction(async (tx) => {
+      // a) Criar Assinante
+      const newSubscriber = await tx.subscriber.create({
+        data: subscriber
+      });
+
+      // b) Hash da senha
+      const passwordHash = await this.hashingService.hash(admin.password);
+
+      // c) Criar Admin
+      const newAdmin = await tx.professional.create({
+        data: {
+          name: admin.name,
+          cpf: admin.cpf,
+          email: admin.email,
+          password_hash: passwordHash,
+          role: 'admin', // Papel de Admin Local
+          subscriber_id: newSubscriber.id,
+          // Outros campos obrigatórios ou defaults
+          sex: 'nao_informado', // Default safe
+        }
+      });
+
+      return {
+        subscriber: newSubscriber,
+        admin: {
+          id: newAdmin.id,
+          name: newAdmin.name,
+          email: newAdmin.email,
+          role: newAdmin.role
+        }
+      };
     });
   }
 
@@ -38,7 +104,7 @@ export class SubscriberService {
       where: { deleted_at: null },
       orderBy: { created_at: 'desc' },
       select: {
-        id:true,
+        id: true,
         uuid: true,
         name: true,
         municipality_name: true,

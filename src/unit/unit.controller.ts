@@ -30,17 +30,17 @@ export class UnitController {
     return this.unitService.findAll(Number(TokenPayload.sub_id));
   }
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.unitService.findOne(+id);
+  findOne(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.unitService.findOne(+id, Number(TokenPayload.sub_id));
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUnitDto: UpdateUnitDto) {
-    return this.unitService.update(+id, updateUnitDto);
+  update(@Param('id') id: string, @Body() updateUnitDto: UpdateUnitDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.unitService.update(+id, updateUnitDto, Number(TokenPayload.sub_id));
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.unitService.remove(+id);
+  remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.unitService.remove(+id, Number(TokenPayload.sub_id));
   }
 }

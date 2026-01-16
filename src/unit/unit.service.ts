@@ -37,27 +37,27 @@ export class UnitService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, subscriber_id: number) {
     const unit = await this.prisma.unit.findUnique({
-      where: { id },
+      where: { id, subscriber_id },
     });
 
     if (!unit) throw new NotFoundException(`Unit #${id} not found`);
     return unit;
   }
 
-  async update(id: number, updateUnitDto: UpdateUnitDto) {
-    await this.findOne(id);
+  async update(id: number, updateUnitDto: UpdateUnitDto, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.unit.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: updateUnitDto,
     });
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(id: number, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.unit.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: { deleted_at: new Date() },
     });
   }

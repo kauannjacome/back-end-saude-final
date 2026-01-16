@@ -12,13 +12,13 @@ export class CareService {
   /**
    * Cria um novo registro de cuidado (care)
    */
-  async create(createCareDto: CreateCareDto) {
+  async create(createCareDto: CreateCareDto, subscriber_id: number) {
     console.log(createCareDto)
     try {
       return await this.prisma.care.create({
         data: {
           ...createCareDto,
-          subscriber_id: 1,
+          subscriber_id: subscriber_id,
           name_normalized: normalizeText(createCareDto.name),
         }
       });
@@ -36,14 +36,14 @@ export class CareService {
   /**
    * Retorna todos os cuidados ativos (soft delete aplicado)
    */
-  async findAll() {
+  async findAll(subscriber_id: number) {
     return this.prisma.care.findMany({
-      where: { deleted_at: null },
+      where: { subscriber_id, deleted_at: null },
       orderBy: { created_at: 'desc' },
       select: {
         id: true,
         name: true,
-        acronym:true,
+        acronym: true,
       },
     });
   }
@@ -75,9 +75,9 @@ export class CareService {
   /**
    * Retorna um único cuidado pelo ID
    */
-  async findOne(id: number) {
+  async findOne(id: number, subscriber_id: number) {
     const care = await this.prisma.care.findUnique({
-      where: { id },
+      where: { id, subscriber_id },
       include: {
         subscriber: { select: { name: true } },
         group: { select: { name: true } },
@@ -95,8 +95,8 @@ export class CareService {
   /**
    * Atualiza um cuidado existente
    */
-  async update(id: number, updateCareDto: UpdateCareDto) {
-    const care = await this.prisma.care.findUnique({ where: { id } });
+  async update(id: number, updateCareDto: UpdateCareDto, subscriber_id: number) {
+    const care = await this.prisma.care.findUnique({ where: { id, subscriber_id } });
     if (!care || care.deleted_at) {
       throw new NotFoundException(`Care #${id} não encontrado.`);
     }
@@ -115,8 +115,8 @@ export class CareService {
   /**
    * Realiza soft delete de um cuidado
    */
-  async remove(id: number) {
-    const care = await this.prisma.care.findUnique({ where: { id } });
+  async remove(id: number, subscriber_id: number) {
+    const care = await this.prisma.care.findUnique({ where: { id, subscriber_id } });
     if (!care || care.deleted_at) {
       throw new NotFoundException(`Care #${id} não encontrado.`);
     }

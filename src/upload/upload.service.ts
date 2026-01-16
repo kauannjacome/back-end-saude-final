@@ -110,68 +110,45 @@ export class UploadService {
     }
   }
 
-  async uploadRequirement(file: Express.Multer.File, regulationId: number) {
-    console.log('📤 Iniciando upload de requisito (requirement)...');
-    console.log('  Nome original:', file.originalname);
+async uploadRequirement(
+  file: Express.Multer.File,
+  userId: number,
+  regulationId: number,
+) {
+  const regulation = await this.prisma.regulation.findUnique({
+    where: { id: regulationId },
+  });
 
-    console.log('  Regulation ID:', regulationId);
-
-    try {
-      // 🔹 Verifica se o regulation existe
-      const regulation = await this.prisma.regulation.findUnique({
-        where: { id: regulationId },
-      });
-
-      if (!regulation) {
-        throw new NotFoundException(`Regulação #${regulationId} não encontrada.`);
-      }
-
-      // 🔹 Gera a key do arquivo
-      const fileExt = path.extname(file.originalname).toLowerCase();
-      const key = `${regulationId}/${randomUUID()}${fileExt}`;
-      console.log('🗝️  Key gerada:', key);
-
-      // 🔹 Envia o arquivo para o S3
-      const command = new PutObjectCommand({
-        Bucket: this.bucketName,
-        Key: key,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      });
-
-      await this.s3Client.send(command);
-
-      const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
-      console.log('✅ Upload concluído com sucesso!');
-      console.log('  URL:', url);
-
-      // 🔹 Atualiza o campo url_requirement do regulation mantendo os outros dados
-      const updatedRegulation = await this.prisma.regulation.update({
-        where: { id: regulationId },
-        data: {
-          url_requirement: key,
-          history: (regulation.history ?? 1) + 1,
-        }, // grava a KEY (não a URL completa)
-      });
-
-      console.log('✅ Regulation atualizado com a nova key!');
-      return {
-        message: 'Upload realizado e regulation atualizado com sucesso!',
-        key,
-        url,
-        regulation: updatedRegulation,
-      };
-    } catch (error) {
-      console.error('❌ Erro detalhado no uploadRequirement:');
-      console.error('  Código:', error?.Code || error?.name);
-      console.error('  Mensagem:', error?.message);
-      console.error('  Stack:', error?.stack);
-
-      throw new InternalServerErrorException(
-        'Falha ao enviar o arquivo ou atualizar o registro. Tente novamente mais tarde.',
-      );
-    }
+  if (!regulation) {
+    throw new NotFoundException('Regulação não encontrada.');
   }
+
+  const fileExt = path.extname(file.originalname).toLowerCase();
+  const key = `users/${userId}/regulations/${regulationId}/requirements/${randomUUID()}${fileExt}`;
+
+  await this.s3Client.send(
+    new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    }),
+  );
+
+  await this.prisma.regulation.update({
+    where: { id: regulationId },
+    data: {
+      url_requirement: key,
+      history: { increment: 1 },
+    },
+  });
+
+  return {
+    message: 'Upload realizado com sucesso',
+    key,
+  };
+}
+
 
 
   /**

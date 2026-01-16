@@ -40,17 +40,17 @@ export class ProfessionalController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.professionalService.findOne(+id);
+  findOne(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.professionalService.findOne(+id, Number(TokenPayload.sub_id));
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProfessionalDto: UpdateProfessionalDto) {
-    return this.professionalService.update(+id, updateProfessionalDto);
+  update(@Param('id') id: string, @Body() updateProfessionalDto: UpdateProfessionalDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.professionalService.update(+id, updateProfessionalDto, Number(TokenPayload.sub_id));
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.professionalService.remove(+id);
+  remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.professionalService.remove(+id, Number(TokenPayload.sub_id));
   }
 }

@@ -9,6 +9,7 @@ import {
   Query,
   Res,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Response } from 'express'; // ✅ import type
 import { RegulationService } from './regulation.service';
@@ -20,15 +21,45 @@ import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
 import { TokenPayloadParam } from '../auth/param/token-payload.param';
 import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadService } from '../upload/upload.service';
+import {
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+
 @UseGuards(AuthTokenGuard)
 @Controller('regulation')
 export class RegulationController {
-  constructor(private readonly regulationService: RegulationService) { }
+  constructor(
+    private readonly regulationService: RegulationService,
+    private readonly uploadService: UploadService
+  ) { }
+
+
+
+@Post('/upload/:regulationId')
+@UseInterceptors(FileInterceptor('file'))
+async uploadRequirement(
+  @UploadedFile() file: Express.Multer.File,
+  @Param('regulationId') regulationId: string,
+  @TokenPayloadParam() token: PayloadTokenDto,
+) {
+  if (!file) {
+    throw new BadRequestException('Nenhum arquivo foi enviado.');
+  }
+
+  return this.uploadService.uploadRequirement(
+    file,
+    Number(token.sub_id),       // userId
+    Number(regulationId),       // regulationId
+  );
+}
 
   @Post()
-  create(@Body() createRegulationDto: CreateRegulationDto) {
+  create(@Body() createRegulationDto: CreateRegulationDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     console.log(createRegulationDto)
-    return this.regulationService.create(createRegulationDto);
+    return this.regulationService.create(createRegulationDto, Number(TokenPayload.sub_id));
   }
 
   // 🔍 Endpoint de busca
@@ -36,7 +67,7 @@ export class RegulationController {
   search(@Query() filters: SearchRegulationDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.regulationService.search(Number(TokenPayload.sub_id), filters);
   }
-  
+
   @Get('by-patient/:patient_id')
   findByPatient(@Param('patient_id') patient_id: string) {
     return this.regulationService.findByPatient(Number(patient_id));
@@ -54,8 +85,8 @@ export class RegulationController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.regulationService.findOne(+id);
+  findOne(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.regulationService.findOne(+id, Number(TokenPayload.sub_id));
   }
 
   @Get('pdf/:id')
@@ -76,8 +107,9 @@ export class RegulationController {
   updateStatus(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateStatusRegulationDto,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    return this.regulationService.updateStatus(+id, updateStatusDto.status);
+    return this.regulationService.updateStatus(+id, updateStatusDto.status, Number(TokenPayload.sub_id));
   }
 
 
@@ -85,12 +117,13 @@ export class RegulationController {
   update(
     @Param('id') id: string,
     @Body() updateRegulationDto: UpdateRegulationDto,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    return this.regulationService.update(+id, updateRegulationDto);
+    return this.regulationService.update(+id, updateRegulationDto, Number(TokenPayload.sub_id));
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.regulationService.remove(+id);
+  remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.regulationService.remove(+id, Number(TokenPayload.sub_id));
   }
 }

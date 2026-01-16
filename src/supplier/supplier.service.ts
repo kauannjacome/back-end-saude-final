@@ -7,9 +7,12 @@ import { UpdateSupplierDto } from './dto/update-supplier.dto';
 export class SupplierService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createSupplierDto: CreateSupplierDto) {
+  async create(createSupplierDto: CreateSupplierDto,subscriber_id: number) {
     return this.prisma.supplier.create({
-      data: createSupplierDto,
+      data: {
+        ...createSupplierDto,
+        subscriber_id: subscriber_id
+      },  
     });
   }
   async search(subscriber_id: number, term: string) {
@@ -69,9 +72,9 @@ export class SupplierService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, subscriber_id: number) {
     const supplier = await this.prisma.supplier.findUnique({
-      where: { id },
+      where: { id, subscriber_id },
       include: { regulations: true },
     });
 
@@ -79,18 +82,18 @@ export class SupplierService {
     return supplier;
   }
 
-  async update(id: number, updateSupplierDto: UpdateSupplierDto) {
-    await this.findOne(id);
+  async update(id: number, updateSupplierDto: UpdateSupplierDto, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.supplier.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: updateSupplierDto,
     });
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(id: number, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.supplier.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: { deleted_at: new Date() },
     });
   }

@@ -3,9 +3,11 @@ import { RegulationService } from './regulation.service';
 import { RegulationController } from './regulation.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 
+import { UploadModule } from '../upload/upload.module';
+
 @Module({
-    imports:[PrismaModule],
+  imports: [PrismaModule, UploadModule],
   controllers: [RegulationController],
   providers: [RegulationService],
 })
-export class RegulationModule {}
+export class RegulationModule { }

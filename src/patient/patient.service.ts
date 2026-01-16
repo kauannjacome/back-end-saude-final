@@ -8,12 +8,12 @@ import { normalizeText } from 'src/common/utils/normalize-text';
 export class PatientService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createPatientDto: CreatePatientDto) {
+  async create(createPatientDto: CreatePatientDto, subscriber_id: number) {
     return this.prisma.patient.create({
       data: {
         ...createPatientDto,
         name_normalized: normalizeText(createPatientDto.full_name),
-        subscriber_id: 1,
+        subscriber_id: subscriber_id,
         birth_date: new Date(createPatientDto.birth_date),
         accepted_terms_at: createPatientDto.accepted_terms_at
           ? new Date(createPatientDto.accepted_terms_at)
@@ -98,9 +98,9 @@ export class PatientService {
 
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, subscriber_id: number) {
     const patient = await this.prisma.patient.findUnique({
-      where: { id },
+      where: { id, subscriber_id },
       include: { regulations: true },
     });
 
@@ -108,10 +108,10 @@ export class PatientService {
     return patient;
   }
 
-  async update(id: number, updatePatientDto: UpdatePatientDto) {
-    await this.findOne(id);
+  async update(id: number, updatePatientDto: UpdatePatientDto, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.patient.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: {
         ...updatePatientDto,
         ...(updatePatientDto.full_name && {
@@ -121,10 +121,10 @@ export class PatientService {
     });
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(id: number, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.patient.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: { deleted_at: new Date() },
     });
   }

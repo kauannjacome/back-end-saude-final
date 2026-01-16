@@ -13,9 +13,9 @@ export class FolderController {
   constructor(private readonly folderService: FolderService) { }
 
   @Post()
-  create(@Body() createFolderDto: CreateFolderDto) {
+  create(@Body() createFolderDto: CreateFolderDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     console.log(createFolderDto)
-    return this.folderService.create(createFolderDto);
+    return this.folderService.create(createFolderDto, Number(TokenPayload.sub_id));
   }
 
   // 🔍 Endpoint de busca
@@ -31,8 +31,8 @@ export class FolderController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.folderService.findOne(+id);
+  findOne(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.folderService.findOne(+id, Number(TokenPayload.sub_id));
   }
 
   @Get('all/regulation/:uuid')
@@ -53,12 +53,12 @@ export class FolderController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateFolderDto: UpdateFolderDto) {
-    return this.folderService.update(+id, updateFolderDto);
+  update(@Param('id') id: string, @Body() updateFolderDto: UpdateFolderDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.folderService.update(+id, updateFolderDto, Number(TokenPayload.sub_id));
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.folderService.remove(+id);
+  remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.folderService.remove(+id, Number(TokenPayload.sub_id));
   }
 }

@@ -12,9 +12,9 @@ export class CareController {
   constructor(private readonly careService: CareService) { }
 
   @Post()
-  create(@Body() createCareDto: CreateCareDto) {
+  create(@Body() createCareDto: CreateCareDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     console.log(CreateCareDto)
-    return this.careService.create(createCareDto);
+    return this.careService.create(createCareDto, Number(TokenPayload.sub_id));
   }
   // 🔍 Endpoint de busca
   @Get('search')
@@ -27,23 +27,26 @@ export class CareController {
   }
 
   @Get()
-  findAll() {
-    return this.careService.findAll();
+  findAll(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+    return this.careService.findAll(Number(tokenPayload.sub_id));
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.careService.findOne(+id);
+  @Get(':id')
+  findOne(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+    return this.careService.findOne(+id, Number(tokenPayload.sub_id));
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCareDto: UpdateCareDto) {
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateCareDto: UpdateCareDto, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
     console.log(UpdateCareDto)
-    return this.careService.update(+id, updateCareDto);
+    return this.careService.update(+id, updateCareDto, Number(tokenPayload.sub_id));
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.careService.remove(+id);
+  @Delete(':id')
+  remove(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+    return this.careService.remove(+id, Number(tokenPayload.sub_id));
   }
 }

@@ -4,10 +4,13 @@ import { CreateSubscriberDto } from './dto/create-subscriber.dto';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
 import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
 
+
 @UseGuards(AuthTokenGuard)
 @Controller('subscriber')
 export class SubscriberController {
   constructor(private readonly subscriberService: SubscriberService) { }
+
+  // ... imports
 
   @Post()
   create(@Body() createSubscriberDto: CreateSubscriberDto) {

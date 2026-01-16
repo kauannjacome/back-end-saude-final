@@ -13,8 +13,8 @@ export class PatientController {
   constructor(private readonly patientService: PatientService) { }
 
   @Post()
-  create(@Body() createPatientDto: CreatePatientDto) {
-    return this.patientService.create(createPatientDto);
+  create(@Body() createPatientDto: CreatePatientDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.patientService.create(createPatientDto, Number(TokenPayload.sub_id));
   }
 
   @Get()
@@ -32,17 +32,17 @@ export class PatientController {
 
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.patientService.findOne(+id);
+  findOne(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.patientService.findOne(+id, Number(TokenPayload.sub_id));
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePatientDto: UpdatePatientDto) {
-    return this.patientService.update(+id, updatePatientDto);
+  update(@Param('id') id: string, @Body() updatePatientDto: UpdatePatientDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.patientService.update(+id, updatePatientDto, Number(TokenPayload.sub_id));
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.patientService.remove(+id);
+  remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.patientService.remove(+id, Number(TokenPayload.sub_id));
   }
 }

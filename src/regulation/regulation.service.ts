@@ -12,7 +12,7 @@ import { SearchRegulationDto } from './dto/search-regulation.dto';
 export class RegulationService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createRegulationDto: CreateRegulationDto) {
+  async create(createRegulationDto: CreateRegulationDto, subscriber_id: number) {
     const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUXYZ', 10)
     const { cares, ...regulationData } = createRegulationDto;
 
@@ -20,7 +20,7 @@ export class RegulationService {
       data: {
         ...regulationData,
         id_code: nanoid(),
-        subscriber_id: 1,
+        subscriber_id: subscriber_id,
         history: regulationData.history ?? 1,
         version_document: 1,
         cares: cares
@@ -180,9 +180,9 @@ export class RegulationService {
       throw new NotFoundException(`Regulation #${uuid} not found`);
     return regulation;
   }
-  async findOne(id: number) {
+  async findOne(id: number, subscriber_id: number) {
     const regulation = await this.prisma.regulation.findUnique({
-      where: { id },
+      where: { id, subscriber_id },
       include: {
         patient: true,
         folder: true,
@@ -228,16 +228,16 @@ export class RegulationService {
 
 
 
-  async updateStatus(id: number, status: status) {
+  async updateStatus(id: number, status: status, subscriber_id: number) {
     return this.prisma.regulation.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: { status },
     });
   }
 
-  async update(id: number, updateRegulationDto: UpdateRegulationDto) {
+  async update(id: number, updateRegulationDto: UpdateRegulationDto, subscriber_id: number) {
     const existingRegulation = await this.prisma.regulation.findUnique({
-      where: { id },
+      where: { id, subscriber_id },
     });
 
     if (!existingRegulation) {
@@ -249,7 +249,7 @@ export class RegulationService {
       Object.entries(updateRegulationDto).filter(([_, v]) => v !== undefined),
     );
     const updatedRegulation = await this.prisma.regulation.update({
-      where: { id },
+      where: { id, subscriber_id },
       data,
       include: {
         patient: true,
@@ -268,10 +268,10 @@ export class RegulationService {
   }
 
 
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(id: number, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.regulation.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: { deleted_at: new Date() },
     });
   }

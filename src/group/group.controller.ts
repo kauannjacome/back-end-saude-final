@@ -12,8 +12,8 @@ export class GroupController {
   constructor(private readonly groupService: GroupService) { }
 
   @Post()
-  create(@Body() createGroupDto: CreateGroupDto) {
-    return this.groupService.create(createGroupDto);
+  create(@Body() createGroupDto: CreateGroupDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.groupService.create(createGroupDto, Number(TokenPayload.sub_id));
   }
 
   // 🔍 Endpoint de busca
@@ -35,17 +35,17 @@ export class GroupController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.groupService.findOne(+id);
+  findOne(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.groupService.findOne(+id, Number(TokenPayload.sub_id));
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateGroupDto: UpdateGroupDto) {
-    return this.groupService.update(+id, updateGroupDto);
+  update(@Param('id') id: string, @Body() updateGroupDto: UpdateGroupDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.groupService.update(+id, updateGroupDto, Number(TokenPayload.sub_id));
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.groupService.remove(+id);
+  remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.groupService.remove(+id, Number(TokenPayload.sub_id));
   }
 }

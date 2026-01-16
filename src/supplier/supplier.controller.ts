@@ -12,8 +12,8 @@ export class SupplierController {
   constructor(private readonly supplierService: SupplierService) { }
 
   @Post()
-  create(@Body() createSupplierDto: CreateSupplierDto) {
-    return this.supplierService.create(createSupplierDto);
+  create(@Body() createSupplierDto: CreateSupplierDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {  
+    return this.supplierService.create(createSupplierDto, Number(TokenPayload.sub_id));
   }
 
   // 🔍 Endpoint de busca
@@ -39,17 +39,17 @@ export class SupplierController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.supplierService.findOne(+id);
+  findOne(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.supplierService.findOne(+id, Number(TokenPayload.sub_id));
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSupplierDto: UpdateSupplierDto) {
-    return this.supplierService.update(+id, updateSupplierDto);
+  update(@Param('id') id: string, @Body() updateSupplierDto: UpdateSupplierDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.supplierService.update(+id, updateSupplierDto, Number(TokenPayload.sub_id));
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.supplierService.remove(+id);
+  remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.supplierService.remove(+id, Number(TokenPayload.sub_id));
   }
 }

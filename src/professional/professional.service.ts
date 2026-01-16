@@ -149,9 +149,9 @@ export class ProfessionalService {
 
 
   // ✅ BUSCAR POR ID
-  async findOne(id: number) {
+  async findOne(id: number, subscriber_id: number) {
     const professional = await this.prisma.professional.findUnique({
-      where: { id },
+      where: { id, subscriber_id },
       include: {
         cares: true,
         audit_logs: true,
@@ -166,10 +166,10 @@ export class ProfessionalService {
   }
 
   // ✅ ATUALIZAR
-  async update(id: number, updateProfessionalDto: UpdateProfessionalDto) {
+  async update(id: number, updateProfessionalDto: UpdateProfessionalDto, subscriber_id: number) {
     try {
       const professional = await this.prisma.professional.findUnique({
-        where: { id },
+        where: { id, subscriber_id },
       });
 
       if (!professional) {
@@ -223,7 +223,7 @@ export class ProfessionalService {
       }
 
       return await this.prisma.professional.update({
-        where: { id },
+        where: { id, subscriber_id },
         data: dataProfessional,
         select: {
           id: true,
@@ -244,10 +244,10 @@ export class ProfessionalService {
   }
 
   // ✅ REMOVER (soft delete)
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(id: number, subscriber_id: number) {
+    await this.findOne(id, subscriber_id);
     return this.prisma.professional.update({
-      where: { id },
+      where: { id, subscriber_id },
       data: { deleted_at: new Date() },
     });
   }
