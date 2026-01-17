@@ -60,7 +60,7 @@ export class SubscriberService {
           cpf: admin.cpf,
           email: admin.email,
           password_hash: passwordHash,
-          role: 'admin', // Papel de Admin Local
+          role: 'admin_manager', // Papel de Admin Local
           subscriber_id: newSubscriber.id,
           // Outros campos obrigatórios ou defaults
           sex: 'nao_informado', // Default safe
