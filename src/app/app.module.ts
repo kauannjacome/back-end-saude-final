@@ -23,6 +23,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { envSchema } from '../common/env/env';
 import { EmailModule } from '../email/email.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -69,7 +70,9 @@ import { EmailModule } from '../email/email.module';
     SeedsModule,
     AuthModule,
     HealthModule,
-    EmailModule
+    HealthModule,
+    EmailModule,
+    NotificationModule
   ],
   controllers: [AppController],
   providers: [

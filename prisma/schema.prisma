@@ -38,6 +38,7 @@ model subscriber {
   regulations         regulation[]
   suppliers           supplier[]
   units               unit[]
+  notifications       notification[]
 }
 
 model unit {
@@ -186,8 +187,8 @@ model patient {
 }
 
 model professional {
-  id                     Int          @id @default(autoincrement())
-  uuid                   String       @unique @default(uuid())
+  id                     Int                 @id @default(autoincrement())
+  uuid                   String              @unique @default(uuid())
   subscriber_id          Int
   cpf                    String
   name                   String?
@@ -197,26 +198,27 @@ model professional {
   birth_date             DateTime?
   phone_number           String?
   email                  String?
-  role                   role?        @default(typist)
+  role                   role?               @default(typist)
   password_hash          String?
-  is_password_temp       Boolean      @default(false)
-  number_try             Int?         @default(0)
-  is_blocked             Boolean      @default(false)
-  accepted_terms         Boolean      @default(false)
+  is_password_temp       Boolean             @default(false)
+  number_try             Int?                @default(0)
+  is_blocked             Boolean             @default(false)
+  accepted_terms         Boolean             @default(false)
   accepted_terms_at      DateTime?
   accepted_terms_version String?
   reset_token            String?
   reset_token_expiry     DateTime?
-  created_at             DateTime     @default(now())
-  updated_at             DateTime     @updatedAt
+  created_at             DateTime            @default(now())
+  updated_at             DateTime            @updatedAt
   deleted_at             DateTime?
   audit_logs             audit_log[]
   cares                  care[]
-  folders_responsible    folder[]     @relation("ProfessionalResponsible")
-  subscriber             subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  regulations_analyzed   regulation[] @relation("regulation_analyzer")
-  regulations_created    regulation[] @relation("regulation_creator")
-  regulations_printed    regulation[] @relation("regulation_printer")
+  folders_responsible    folder[]            @relation("ProfessionalResponsible")
+  subscriber             subscriber          @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  regulations_analyzed   regulation[]        @relation("regulation_analyzer")
+  regulations_created    regulation[]        @relation("regulation_creator")
+  regulations_printed    regulation[]        @relation("regulation_printer")
+  notification_reads     notification_read[]
 
   @@unique([subscriber_id, cpf])
   @@index([subscriber_id])
@@ -252,15 +254,16 @@ model regulation {
   updated_at              DateTime          @updatedAt
   deleted_at              DateTime?
 
-  cares       care_regulation[]
-  analyzer    professional?     @relation("regulation_analyzer", fields: [analyzed_id], references: [id])
-  creator     professional?     @relation("regulation_creator", fields: [creator_id], references: [id])
-  folder      folder?           @relation(fields: [folder_id], references: [id])
-  patient     patient?          @relation("PatientRegulation", fields: [patient_id], references: [id])
-  printer     professional?     @relation("regulation_printer", fields: [printer_id], references: [id])
-  responsible patient?          @relation("ResponsibleRegulation", fields: [responsible_id], references: [id])
-  subscriber  subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  supplier    supplier?         @relation(fields: [supplier_id], references: [id])
+  cares         care_regulation[]
+  analyzer      professional?     @relation("regulation_analyzer", fields: [analyzed_id], references: [id])
+  creator       professional?     @relation("regulation_creator", fields: [creator_id], references: [id])
+  folder        folder?           @relation(fields: [folder_id], references: [id])
+  patient       patient?          @relation("PatientRegulation", fields: [patient_id], references: [id])
+  printer       professional?     @relation("regulation_printer", fields: [printer_id], references: [id])
+  responsible   patient?          @relation("ResponsibleRegulation", fields: [responsible_id], references: [id])
+  subscriber    subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  supplier      supplier?         @relation(fields: [supplier_id], references: [id])
+  notifications notification[]
 
   @@index([subscriber_id])
   @@index([patient_id])
@@ -400,4 +403,44 @@ enum type_declaration {
   cer
   medicamento_continuo
   assistencia_farmaceutica
+}
+
+enum notification_type {
+  PRAZO
+  PRIORIDADE
+}
+
+model notification {
+  id            Int               @id @default(autoincrement())
+  uuid          String            @unique @default(uuid())
+  subscriber_id Int
+  regulation_id Int?
+  title         String
+  message       String
+  type          notification_type
+  milestone     String?
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+  deleted_at    DateTime?
+
+  subscriber subscriber          @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  regulation regulation?         @relation(fields: [regulation_id], references: [id])
+  reads      notification_read[]
+
+  @@index([subscriber_id])
+  @@index([regulation_id])
+  @@index([created_at])
+}
+
+model notification_read {
+  id              Int       @id @default(autoincrement())
+  notification_id Int
+  professional_id Int
+  read_at         DateTime?
+  cleared_at      DateTime?
+
+  notification notification @relation(fields: [notification_id], references: [id], onDelete: Cascade)
+  professional professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
+
+  @@unique([notification_id, professional_id])
 }
