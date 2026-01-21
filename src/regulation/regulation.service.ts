@@ -8,12 +8,15 @@ import { customAlphabet } from 'nanoid'
 import { status, Prisma } from '@prisma/client';
 import { SearchRegulationDto } from './dto/search-regulation.dto';
 import { ZapService } from '../zap/service';
+import { sendRegulationStatusMessage } from '../common/utils/send-regulation-message';
+import { QueueService } from '../common/queue/queue.service';
 
 @Injectable()
 export class RegulationService {
   constructor(
     private prisma: PrismaService,
-    private zapService: ZapService
+    private zapService: ZapService,
+    private queueService: QueueService
   ) { }
 
   // ... (existing methods until updateStatus)
@@ -25,31 +28,8 @@ export class RegulationService {
       include: { patient: true, cares: { include: { care: true } } }
     });
 
-    if (sendMessage && (status === 'em_andamento' || status === 'aprovado')) {
-      try {
-        const patientName = updated.patient?.full_name?.split(' ')[0] || 'Paciente';
-        const isPlural = updated.cares.length > 1;
-        const careText = isPlural ? 'os seus cuidados foram atualizados' : 'o seu cuidado foi atualizado';
-        const statusText = status === 'em_andamento' ? 'Em andamento' : 'Aprovado';
-
-        const message = `Olá *${patientName}*, estamos felizes em te informar que ${careText} para *${statusText}*.\n\n_Mensagem automática._`;
-
-        if (updated.patient?.phone) {
-          let phone = updated.patient.phone.replace(/\D/g, '');
-
-          // Tratamento simples para números do Brasil
-          // Se tiver 10 ou 11 dígitos, provavelmente falta o 55
-          if (phone.length >= 10 && phone.length <= 11) {
-            phone = '55' + phone;
-          }
-
-          console.log(`Sending WhatsApp to ${phone}`);
-          await this.zapService.sendMessage(subscriber_id, phone, message);
-        }
-      } catch (e) {
-        console.error('Erro ao enviar notificação Zap:', e);
-        // Não bloqueia o retorno se falhar o zap
-      }
+    if (sendMessage) {
+      this.queueService.addJob(() => sendRegulationStatusMessage(updated, status, subscriber_id, this.zapService));
     }
 
     return updated;

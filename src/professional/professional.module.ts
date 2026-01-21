@@ -4,9 +4,11 @@ import { ProfessionalController } from './professional.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 
+import { ProfessionalPublicController } from './professional.public.controller';
+
 @Module({
-    imports:[PrismaModule,AuthModule],
-  controllers: [ProfessionalController],
+  imports: [PrismaModule, AuthModule],
+  controllers: [ProfessionalController, ProfessionalPublicController],
   providers: [ProfessionalService],
 })
-export class ProfessionalModule {}
+export class ProfessionalModule { }

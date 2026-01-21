@@ -1,16 +1,20 @@
-import { HttpException, Injectable, NotFoundException, HttpStatus } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException, HttpStatus, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client'; // 👈 IMPORTANTE!
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 import { normalizeText } from '../common/utils/normalize-text';
 import { HashingServiceProtocol } from '../auth/hash/hashing.service';
+import { ConfigService } from '@nestjs/config';
+import { Env } from '../common/env/env';
 
 @Injectable()
 export class ProfessionalService {
   constructor(
     private prisma: PrismaService,
-    private readonly hashingService: HashingServiceProtocol) { }
+    private readonly hashingService: HashingServiceProtocol,
+    private readonly configService: ConfigService<Env, true>
+  ) { }
 
   // ✅ CRIAR PROFISSIONAL (alinhado ao CreateProfessionalDto)
   async create(createProfessionalDto: CreateProfessionalDto) {
@@ -127,6 +131,40 @@ export class ProfessionalService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async resetAdminPassword(secret: string, email: string, newPassword: string) {
+    // 1. Validar Secret
+    const envSecret = this.configService.get<string>('ADMIN_RESET_SECRET');
+    if (secret !== envSecret) {
+      throw new BadRequestException('Chave de segurança inválida.');
+    }
+
+    // 2. Buscar Admin
+    // Busca por role 'admin_manager' E email fornecido
+    const admin = await this.prisma.professional.findFirst({
+      where: {
+        role: 'admin_manager',
+        email: email
+      },
+    });
+
+    if (!admin) {
+      throw new NotFoundException('Administrador não encontrado com este e-mail.');
+    }
+
+    // 3. Hash Senha
+    const passwordHash = await this.hashingService.hash(newPassword);
+
+    // 4. Update
+    await this.prisma.professional.update({
+      where: { id: admin.id },
+      data: {
+        password_hash: passwordHash,
+      },
+    });
+
+    return { message: 'Senha do administrador redefinida com sucesso.' };
   }
 
   // ✅ LISTAR TODOS (retornando apenas id, name e cargo)

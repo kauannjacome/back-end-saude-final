@@ -9,11 +9,17 @@ import {
   relationship,
   audit_action,
 } from '@prisma/client'
+import * as bcrypt from 'bcryptjs'
+import * as dotenv from 'dotenv'
+
+dotenv.config()
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Iniciando seed completo...')
+
+  const passwordHash = await bcrypt.hash('123456', 6)
 
   // ===========================
   // MUNICÍPIO 1
@@ -71,7 +77,9 @@ async function main() {
         cpf: '11111111111',
       },
     },
-    update: {},
+    update: {
+      password_hash: passwordHash,
+    },
     create: {
       subscriber_id: subscriber1.id,
       cpf: '11111111111',
@@ -80,7 +88,7 @@ async function main() {
       sex: sex.masculino,
       email: 'joao.silva@exemplo.gov.br',
       role: role.admin_manager,
-      password_hash: 'hashed_password_admin',
+      password_hash: passwordHash,
       accepted_terms: true,
     },
   })
@@ -92,7 +100,9 @@ async function main() {
         cpf: '22222222222',
       },
     },
-    update: {},
+    update: {
+      password_hash: passwordHash,
+    },
     create: {
       subscriber_id: subscriber1.id,
       cpf: '22222222222',
@@ -101,7 +111,7 @@ async function main() {
       sex: sex.feminino,
       email: 'maria.santos@exemplo.gov.br',
       role: role.typist,
-      password_hash: 'hashed_password_user',
+      password_hash: passwordHash,
       accepted_terms: true,
     },
   })
@@ -330,7 +340,9 @@ async function main() {
         cpf: '99999999999',
       },
     },
-    update: {},
+    update: {
+      password_hash: passwordHash,
+    },
     create: {
       subscriber_id: subscriber2.id,
       cpf: '99999999999',
@@ -339,7 +351,7 @@ async function main() {
       sex: sex.masculino,
       email: 'pedro.ramos@modelo.gov.br',
       role: role.typist,
-      password_hash: 'hashed_password_cardio',
+      password_hash: passwordHash,
       accepted_terms: true,
     },
   })
@@ -454,6 +466,20 @@ async function main() {
   })
 
   console.log('✅ Seed completo criado com sucesso!')
+
+  // VERIFICAÇÃO PÓS-SEED
+  console.log('🔍 Verificando hash do usuário joao.silva@exemplo.gov.br...');
+  const userCheck = await prisma.professional.findFirst({ where: { email: 'joao.silva@exemplo.gov.br' } });
+  if (userCheck && userCheck.password_hash) {
+    const isValid = await bcrypt.compare('123456', userCheck.password_hash);
+    if (isValid) {
+      console.log('✅ VERIFICADO: Senha "123456" corresponde ao hash salvo no banco.');
+    } else {
+      console.error('❌ ERRO: Senha "123456" NÃO corresponde ao hash salvo no banco.');
+    }
+  } else {
+    console.error('❌ ERRO: Usuário não encontrado ou sem hash após seed.');
+  }
 }
 
 main()

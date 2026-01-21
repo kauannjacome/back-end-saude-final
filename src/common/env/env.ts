@@ -23,6 +23,9 @@ export const envSchema = z.object({
   // Evolution API
   EVOLUTION_API_URL: z.string().url().optional(),
   EVOLUTION_API_GLOBAL_KEY: z.string().optional(),
+
+  // Security
+  ADMIN_RESET_SECRET: z.string().default('admin'),
 });
 
 export type Env = z.infer<typeof envSchema>;

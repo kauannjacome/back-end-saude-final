@@ -98,6 +98,13 @@ export class AuthService {
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
     }
 
+    if (professional.role === 'admin_manager') {
+      throw new HttpException(
+        'Administradores não podem redefinir senha por aqui. Contate o suporte ou use a rota administrativa.',
+        HttpStatus.FORBIDDEN
+      );
+    }
+
     // Gerar token (UUID simples ou aleatório forte)
     // Como é link, usar UUID é melhor. A lib `nanoid` ou node nativo `crypto`
     // Mas para manter simples/compatível, vamos usar um Math.random string mais longo
@@ -147,20 +154,41 @@ export class AuthService {
 
     return { message: 'Senha alterada com sucesso' };
   }
-  async impersonate(subscriberId: number) {
-    // 1. Buscar um admin deste assinante para impersonar
-    // Prioriza 'admin_manager' (Admin Local), depois pega qualquer um se necessario? 
-    // Melhor ser estrito: apenas admin_manager.
-    const professional = await this.prisma.professional.findFirst({
-      where: {
-        subscriber_id: Number(subscriberId),
-        role: 'admin_manager'
-      },
-      orderBy: { created_at: 'asc' } // Geralmente o dono é o primeiro
+  async verifyPassword(userId: number, password: string): Promise<boolean> {
+    const professional = await this.prisma.professional.findUnique({
+      where: { id: userId }
     });
 
+    if (!professional || !professional.password_hash) {
+      return false;
+    }
+
+    return await this.hashingService.compare(password, professional.password_hash);
+  }
+
+  async impersonate(subscriberId: number) {
+    // 1. Buscar um admin deste assinante para impersonar
+    // Prioriza 'admin_municipal' (Admin Local/Assinante)
+    let professional = await this.prisma.professional.findFirst({
+      where: {
+        subscriber_id: Number(subscriberId),
+        role: 'admin_municipal'
+      },
+      orderBy: { created_at: 'asc' }
+    });
+
+    // Se não achar admin municipal, tenta qualquer usuário (fallback) para não impedir o acesso
     if (!professional) {
-      throw new HttpException("Nenhum administrador encontrado para este assinante", HttpStatus.NOT_FOUND);
+      professional = await this.prisma.professional.findFirst({
+        where: {
+          subscriber_id: Number(subscriberId),
+        },
+        orderBy: { created_at: 'asc' }
+      });
+    }
+
+    if (!professional) {
+      throw new HttpException("Nenhum usuário encontrado para este assinante para realizar o acesso.", HttpStatus.NOT_FOUND);
     }
 
     const subscriber = await this.prisma.subscriber.findUnique({

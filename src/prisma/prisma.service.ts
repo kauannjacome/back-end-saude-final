@@ -19,14 +19,32 @@ export class PrismaService
     const pool = new Pool({
       connectionString,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : { rejectUnauthorized: false },
+      max: 10, // Connection Pooling: Max 10 connections
+      idleTimeoutMillis: 20000, // Connection Pooling: 20s timeout
     });
     const adapter = new PrismaPg(pool);
-    super({ adapter });
+    super({
+      adapter,
+      log: [
+        { emit: 'event', level: 'query' },
+        { emit: 'stdout', level: 'info' },
+        { emit: 'stdout', level: 'warn' },
+        { emit: 'stdout', level: 'error' },
+      ],
+    });
   }
 
   async onModuleInit() {
     await this.$connect();
-    this.logger.log('Prisma conectado ao banco de dados.');
+
+    // @ts-ignore
+    this.$on('query', (e: any) => {
+      if (e.duration > 1000) {
+        this.logger.warn(`⚠️  Slow query: ${e.query} took ${e.duration}ms`);
+      }
+    });
+
+    this.logger.log('Prisma conectado ao banco de dados com Pooling e Monitoramento.');
   }
 
   async onModuleDestroy() {

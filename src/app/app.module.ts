@@ -25,6 +25,8 @@ import { envSchema } from '../common/env/env';
 import { EmailModule } from '../email/email.module';
 import { NotificationModule } from '../notification/notification.module';
 import { ZapModule } from '../zap/module';
+import { SuggestionModule } from '../suggestion/suggestion.module';
+import { QueueModule } from '../common/queue/queue.module';
 
 @Module({
   imports: [
@@ -74,7 +76,9 @@ import { ZapModule } from '../zap/module';
     HealthModule,
     EmailModule,
     NotificationModule,
-    ZapModule
+    ZapModule,
+    SuggestionModule,
+    QueueModule
   ],
   controllers: [AppController],
   providers: [

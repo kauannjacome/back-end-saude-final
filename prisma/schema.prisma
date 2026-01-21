@@ -40,6 +40,7 @@ model subscriber {
   units               unit[]
   notifications       notification[]
   whatsappConfig      whatsapp_config?
+  suggestions         suggestion[]
 }
 
 model unit {
@@ -223,6 +224,7 @@ model professional {
 
   @@unique([subscriber_id, cpf])
   @@index([subscriber_id])
+  @@index([email]) // Login rápido
 }
 
 model regulation {
@@ -273,6 +275,8 @@ model regulation {
   @@index([creator_id])
   @@index([analyzed_id])
   @@index([printer_id])
+  @@index([subscriber_id, status]) // Otimização para filtros de status por assinante
+  @@index([subscriber_id, created_at]) // Otimização para ordenação e relatórios
 }
 
 model supplier {
@@ -431,6 +435,7 @@ model notification {
   @@index([subscriber_id])
   @@index([regulation_id])
   @@index([created_at])
+  @@index([subscriber_id, created_at]) // Otimização para buscar notificações recentes
 }
 
 model notification_read {
@@ -459,4 +464,20 @@ model whatsapp_config {
   subscriber subscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
 
   @@index([subscriber_id])
+}
+
+model suggestion {
+  id            Int      @id @default(autoincrement())
+  subscriber_id Int
+  user_id       Int?
+  field_name    String
+  term          String
+  usage_count   Int      @default(1)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  subscriber subscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+
+  @@unique([subscriber_id, field_name, term])
+  @@index([subscriber_id, field_name])
 }
