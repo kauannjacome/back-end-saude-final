@@ -147,4 +147,50 @@ export class AuthService {
 
     return { message: 'Senha alterada com sucesso' };
   }
+  async impersonate(subscriberId: number) {
+    // 1. Buscar um admin deste assinante para impersonar
+    // Prioriza 'admin_manager' (Admin Local), depois pega qualquer um se necessario? 
+    // Melhor ser estrito: apenas admin_manager.
+    const professional = await this.prisma.professional.findFirst({
+      where: {
+        subscriber_id: Number(subscriberId),
+        role: 'admin_manager'
+      },
+      orderBy: { created_at: 'asc' } // Geralmente o dono é o primeiro
+    });
+
+    if (!professional) {
+      throw new HttpException("Nenhum administrador encontrado para este assinante", HttpStatus.NOT_FOUND);
+    }
+
+    const subscriber = await this.prisma.subscriber.findUnique({
+      where: { id: Number(subscriberId) }
+    });
+
+    // 2. Gerar Token (mesmo payload do login normal)
+    const token = await this.jwtService.signAsync(
+      {
+        user_id: professional.id,
+        sub_id: professional.subscriber_id,
+        role: professional.role
+      },
+      {
+        secret: this.jwtConfiguration.secret,
+        expiresIn: "1d",
+        audience: this.jwtConfiguration.audience,
+        issuer: this.jwtConfiguration.issuer
+      }
+    );
+
+    return {
+      id: professional.id,
+      name: professional.name,
+      email: professional.email,
+      role: professional.role,
+      nome_sub: subscriber?.name,
+      pay_sub: subscriber?.payment,
+      token: token,
+      isImpersonating: true // Flag útil para o frontend saber (ex: mostrar banner)
+    };
+  }
 }

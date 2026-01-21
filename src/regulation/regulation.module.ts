@@ -5,8 +5,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 
 import { UploadModule } from '../upload/upload.module';
 
+import { ZapModule } from '../zap/module';
+
 @Module({
-  imports: [PrismaModule, UploadModule],
+  imports: [PrismaModule, UploadModule, ZapModule],
   controllers: [RegulationController],
   providers: [RegulationService],
 })

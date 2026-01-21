@@ -7,13 +7,13 @@ datasource db {
 }
 
 model subscriber {
-  id                  Int            @id @default(autoincrement())
-  uuid                String         @unique @default(uuid())
+  id                  Int              @id @default(autoincrement())
+  uuid                String           @unique @default(uuid())
   name                String
   municipality_name   String
   email               String
   telephone           String
-  cnpj                String         @unique
+  cnpj                String           @unique
   postal_code         String
   city                String
   neighborhood        String
@@ -24,10 +24,10 @@ model subscriber {
   state_logo          String?
   municipal_logo      String?
   administration_logo String?
-  payment             Boolean        @default(true)
-  is_blocked          Boolean        @default(false)
-  created_at          DateTime       @default(now())
-  updated_at          DateTime       @updatedAt
+  payment             Boolean          @default(true)
+  is_blocked          Boolean          @default(false)
+  created_at          DateTime         @default(now())
+  updated_at          DateTime         @updatedAt
   deleted_at          DateTime?
   audit_logs          audit_log[]
   cares               care[]
@@ -39,6 +39,7 @@ model subscriber {
   suppliers           supplier[]
   units               unit[]
   notifications       notification[]
+  whatsappConfig      whatsapp_config?
 }
 
 model unit {
@@ -443,4 +444,19 @@ model notification_read {
   professional professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
 
   @@unique([notification_id, professional_id])
+}
+
+model whatsapp_config {
+  id            Int      @id @default(autoincrement())
+  uuid          String   @unique @default(uuid())
+  subscriber_id Int      @unique
+  instance_name String   @unique
+  api_key       String?
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  subscriber subscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+
+  @@index([subscriber_id])
 }

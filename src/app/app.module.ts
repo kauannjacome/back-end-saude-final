@@ -24,6 +24,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { envSchema } from '../common/env/env';
 import { EmailModule } from '../email/email.module';
 import { NotificationModule } from '../notification/notification.module';
+import { ZapModule } from '../zap/module';
 
 @Module({
   imports: [
@@ -72,7 +73,8 @@ import { NotificationModule } from '../notification/notification.module';
     HealthModule,
     HealthModule,
     EmailModule,
-    NotificationModule
+    NotificationModule,
+    ZapModule
   ],
   controllers: [AppController],
   providers: [

@@ -38,23 +38,23 @@ export class RegulationController {
 
 
 
-@Post('/upload/:regulationId')
-@UseInterceptors(FileInterceptor('file'))
-async uploadRequirement(
-  @UploadedFile() file: Express.Multer.File,
-  @Param('regulationId') regulationId: string,
-  @TokenPayloadParam() token: PayloadTokenDto,
-) {
-  if (!file) {
-    throw new BadRequestException('Nenhum arquivo foi enviado.');
-  }
+  @Post('/upload/:regulationId')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadRequirement(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('regulationId') regulationId: string,
+    @TokenPayloadParam() token: PayloadTokenDto,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Nenhum arquivo foi enviado.');
+    }
 
-  return this.uploadService.uploadRequirement(
-    file,
-    Number(token.sub_id),       // userId
-    Number(regulationId),       // regulationId
-  );
-}
+    return this.uploadService.uploadRequirement(
+      file,
+      Number(token.sub_id),       // userId
+      Number(regulationId),       // regulationId
+    );
+  }
 
   @Post()
   create(@Body() createRegulationDto: CreateRegulationDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
@@ -109,7 +109,7 @@ async uploadRequirement(
     @Body() updateStatusDto: UpdateStatusRegulationDto,
     @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    return this.regulationService.updateStatus(+id, updateStatusDto.status, Number(TokenPayload.sub_id));
+    return this.regulationService.updateStatus(+id, updateStatusDto.status, Number(TokenPayload.sub_id), updateStatusDto.sendMessage);
   }
 
 

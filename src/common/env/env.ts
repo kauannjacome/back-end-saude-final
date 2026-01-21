@@ -20,6 +20,9 @@ export const envSchema = z.object({
   // Server
   PORT: z.string().transform(Number).default(3000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  // Evolution API
+  EVOLUTION_API_URL: z.string().url().optional(),
+  EVOLUTION_API_GLOBAL_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

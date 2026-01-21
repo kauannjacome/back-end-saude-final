@@ -1,0 +1,14 @@
+--- Debug Zap ---
+URL: https://evosaude.akautec.cloud
+KEY: senh******
+
+1. Testando conexão com a API (fetchInstances)...
+✅ Conexão OK!
+ℹ️ Instâncias encontradas: 1
+
+2. Tentando criar instância de teste: debug_test_123...
+✅ Instância CRIADA com sucesso.
+
+3. Tentando conectar/pegar QR Code do debug_test_123...
+✅ Endpoint Connect respondeu OK.
+   -> Data: {"count":0}

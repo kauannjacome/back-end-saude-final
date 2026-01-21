@@ -1,6 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { SignInDto } from './dto/signin.dto';
 import { AuthService } from './auth.service';
+import { AuthTokenGuard } from './guard/auth-token-guard';
+import { TokenPayloadParam } from './param/token-payload.param';
 
 @Controller('auth')
 export class AuthController {
@@ -21,5 +23,17 @@ export class AuthController {
   @Post('reset-password')
   resetPassword(@Body() body: { token: string; password: string }) {
     return this.authService.resetPassword(body.token, body.password);
+  }
+
+  @UseGuards(AuthTokenGuard)
+  @Post('impersonate')
+  async impersonate(
+    @Body() body: { subscriber_id: number },
+    @TokenPayloadParam() payload: any
+  ) {
+    if (payload.role !== 'admin_master') {
+      throw new UnauthorizedException('Apenas Super Admins podem realizar esta ação.');
+    }
+    return this.authService.impersonate(body.subscriber_id);
   }
 }

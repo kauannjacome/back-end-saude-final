@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateSubscriberDto } from './dto/create-subscriber.dto';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
 import { CreateSubscriberWithAdminDto } from './dto/create-subscriber-with-admin.dto';
+import { SearchSubscriberDto } from './dto/search-subscriber.dto';
 import { HashingServiceProtocol } from '../auth/hash/hashing.service';
 
 @Injectable()
@@ -79,9 +80,69 @@ export class SubscriberService {
     });
   }
 
+  async findAll(filters?: SearchSubscriberDto) {
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = { deleted_at: null };
+
+    if (filters?.name) {
+      where.name = { contains: filters.name, mode: 'insensitive' };
+    }
+    if (filters?.city) {
+      where.municipality_name = { contains: filters.city, mode: 'insensitive' };
+    }
+    if (filters?.state) {
+      where.state_acronym = { contains: filters.state, mode: 'insensitive' };
+    }
+    if (filters?.payment !== undefined) {
+      where.payment = filters.payment;
+    }
+    if (filters?.is_blocked !== undefined) {
+      where.is_blocked = filters.is_blocked;
+    }
+
+    const [total, data] = await Promise.all([
+      this.prisma.subscriber.count({ where }),
+      this.prisma.subscriber.findMany({
+        where,
+        take: Number(limit),
+        skip: Number(skip),
+        orderBy: { created_at: 'desc' },
+        select: {
+          id: true,
+          uuid: true,
+          name: true,
+          municipality_name: true,
+          cnpj: true,
+          payment: true,
+          is_blocked: true,
+          created_at: true,
+          _count: {
+            select: {
+              patients: true,
+              regulations: true
+            }
+          }
+        },
+      }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: Number(page),
+        last_page: Math.ceil(total / Number(limit)),
+      },
+    };
+  }
+
+  // Mantendo o search simples para retrocompatibilidade ou uso rápido se necessário, mas o findAll agora cobre tudo
   async search(term: string) {
     console.log('📥 term:', term);
-
+    // ... existing search logic if you want to keep it, but findAll is better
     return this.prisma.subscriber.findMany({
       where: {
         deleted_at: null,
@@ -92,27 +153,36 @@ export class SubscriberService {
           { cnpj: { contains: term, mode: 'insensitive' } },
         ],
       },
-      take: 10,
-      skip: 0,
+      take: 20, // increased defaults
       orderBy: { name: 'asc' },
     });
   }
 
+  async getStats() {
+    const [
+      total,
+      active,
+      blocked,
+      pending,
+      totalRegulations,
+      totalPatients
+    ] = await Promise.all([
+      this.prisma.subscriber.count({ where: { deleted_at: null } }),
+      this.prisma.subscriber.count({ where: { is_blocked: false, payment: true, deleted_at: null } }),
+      this.prisma.subscriber.count({ where: { is_blocked: true, deleted_at: null } }),
+      this.prisma.subscriber.count({ where: { payment: false, is_blocked: false, deleted_at: null } }),
+      this.prisma.regulation.count(),
+      this.prisma.patient.count()
+    ]);
 
-  async findAll() {
-    return this.prisma.subscriber.findMany({
-      where: { deleted_at: null },
-      orderBy: { created_at: 'desc' },
-      select: {
-        id: true,
-        uuid: true,
-        name: true,
-        municipality_name: true,
-        cnpj: true,
-        // se quiser incluir created_at também:
-        // created_at: true,
-      },
-    });
+    return {
+      totalSubscribers: total,
+      activeSubscribers: active,
+      blockedSubscribers: blocked,
+      pendingSubscribers: pending,
+      totalRegulations,
+      totalPatients
+    };
   }
 
   async findOne(id: number) {

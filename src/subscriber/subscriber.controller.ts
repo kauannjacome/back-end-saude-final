@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { SubscriberService } from './subscriber.service';
 import { CreateSubscriberDto } from './dto/create-subscriber.dto';
+import { SearchSubscriberDto } from './dto/search-subscriber.dto';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
 import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
 
@@ -23,10 +24,15 @@ export class SubscriberController {
     return this.subscriberService.search(term);
   }
 
+  @Get('stats')
+  getStats() {
+    return this.subscriberService.getStats();
+  }
+
 
   @Get()
-  findAll() {
-    return this.subscriberService.findAll();
+  findAll(@Query() filters: SearchSubscriberDto) {
+    return this.subscriberService.findAll(filters);
   }
 
   @Get(':id')

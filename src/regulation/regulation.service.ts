@@ -7,10 +7,53 @@ import { PageRegulationPdf } from './pdf/page-regulation-pdf';
 import { customAlphabet } from 'nanoid'
 import { status, Prisma } from '@prisma/client';
 import { SearchRegulationDto } from './dto/search-regulation.dto';
+import { ZapService } from '../zap/service';
 
 @Injectable()
 export class RegulationService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private zapService: ZapService
+  ) { }
+
+  // ... (existing methods until updateStatus)
+
+  async updateStatus(id: number, status: status, subscriber_id: number, sendMessage?: boolean) {
+    const updated = await this.prisma.regulation.update({
+      where: { id, subscriber_id },
+      data: { status },
+      include: { patient: true, cares: { include: { care: true } } }
+    });
+
+    if (sendMessage && (status === 'em_andamento' || status === 'aprovado')) {
+      try {
+        const patientName = updated.patient?.full_name?.split(' ')[0] || 'Paciente';
+        const isPlural = updated.cares.length > 1;
+        const careText = isPlural ? 'os seus cuidados foram atualizados' : 'o seu cuidado foi atualizado';
+        const statusText = status === 'em_andamento' ? 'Em andamento' : 'Aprovado';
+
+        const message = `Olá *${patientName}*, estamos felizes em te informar que ${careText} para *${statusText}*.\n\n_Mensagem automática._`;
+
+        if (updated.patient?.phone) {
+          let phone = updated.patient.phone.replace(/\D/g, '');
+
+          // Tratamento simples para números do Brasil
+          // Se tiver 10 ou 11 dígitos, provavelmente falta o 55
+          if (phone.length >= 10 && phone.length <= 11) {
+            phone = '55' + phone;
+          }
+
+          console.log(`Sending WhatsApp to ${phone}`);
+          await this.zapService.sendMessage(subscriber_id, phone, message);
+        }
+      } catch (e) {
+        console.error('Erro ao enviar notificação Zap:', e);
+        // Não bloqueia o retorno se falhar o zap
+      }
+    }
+
+    return updated;
+  }
 
   async create(createRegulationDto: CreateRegulationDto, subscriber_id: number) {
     const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUXYZ', 10)
@@ -228,12 +271,7 @@ export class RegulationService {
 
 
 
-  async updateStatus(id: number, status: status, subscriber_id: number) {
-    return this.prisma.regulation.update({
-      where: { id, subscriber_id },
-      data: { status },
-    });
-  }
+
 
   async update(id: number, updateRegulationDto: UpdateRegulationDto, subscriber_id: number) {
     const existingRegulation = await this.prisma.regulation.findUnique({
