@@ -37,7 +37,7 @@ export class AuthTokenGuard implements CanActivate {
 
       request[REQUEST_TOKEN_PAYLOAD_NAME] = payload;
     } catch {
-      throw new UnauthorizedException("Acesso não autorizado.");
+      throw new UnauthorizedException("Acesso não authorized.");
     }
 
     return true;

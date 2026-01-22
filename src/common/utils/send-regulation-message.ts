@@ -20,28 +20,22 @@ export async function sendRegulationStatusMessage(
   zapService: ZapService
 ) {
   try {
-    const patientName = updated.patient?.full_name?.split(' ')[0] || 'Paciente';
+    const patientName = updated.patient?.name?.split(' ')[0] || 'Paciente';
     const isPlural = updated.cares.length > 1;
 
     let text = '';
 
     switch (status) {
-      case 'recebido':
-        text = `Olá *${patientName}*, informamos que sua solicitação foi recebida pela Central de Regulação e está aguardando análise.`;
-        break;
-      case 'em_andamento':
+      case 'in_progress':
         text = `Olá *${patientName}*, sua solicitação está *Em Análise* por nossa equipe técnica. Em breve você receberá novas atualizações.`;
         break;
-      case 'aprovado':
+      case 'approved':
         text = `Olá *${patientName}*, temos ótimas notícias! Sua solicitação foi *Aprovada*. Aguarde, em breve entraremos em contato com detalhes sobre o agendamento.`;
         break;
-      case 'autorizado':
-        text = `Olá *${patientName}*, sua solicitação está *Autorizada*! Por favor, aguarde as instruções para realização do procedimento.`;
+      case 'denied':
+        text = `Olá *${patientName}*, atualizamos o status da sua solicitação para *denied* após análise técnica. Para compreender o motivo ou regularizar pendências, procure sua Unidade de Saúde.`;
         break;
-      case 'reprovado':
-        text = `Olá *${patientName}*, atualizamos o status da sua solicitação para *Reprovado* após análise técnica. Para compreender o motivo ou regularizar pendências, procure sua Unidade de Saúde.`;
-        break;
-      case 'removido':
+      case 'cancelled':
         text = `Olá *${patientName}*, informamos que sua solicitação foi cancelada/removida do sistema. Caso tenha dúvidas, entre em contato com sua Unidade de Saúde.`;
         break;
       default:

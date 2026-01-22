@@ -109,7 +109,7 @@ export class RegulationService {
       const normalizedName = filters.patientName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       where.patient = {
         OR: [
-          { full_name: { contains: filters.patientName, mode: 'insensitive' } },
+          { name: { contains: filters.patientName, mode: 'insensitive' } },
           { name_normalized: { contains: normalizedName, mode: 'insensitive' } },
         ],
       };
@@ -158,7 +158,7 @@ export class RegulationService {
     return this.prisma.regulation.findMany({
       where,
       include: {
-        patient: { select: { full_name: true } },
+        patient: { select: { name: true } },
         supplier: { select: { name: true } },
         cares: {
           include: { care: { select: { name: true } } },

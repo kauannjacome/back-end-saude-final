@@ -16,7 +16,7 @@ export class NotificationService {
   constructor(private readonly prisma: PrismaService) { }
 
   @Cron('0 21 * * *', { timeZone: 'America/Sao_Paulo' })
-  
+
   async handleDailyNotifications() {
     this.logger.log('Starting daily notification check...');
     await this.processNotifications();
@@ -37,7 +37,7 @@ export class NotificationService {
     const regulations = await this.prisma.regulation.findMany({
       where: {
         scheduled_date: { not: null },
-        status: { in: ['recebido', 'em_andamento'] },
+        status: { in: ['in_progress'] },
         subscriber: subscriberFilter,
       },
       include: { subscriber: true },
@@ -73,7 +73,7 @@ export class NotificationService {
     const regulations = await this.prisma.regulation.findMany({
       where: {
         priority: { in: ['urgencia', 'emergencia'] },
-        status: { in: ['recebido', 'em_andamento'] },
+        status: { in: ['in_progress'] },
         subscriber: subscriberFilter,
       },
     });
@@ -137,90 +137,90 @@ export class NotificationService {
 
 
 
-async getNotificationsForUser(
-  subscriberId: number,
-  professionalId: number
-) {
-  /**
-   * Regra:
-   * - Retorna notificações do subscriber
-   * - Exclui notificações que foram "limpas" (cleared_at != null) para o profissional
-   * - Inclui:
-   *   - Regulação
-   *   - Paciente da regulação
-   *   - Cuidados da regulação
-   * - Indica se a notificação está lida (is_read)
-   */
+  async getNotificationsForUser(
+    subscriberId: number,
+    professionalId: number
+  ) {
+    /**
+     * Regra:
+     * - Retorna notificações do subscriber
+     * - Exclui notificações que foram "limpas" (cleared_at != null) para o profissional
+     * - Inclui:
+     *   - Regulação
+     *   - Paciente da regulação
+     *   - Cuidados da regulação
+     * - Indica se a notificação está lida (is_read)
+     */
 
-  const notifications = await this.prisma.notification.findMany({
-    where: {
-      subscriber_id: subscriberId,
-      reads: {
-        none: {
-          professional_id: professionalId,
-          cleared_at: { not: null }
+    const notifications = await this.prisma.notification.findMany({
+      where: {
+        subscriber_id: subscriberId,
+        reads: {
+          none: {
+            professional_id: professionalId,
+            cleared_at: { not: null }
+          }
         }
-      }
-    },
-    orderBy: {
-      created_at: 'desc'
-    },
-    include: {
-      regulation: {
-        include: {
-          patient: {
-            select: {
-              id: true,
-              full_name: true
-            }
-          },
-          cares: {
-            include: {
-              care: {
-                select: {
-                  id: true,
-                  name: true
+      },
+      orderBy: {
+        created_at: 'desc'
+      },
+      include: {
+        regulation: {
+          include: {
+            patient: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            cares: {
+              include: {
+                care: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
                 }
               }
             }
           }
-        }
-      },
-      reads: {
-        where: {
-          professional_id: professionalId
         },
-        select: {
-          read_at: true
+        reads: {
+          where: {
+            professional_id: professionalId
+          },
+          select: {
+            read_at: true
+          }
         }
       }
-    }
-  });
+    });
 
-  /**
-   * Normalização da resposta:
-   * - is_read: boolean
-   * - remove array "reads" da resposta final
-   * - mantém estrutura previsível para o frontend
-   */
+    /**
+     * Normalização da resposta:
+     * - is_read: boolean
+     * - remove array "reads" da resposta final
+     * - mantém estrutura previsível para o frontend
+     */
 
-  return notifications.map(notification => {
-    const isRead =
-      notification.reads.length > 0 &&
-      notification.reads[0].read_at !== null;
+    return notifications.map(notification => {
+      const isRead =
+        notification.reads.length > 0 &&
+        notification.reads[0].read_at !== null;
 
-    return {
-      id: notification.id,
-      uuid: notification.uuid,
-      title: notification.title,
-      message: notification.message,
-      type: notification.type,
-      milestone: notification.milestone,
-      created_at: notification.created_at,
-      is_read: isRead,
+      return {
+        id: notification.id,
+        uuid: notification.uuid,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        milestone: notification.milestone,
+        created_at: notification.created_at,
+        is_read: isRead,
 
-      regulation: notification.regulation
-        ? {
+        regulation: notification.regulation
+          ? {
             id: notification.regulation.id,
             uuid: notification.regulation.uuid,
             status: notification.regulation.status,
@@ -228,9 +228,9 @@ async getNotificationsForUser(
 
             patient: notification.regulation.patient
               ? {
-                  id: notification.regulation.patient.id,
-                  full_name: notification.regulation.patient.full_name
-                }
+                id: notification.regulation.patient.id,
+                name: notification.regulation.patient.name
+              }
               : null,
 
             cares: notification.regulation.cares.map(cr => ({
@@ -241,10 +241,10 @@ async getNotificationsForUser(
               // validity_date: cr.validity_date
             }))
           }
-        : null
-    };
-  });
-}
+          : null
+      };
+    });
+  }
 
 
 

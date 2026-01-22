@@ -112,7 +112,7 @@ export async function generateRegulationPdf(
       .text('Paciente', { underline: true });
 
     doc.font(LAYOUT.font.body.family).fontSize(LAYOUT.font.body.size);
-    doc.text(`Nome: ${patient.full_name}`);
+    doc.text(`Nome: ${patient.name}`);
     doc.text(`CPF: ${patient.cpf}`);
     doc.text(`Telefone: ${patient.phone || 'N/A'}`);
     doc.text(

@@ -26,6 +26,19 @@ export class CareController {
     return this.careService.search(Number(TokenPayload.sub_id), term);
   }
 
+  @Get('min-deadline/check')
+  checkMinDeadline(
+    @Query('care_id') careId: string,
+    @Query('patient_id') patientId: string,
+    @TokenPayloadParam() tokenPayload: PayloadTokenDto
+  ) {
+    return this.careService.checkMinDeadline(
+      Number(careId),
+      Number(patientId),
+      Number(tokenPayload.sub_id)
+    );
+  }
+
   @Get()
   findAll(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
     return this.careService.findAll(Number(tokenPayload.sub_id));

@@ -45,7 +45,7 @@ export class CreateRegulationDto {
 
   @IsOptional()
   @IsString()
-  justification?: string;
+  clinical_indication?: string;
 
   @IsOptional()
   @IsString()

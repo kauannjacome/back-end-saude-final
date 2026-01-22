@@ -36,7 +36,7 @@ export class SeedsController {
     }
 
     this.logger.log(
-      `Recebido upload CSV — payload=${JSON.stringify(
+      `pending upload CSV — payload=${JSON.stringify(
         CreateSeedPatient,
       )} file=${file.originalname}`,
     );

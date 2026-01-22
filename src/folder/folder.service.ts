@@ -91,7 +91,7 @@ export class FolderService {
             patient_id: true,
             status: true,
             notes: true,
-            justification: true,
+            clinical_indication: true,
             priority: true,
             type_declaration: true,
 
@@ -99,7 +99,7 @@ export class FolderService {
               select: {
                 cpf: true,
                 cns: true,
-                full_name: true,
+                name: true,
                 social_name: true,
               },
             },

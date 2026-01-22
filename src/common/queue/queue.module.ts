@@ -2,7 +2,7 @@
 import { Global, Module } from '@nestjs/common';
 import { QueueService } from './queue.service';
 
-@Global() // Deixando global para não precisar importar em todo lugar, mas pode ser removido se preferir explícito
+@Global() // Deixando global para não precisar importar em todo lugar, mas pode ser cancelled se preferir explícito
 @Module({
   providers: [QueueService],
   exports: [QueueService],

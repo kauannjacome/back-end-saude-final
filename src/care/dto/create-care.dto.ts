@@ -4,8 +4,9 @@ import {
   IsNumber,
   IsEnum,
   IsInt,
+  Min,
 } from 'class-validator';
-import { status, resource_origin, unit_measure, type_declaration } from '@prisma/client';
+import { status, resource_origin, unit_measure, type_declaration, priority } from '@prisma/client';
 
 export class CreateCareDto {
 
@@ -27,7 +28,15 @@ export class CreateCareDto {
 
   @IsOptional()
   @IsEnum(resource_origin)
+  resource_origin?: resource_origin;
+
+  @IsOptional()
+  @IsEnum(resource_origin)
   resource?: resource_origin;
+
+  @IsOptional()
+  @IsEnum(priority)
+  priority?: priority;
 
   @IsEnum(unit_measure)
   unit_measure: unit_measure;
@@ -45,6 +54,11 @@ export class CreateCareDto {
   @IsOptional()
   @IsInt()
   amount?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  min_deadline_days?: number;
 
   @IsOptional()
   @IsInt()

@@ -1,0 +1,36 @@
+[dotenv@17.2.3] injecting env (15) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+🌱 Iniciando seed completo...
+❌ Erro ao executar seed: PrismaClientKnownRequestError: 
+Invalid `prisma.care.upsert()` invocation in
+C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\prisma\seed.ts:198:35
+
+  195 // ===========================
+  196 // CUIDADOS
+  197 // ===========================
+→ 198 const care1 = await prisma.care.upsert(
+The column `(not available)` does not exist in the current database.
+    at qr.handleRequestError (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at qr.handleAndLogRequestError (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at qr.request (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async a (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:805:24)
+    at async main (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\prisma\seed.ts:198:17) {
+  code: 'P2022',
+  meta: {
+    modelName: 'care',
+    driverAdapterError: DriverAdapterError: ColumnNotFound
+        at PgTransaction.onError (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\adapter-pg\dist\index.js:687:11)
+        at PgTransaction.performIO (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\adapter-pg\dist\index.js:682:12)
+        at processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at async PgTransaction.queryRaw (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\adapter-pg\dist\index.js:602:30)
+        at async C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client-engine-runtime\src\tracing.ts:68:22
+        at async fr (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client-engine-runtime\src\tracing.ts:56:10)
+        at async e.interpretNode (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client-engine-runtime\src\interpreter\query-interpreter.ts:190:26)
+        at async e.interpretNode (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client-engine-runtime\src\interpreter\query-interpreter.ts:217:41)
+        at async e.interpretNode (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client-engine-runtime\src\interpreter\query-interpreter.ts:132:29)
+        at async e.interpretNode (C:\Users\kauan\OneDrive\Área de Trabalho\Projetos\SAUDE\back-saude\node_modules\@prisma\client-engine-runtime\src\interpreter\query-interpreter.ts:290:18) {
+      cause: [Object]
+    }
+  },
+  clientVersion: '7.2.0'
+}

@@ -11,10 +11,18 @@ import {
 } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import * as dotenv from 'dotenv'
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
 
 dotenv.config()
 
-const prisma = new PrismaClient()
+const connectionString = `${process.env.DATABASE_URL}`
+const pool = new Pool({
+  connectionString,
+  ssl: { rejectUnauthorized: false },
+})
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
 
 async function main() {
   console.log('🌱 Iniciando seed completo...')
@@ -130,7 +138,7 @@ async function main() {
     create: {
       subscriber_id: subscriber1.id,
       cpf: '33333333333',
-      full_name: 'Carlos Oliveira',
+      name: 'Carlos Oliveira',
       gender: 'Masculino',
       race: 'Pardo',
       birth_date: new Date('1985-03-12'),
@@ -150,7 +158,7 @@ async function main() {
     create: {
       subscriber_id: subscriber1.id,
       cpf: '44444444444',
-      full_name: 'Ana Souza',
+      name: 'Ana Souza',
       gender: 'Feminino',
       race: 'Branca',
       birth_date: new Date('1992-07-21'),
@@ -196,8 +204,8 @@ async function main() {
       name: 'Hemograma Completo',
       acronym: 'HEMOC',
       description: 'Exame de sangue completo',
-      status: status.aprovado,
-      resource: resource_origin.municipal,
+
+      resource_origin: resource_origin.municipal,
       unit_measure: unit_measure.un,
 
       value: 25.5,
@@ -216,8 +224,8 @@ async function main() {
       name: 'Glicemia em Jejum',
       acronym: 'GLICJ',
       description: 'Exame de glicose no sangue',
-      status: status.recebido,
-      resource: resource_origin.municipal,
+
+      resource_origin: resource_origin.municipal,
       unit_measure: unit_measure.un,
 
       value: 15.0,
@@ -274,7 +282,7 @@ async function main() {
       subscriber_id: subscriber1.id,
       id_code: 'REG-001',
       patient_id: pac1.id,
-      status: status.recebido,
+      status: status.in_progress,
       notes: 'Solicitação de hemograma de rotina',
       request_date: new Date(),
       supplier_id: supplier1.id,
@@ -367,7 +375,7 @@ async function main() {
     create: {
       subscriber_id: subscriber2.id,
       cpf: '88888888888',
-      full_name: 'Luciana Mendes',
+      name: 'Luciana Mendes',
       gender: 'Feminino',
       race: 'Branca',
       birth_date: new Date('1988-01-01'),
@@ -396,8 +404,8 @@ async function main() {
       name: 'Eletrocardiograma',
       acronym: 'ECG',
       description: 'Exame de atividade elétrica do coração',
-      status: status.aprovado,
-      resource: resource_origin.estadual,
+
+      resource_origin: resource_origin.estadual,
       unit_measure: unit_measure.un,
 
       value: 40.0,
@@ -432,7 +440,7 @@ async function main() {
       id_code: 'REG-100',
       patient_id: pacRJ.id,
       request_date: new Date(),
-      status: status.em_andamento,
+      status: status.in_progress,
       notes: 'Solicitação de ECG de urgência',
       supplier_id: supplierRJ.id,
       creator_id: profRJ.id,

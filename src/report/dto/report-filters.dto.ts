@@ -8,12 +8,10 @@ export enum PriorityEnum {
 }
 
 export enum StatusEnum {
-  recebido = 'recebido',
-  em_andamento = 'em_andamento',
-  aprovado = 'aprovado',
-  autorizado = 'autorizado',
-  reprovado = 'reprovado',
-  removido = 'removido',
+  in_progress = 'in_progress',
+  approved = 'approved',
+  denied = 'denied',
+  cancelled = 'cancelled',
 }
 
 export class ReportFilterDto {

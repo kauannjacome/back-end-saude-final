@@ -1,25 +1,36 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { SearchPaginationDto } from './dto/search-pagination-dto';
 import { normalizeText } from 'src/common/utils/normalize-text';
+import { Prisma } from '@prisma/client';
 @Injectable()
 export class PatientService {
   constructor(private prisma: PrismaService) { }
 
   async create(createPatientDto: CreatePatientDto, subscriber_id: number) {
-    return this.prisma.patient.create({
-      data: {
-        ...createPatientDto,
-        name_normalized: normalizeText(createPatientDto.full_name),
-        subscriber_id: subscriber_id,
-        birth_date: new Date(createPatientDto.birth_date),
-        accepted_terms_at: createPatientDto.accepted_terms_at
-          ? new Date(createPatientDto.accepted_terms_at)
-          : null,
-      },
-    });
+    try {
+      return this.prisma.patient.create({
+        data: {
+          ...createPatientDto,
+          name_normalized: normalizeText(createPatientDto.name),
+          subscriber_id: subscriber_id,
+          birth_date: new Date(createPatientDto.birth_date),
+          accepted_terms_at: createPatientDto.accepted_terms_at
+            ? new Date(createPatientDto.accepted_terms_at)
+            : null,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new BadRequestException('CPF ja cadastrado para este assinante.');
+      }
+      throw error;
+    }
   }
 
 
@@ -47,7 +58,7 @@ export class PatientService {
             }
           },
           {
-            full_name: {
+            name: {
               contains: term,
               mode: 'insensitive', // <-- ignora maiúsculas/minúsculas
             },
@@ -62,14 +73,14 @@ export class PatientService {
       },
       take: 10,
       skip: 0,
-      orderBy: { full_name: 'asc' },
+      orderBy: { name: 'asc' },
       select: {
         id: true,
         uuid: true,
         subscriber_id: true,
         cpf: true,
         cns: true,
-        full_name: true,
+        name: true,
         social_name: true,
         gender: true,
         race: true,
@@ -109,16 +120,42 @@ export class PatientService {
   }
 
   async update(id: number, updatePatientDto: UpdatePatientDto, subscriber_id: number) {
-    await this.findOne(id, subscriber_id);
-    return this.prisma.patient.update({
-      where: { id, subscriber_id },
-      data: {
-        ...updatePatientDto,
-        ...(updatePatientDto.full_name && {
-          name_normalized: normalizeText(updatePatientDto.full_name),
-        }),
-      },
-    });
+    const patient = await this.findOne(id, subscriber_id);
+    const { subscriber_id: _subscriberId, ...data } = updatePatientDto;
+
+    if (data.cpf && data.cpf !== patient.cpf) {
+      const existing = await this.prisma.patient.findFirst({
+        where: {
+          subscriber_id,
+          cpf: data.cpf,
+          NOT: { id },
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        throw new BadRequestException('CPF ja cadastrado para este assinante.');
+      }
+    }
+
+    try {
+      return this.prisma.patient.update({
+        where: { id, subscriber_id },
+        data: {
+          ...data,
+          ...(data.name && {
+            name_normalized: normalizeText(data.name),
+          }),
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new BadRequestException('CPF ja cadastrado para este assinante.');
+      }
+      throw error;
+    }
   }
 
   async remove(id: number, subscriber_id: number) {

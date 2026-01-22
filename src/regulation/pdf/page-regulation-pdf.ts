@@ -109,7 +109,7 @@ export async function PageRegulationPdf(
   doc
     .font(LAYOUT.font.body.family)
     .fontSize(LAYOUT.font.body.size)
-    .text(`Nome: ${patient.full_name}`)
+    .text(`Nome: ${patient.name}`)
     .text(`CPF: ${patient.cpf}`)
     .text(`Telefone: ${patient.phone || 'N/A'}`)
     .text(

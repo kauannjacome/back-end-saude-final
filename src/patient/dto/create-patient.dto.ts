@@ -9,7 +9,7 @@ import {
 
 export class CreatePatientDto {
   @IsString()
-  full_name: string;
+  name: string;
 
   @IsOptional()
   @IsString()

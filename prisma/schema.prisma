@@ -39,7 +39,7 @@ model subscriber {
   suppliers           supplier[]
   units               unit[]
   notifications       notification[]
-  whatsappConfig      whatsapp_config?
+  whatsapp_config     whatsapp_config?
   suggestions         suggestion[]
 }
 
@@ -82,13 +82,14 @@ model care {
   name_normalized String?
   acronym         String?
   description     String?
-  status          status?
-  resource        resource_origin? @default(nao_especificado)
+  status          status?          @default(in_progress)
+  resource_origin resource_origin? @default(nao_especificado)
   unit_measure    unit_measure
 
   type_declaration type_declaration?
   value            Float?
   amount           Int?
+  min_deadline_days Int?
   group_id         Int?
   professional_id  Int?
   supplier_id      Int?
@@ -147,7 +148,7 @@ model patient {
   subscriber_id          Int
   cpf                    String
   cns                    String?
-  full_name              String
+  name                   String
   name_normalized        String?
   social_name            String?
   gender                 String?
@@ -238,7 +239,8 @@ model regulation {
   scheduled_date          DateTime?
   status                  status?
   notes                   String?
-  justification           String?
+  clinical_indication     String?
+  cid                     String?
   url_requirement         String?
   url_pre_document        String?
   url_current_document    String?
@@ -323,12 +325,10 @@ enum audit_action {
 }
 
 enum status {
-  recebido
-  em_andamento
-  aprovado
-  autorizado
-  reprovado
-  removido
+  in_progress
+  approved
+  denied
+  cancelled
 }
 
 enum unit_measure {

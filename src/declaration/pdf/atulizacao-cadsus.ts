@@ -94,7 +94,7 @@ export async function AtulizacaoCadsusPdf(data: any): Promise<Buffer> {
     .font(LAYOUT.font.body.family) // sem negrito
     .fontSize(LAYOUT.font.body.size);
 
-  let textoPrincipal = `Declaro, sob as penas de Lei, para fins de comprovação junto aos órgãos de controle interno e externo que eu, ${patient.full_name || 'N/A'}, portador(a) do CPF nº ${patient.cpf || 'N/A'
+  let textoPrincipal = `Declaro, sob as penas de Lei, para fins de comprovação junto aos órgãos de controle interno e externo que eu, ${patient.name || 'N/A'}, portador(a) do CPF nº ${patient.cpf || 'N/A'
     }, residente  no endereço especificado: ${patient.address || 'N/A'}, ${patient.neighborhood || ''
     }, ${patient.city || ''}/${patient.state || ''}, venho solicitar `;
 

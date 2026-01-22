@@ -1,7 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import dayjs from 'dayjs';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+import * as dotenv from 'dotenv';
 
-const prisma = new PrismaClient();
+dotenv.config();
+
+const connectionString = `${process.env.DATABASE_URL}`;
+const pool = new Pool({
+  connectionString,
+  ssl: { rejectUnauthorized: false },
+});
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('🌱 Starting Notification Seed...');
@@ -17,7 +28,7 @@ async function main() {
   await prisma.regulation.create({
     data: {
       subscriber_id: subscriberId,
-      status: 'recebido',
+      status: 'in_progress',
       scheduled_date: dayjs().add(5, 'day').toDate(),
       notes: 'Teste Prazo 5 Dias',
     },
@@ -27,7 +38,7 @@ async function main() {
   await prisma.regulation.create({
     data: {
       subscriber_id: subscriberId,
-      status: 'recebido',
+      status: 'in_progress',
       scheduled_date: dayjs().add(10, 'day').toDate(),
       notes: 'Teste Prazo 10 Dias (Sem alerta)',
     },
@@ -40,7 +51,7 @@ async function main() {
   await prisma.regulation.create({
     data: {
       subscriber_id: subscriberId,
-      status: 'em_andamento',
+      status: 'in_progress',
       priority: 'urgencia',
       created_at: dayjs().subtract(15, 'day').toDate(),
       notes: 'Teste Prioridade 15 Dias',
@@ -51,7 +62,7 @@ async function main() {
   await prisma.regulation.create({
     data: {
       subscriber_id: subscriberId,
-      status: 'em_andamento',
+      status: 'in_progress',
       priority: 'urgencia',
       created_at: dayjs().subtract(10, 'day').toDate(),
       notes: 'Teste Prioridade 10 Dias (Sem alerta)',

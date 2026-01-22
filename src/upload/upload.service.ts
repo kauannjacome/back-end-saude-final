@@ -158,7 +158,7 @@ async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
   console.log('🖼️ Iniciando upload de imagem...');
 
   try {
-    if (!file) throw new Error('Nenhum arquivo recebido.');
+    if (!file) throw new Error('Nenhum arquivo pending.');
 
     const subscriber = await this.prisma.subscriber.findUnique({ where: { id } });
     if (!subscriber) throw new NotFoundException(`Assinante #${id} não encontrado.`);

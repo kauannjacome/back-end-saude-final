@@ -55,7 +55,7 @@ export class ReportService {
       where,
       take,
       include: {
-        patient: { select: { full_name: true, cpf: true, birth_date: true } },
+        patient: { select: { name: true, cpf: true, birth_date: true } },
         cares: { include: { care: { select: { name: true } } } },
         supplier: { select: { name: true } },
       },
@@ -76,7 +76,7 @@ export class ReportService {
     }).map(reg => ({
       id: reg.id,
       protocol: reg.id_code || reg.uuid,
-      patient_name: reg.patient?.full_name || 'N/A',
+      patient_name: reg.patient?.name || 'N/A',
       care_type: reg.cares.map(c => c.care.name).join(', '),
       priority: reg.priority,
       status: reg.status,

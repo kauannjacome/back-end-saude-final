@@ -111,6 +111,12 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1",
+      "^node-fetch$": "<rootDir>/test-utils/node-fetch.mock.ts",
+      "^p-queue$": "<rootDir>/test-utils/p-queue.mock.ts",
+      "^nanoid$": "<rootDir>/test-utils/nanoid.mock.ts"
+    },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

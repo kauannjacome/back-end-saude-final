@@ -56,8 +56,8 @@ export class SeedsService {
               cpf: row.nu_cpf || '',
               cns: row.nu_cns || null,
 
-              // ✔ full_name corrigido
-              full_name: this.formatName(row.no_cidadao || ''),
+              // ✔ name corrigido
+              name: this.formatName(row.no_cidadao || ''),
 
               social_name: row.no_social || null,
 
