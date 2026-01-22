@@ -43,7 +43,6 @@ export class PatientService {
   }
 
   async search(subscriber_id: number, term?: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
 
     return this.prisma.patient.findMany({
 

@@ -84,8 +84,6 @@ export class ProfessionalService {
   }
 
   async search(subscriber_id: number, term?: string) {
-    console.log('📥 [ProfessionalService.search] subscriber_id:', subscriber_id);
-    console.log('📥 [ProfessionalService.search] term:', term);
 
     try {
 
@@ -102,7 +100,6 @@ export class ProfessionalService {
         ],
       };
 
-      console.log('🔍 Prisma where:', JSON.stringify(where, null, 2));
 
       const results = await this.prisma.professional.findMany({
         where,
@@ -118,7 +115,6 @@ export class ProfessionalService {
         },
       });
 
-      console.log(`✅ ${results.length} profissionais encontrados`);
       return results;
     } catch (error) {
       console.error('❌ Erro detalhado no ProfessionalService.search:');

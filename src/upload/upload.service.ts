@@ -23,12 +23,6 @@ export class UploadService {
   private readonly region: string;
   constructor(private readonly prisma: PrismaService) {
     // 🔍 Logs de inicialização
-    console.log('🟢 Iniciando UploadService...');
-    console.log('🔧 Lendo variáveis de ambiente:');
-    console.log('  AWS_REGION:', process.env.AWS_REGION);
-    console.log('  S3_BUCKET:', process.env.S3_BUCKET);
-    console.log('  AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? '[OK]' : '[FALTANDO]');
-    console.log('  AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? '[OK]' : '[FALTANDO]');
 
     this.region = process.env.AWS_REGION || 'us-east-1';
     this.bucketName = process.env.S3_BUCKET as string;
@@ -57,26 +51,17 @@ export class UploadService {
       },
     });
 
-    console.log('✅ S3 Client configurado com sucesso:');
-    console.log('  Região:', this.region);
-    console.log('  Bucket:', this.bucketName);
-    console.log('  Bucket imagem:', this.imageBucket);
-    console.log('  Endpoint:', endpoint);
   }
 
   /**
    * Upload genérico de arquivo para o S3
    */
   async uploadFile(file: Express.Multer.File, folder: string) {
-    console.log('📤 Iniciando upload genérico...');
-    console.log('  Nome original:', file.originalname);
-    console.log('  Pasta destino:', folder);
 
     try {
       const fileExt = path.extname(file.originalname).toLowerCase();
       const key = `${folder}/${randomUUID()}${fileExt}`;
 
-      console.log('🗝️  Key gerada:', key);
 
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -88,8 +73,6 @@ export class UploadService {
       await this.s3Client.send(command);
 
       const url = `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
-      console.log('✅ Upload concluído com sucesso!');
-      console.log('  URL:', url);
 
       return {
         message: 'Upload realizado com sucesso!',
@@ -155,7 +138,6 @@ async uploadRequirement(
    * Upload de imagem e atualização do subscriber
    */
 async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
-  console.log('🖼️ Iniciando upload de imagem...');
 
   try {
     if (!file) throw new Error('Nenhum arquivo pending.');
@@ -205,7 +187,6 @@ async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
    * Gera URL de download temporária (assinada)
    */
   async getDownloadUrl(key: string) {
-    console.log('🔗 Gerando URL de download para:', key);
 
     try {
       const command = new GetObjectCommand({
@@ -215,8 +196,6 @@ async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
 
       const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
 
-      console.log('✅ URL de download gerada com sucesso!');
-      console.log('  URL:', signedUrl);
 
       return { downloadUrl: signedUrl };
     } catch (error) {
@@ -232,7 +211,6 @@ async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
 
 
   async getDocumentUrl(type: string, id: number) {
-    console.log('🔗 Gerando URL de download para tipo:', type, 'ID:', id);
 
     try {
       // Busca o registro da regulação pelo ID
@@ -275,8 +253,6 @@ async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
 
       const signedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 3600 });
 
-      console.log('✅ URL de download gerada com sucesso!');
-      console.log('  URL:', signedUrl);
 
       return { downloadUrl: signedUrl };
     } catch (error) {

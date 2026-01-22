@@ -214,7 +214,6 @@ export async function generateRegulationPdf(
   await drawRegulationSection(20, false);
 
     // === Linha divisória ===
-console.log(doc.y)
   // === Linha divisória ===
   const afterFirstTableY = 320;
   doc.moveTo(2, afterFirstTableY)

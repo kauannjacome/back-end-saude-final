@@ -13,7 +13,6 @@ export class CareController {
 
   @Post()
   create(@Body() createCareDto: CreateCareDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    console.log(CreateCareDto)
     return this.careService.create(createCareDto, Number(TokenPayload.sub_id));
   }
   // 🔍 Endpoint de busca
@@ -22,7 +21,6 @@ export class CareController {
     @Query('term') term: string,
     @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    console.log(term)
     return this.careService.search(Number(TokenPayload.sub_id), term);
   }
 
@@ -53,7 +51,6 @@ export class CareController {
   @Patch(':id')
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCareDto: UpdateCareDto, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
-    console.log(UpdateCareDto)
     return this.careService.update(+id, updateCareDto, Number(tokenPayload.sub_id));
   }
 

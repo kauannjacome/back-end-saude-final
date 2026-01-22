@@ -14,7 +14,6 @@ export class FolderController {
 
   @Post()
   create(@Body() createFolderDto: CreateFolderDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    console.log(createFolderDto)
     return this.folderService.create(createFolderDto, Number(TokenPayload.sub_id));
   }
 

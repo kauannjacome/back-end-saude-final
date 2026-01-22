@@ -20,9 +20,6 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService
   ) {
-    console.log("--------------------------")
-    console.log(jwtConfiguration)
-    console.log("--------------------------")
   }
 
   async authenticate(signInDto: SignInDto) {

@@ -33,7 +33,6 @@ export class UploadController {
   async upload(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new Error('Nenhum arquivo foi enviado.');
 
-    console.log('Arquivo pending:', file.originalname);
     return await this.uploadService.uploadFile(file, 'certificados');
   }
 
@@ -75,9 +74,6 @@ async uploadRequirement(
 
     if (isNaN(idNum)) throw new Error('O parâmetro "id" deve ser um número válido.');
 
-    console.log('Arquivo pending:', file.originalname);
-    console.log('Tipo pending:', tipo);
-    console.log('ID pending:', idNum);
 
     return await this.uploadService.uploadImage(file, tipo, idNum);
   }
@@ -95,7 +91,6 @@ async uploadRequirement(
   @Get('document')
   async getDocumentUrl(@Query() query: getDocumentUrl) {
     const { type, id } = query;
-    console.log(query)
 
     // Garantir que o id venha como número (DTO faz isso, mas reforçamos)
     if (!type || !id) {

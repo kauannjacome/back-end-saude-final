@@ -104,7 +104,6 @@ export class CareService {
    * Cria um novo registro de cuidado (care)
    */
   async create(createCareDto: CreateCareDto, subscriber_id: number) {
-    console.log(createCareDto)
     const {
       priority: _priority,
       resource: legacyResource,
@@ -151,8 +150,6 @@ export class CareService {
 
 
   async search(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
     return this.prisma.care.findMany({
       where: {
         subscriber_id,

@@ -85,8 +85,6 @@ export class RegulationService {
   }
 
   async search(subscriber_id: number, filters: SearchRegulationDto) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 filters:', filters);
 
     const where: Prisma.regulationWhereInput = {
       subscriber_id,

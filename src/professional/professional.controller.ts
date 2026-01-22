@@ -29,7 +29,6 @@ export class ProfessionalController {
     @Query('term') term: string,
     @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    console.log('🟢 [GET /professional/search]', { term });
     return this.professionalService.search(Number(TokenPayload.sub_id), term);
   }
 

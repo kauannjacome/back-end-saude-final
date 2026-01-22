@@ -141,7 +141,6 @@ export class SubscriberService {
 
   // Mantendo o search simples para retrocompatibilidade ou uso rápido se necessário, mas o findAll agora cobre tudo
   async search(term: string) {
-    console.log('📥 term:', term);
     // ... existing search logic if you want to keep it, but findAll is better
     return this.prisma.subscriber.findMany({
       where: {

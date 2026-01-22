@@ -58,7 +58,6 @@ export class RegulationController {
 
   @Post()
   create(@Body() createRegulationDto: CreateRegulationDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    console.log(createRegulationDto)
     return this.regulationService.create(createRegulationDto, Number(TokenPayload.sub_id));
   }
 

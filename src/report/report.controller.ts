@@ -43,7 +43,6 @@ export class ReportController {
 
   @Post("generate")
   async generateReport(@Body() filters: ReportFilterPriorityStatusCareDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    console.log("chegou aqui")
     filters.subscriber_id = Number(TokenPayload.sub_id)
     return this.reportService.getRegulationReport(filters);
   }

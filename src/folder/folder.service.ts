@@ -20,8 +20,6 @@ export class FolderService {
   }
 
   async search(subscriber_id: number, term: string) {
-    console.log('📥 subscriber_id:', subscriber_id);
-    console.log('📥 term:', term);
 
     return this.prisma.folder.findMany({
       where: {

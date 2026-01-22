@@ -63,7 +63,6 @@ export async function sendRegulationStatusMessage(
         phone = phone.replace(/^55(\d{2})9(\d{8})$/, "55$1$2");
       }
 
-      console.log(`Sending WhatsApp to ${phone} [${status}]`);
       await zapService.sendMessage(subscriber_id, phone, message);
     }
   } catch (e) {
