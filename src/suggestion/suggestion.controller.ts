@@ -15,7 +15,7 @@ export class SuggestionController {
     @TokenPayloadParam() token: PayloadTokenDto
   ) {
     if (!field) return [];
-    return await this.suggestionService.getSuggestions(token.sub_id, field);
+    return await this.suggestionService.getSuggestions(token.sub_id, token.user_id, field);
   }
 
   @Post()
@@ -26,6 +26,7 @@ export class SuggestionController {
     if (!body.field || !body.term) return;
     await this.suggestionService.trackSuggestion(
       token.sub_id,
+      token.user_id,
       body.field,
       body.term
     );
