@@ -163,25 +163,94 @@ export class AuthService {
     return await this.hashingService.compare(password, professional.password_hash);
   }
 
-  async impersonate(subscriberId: number) {
-    // 1. Buscar um admin deste assinante para impersonar
-    // Prioriza 'admin_municipal' (Admin Local/Assinante)
-    let professional = await this.prisma.professional.findFirst({
-      where: {
-        subscriber_id: Number(subscriberId),
-        role: 'admin_municipal'
-      },
-      orderBy: { created_at: 'asc' }
-    });
+  async impersonate(subscriberId: number, role?: string, adminUserId?: number) {
+    // 1. Buscar um usuário deste assinante para impersonar
+    let professional;
 
-    // Se não achar admin municipal, tenta qualquer usuário (fallback) para não impedir o acesso
-    if (!professional) {
+    if (role) {
+      if (role === 'admin_municipal') {
+        professional = await this.prisma.professional.findFirst({
+          where: {
+            subscriber_id: Number(subscriberId),
+            role: { in: ['admin_municipal', 'admin_manager'] }
+          },
+          orderBy: { created_at: 'asc' }
+        });
+      } else {
+        professional = await this.prisma.professional.findFirst({
+          where: {
+            subscriber_id: Number(subscriberId),
+            role: role as any
+          },
+          orderBy: { created_at: 'asc' }
+        });
+      }
+    } else {
+      // Padrão: Prioriza 'admin_municipal'
       professional = await this.prisma.professional.findFirst({
         where: {
           subscriber_id: Number(subscriberId),
+          role: 'admin_municipal'
         },
         orderBy: { created_at: 'asc' }
       });
+
+      if (!professional) {
+        professional = await this.prisma.professional.findFirst({
+          where: {
+            subscriber_id: Number(subscriberId),
+          },
+          orderBy: { created_at: 'asc' }
+        });
+      }
+    }
+
+    // =========================================================================
+    // VIRTUAL IMPERSONATION (Fallback)
+    // Se não encontrar usuário local, usa as credenciais do próprio ADMIN (Ghost Mode)
+    // =========================================================================
+    if (!professional && adminUserId) {
+      // Busca dados do Admin que está solicitando
+      const adminUser = await this.prisma.professional.findUnique({
+        where: { id: adminUserId }
+      });
+
+      if (adminUser) {
+        const subscriber = await this.prisma.subscriber.findUnique({
+          where: { id: Number(subscriberId) }
+        });
+
+        // Gera token "Virtual"
+        // User ID = Admin Real
+        // Sub ID = Assinante Alvo
+        // Role = Role Solicitada (ou default)
+        const targetRole = role || 'admin_municipal';
+
+        const token = await this.jwtService.signAsync(
+          {
+            user_id: adminUser.id,
+            sub_id: Number(subscriberId), // Contexto do Assinante Alvo
+            role: targetRole
+          },
+          {
+            secret: this.jwtConfiguration.secret,
+            expiresIn: "1d",
+            audience: this.jwtConfiguration.audience,
+            issuer: this.jwtConfiguration.issuer
+          }
+        );
+
+        return {
+          id: adminUser.id,
+          name: `${adminUser.name} (Virtual)`,
+          email: adminUser.email,
+          role: targetRole, // Retorna a role simulada para o frontend
+          nome_sub: subscriber?.name,
+          pay_sub: subscriber?.payment,
+          token: token,
+          isImpersonating: true
+        };
+      }
     }
 
     if (!professional) {
@@ -192,12 +261,16 @@ export class AuthService {
       where: { id: Number(subscriberId) }
     });
 
+    // Define a role final para o token: se foi solicitada uma específica, usa ela.
+    // Isso garante que se entrarmos como 'admin_municipal' usando um user 'admin_manager', o token seja 'admin_municipal'.
+    const finalRole = role || professional.role;
+
     // 2. Gerar Token (mesmo payload do login normal)
     const token = await this.jwtService.signAsync(
       {
         user_id: professional.id,
         sub_id: professional.subscriber_id,
-        role: professional.role
+        role: finalRole
       },
       {
         secret: this.jwtConfiguration.secret,
@@ -211,7 +284,7 @@ export class AuthService {
       id: professional.id,
       name: professional.name,
       email: professional.email,
-      role: professional.role,
+      role: finalRole,
       nome_sub: subscriber?.name,
       pay_sub: subscriber?.payment,
       token: token,

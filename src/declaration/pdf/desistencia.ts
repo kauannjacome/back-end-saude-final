@@ -4,6 +4,7 @@ import * as QRCode from 'qrcode';
 import Str from '@supercharge/strings';
 import fetch from 'node-fetch';
 import extenso from 'extenso';
+import type { DeclarationPdfData } from './types';
 
 const LAYOUT = {
   margin: 20,
@@ -19,15 +20,17 @@ const LAYOUT = {
   },
 };
 
-export async function DesistenciaPdf(data: any): Promise<Buffer> {
+const DOCUMENT_TITLE = 'TERMO DE DESISTENCIA';
+
+export async function DesistenciaPdf(data: DeclarationPdfData): Promise<Buffer> {
   const doc = new (PDFDocument as any)({
     margin: LAYOUT.margin,
     size: LAYOUT.pageSize,
     bufferPages: true,
     info: {
-      Title: `Regulação - ${data.id_code || 'N/A'}`,
+      Title: `${DOCUMENT_TITLE} - ${data.id_code || 'N/A'}`,
       Author: data.creator?.name || 'Sistema de Regulação',
-      Subject: 'Ficha de Regulação de Paciente',
+      Subject: 'Documento administrativo',
       Creator: 'Sistema Municipal',
     },
   });
@@ -38,7 +41,7 @@ export async function DesistenciaPdf(data: any): Promise<Buffer> {
     doc.on('end', () => resolve(Buffer.concat(buffers)))
   );
 
-  const patient = data.patient || {};
+  const patient = data.patient;
   const subscriber = data.subscriber || {};
 
   const formatDate = (d: Date | string | null) =>
@@ -79,7 +82,7 @@ export async function DesistenciaPdf(data: any): Promise<Buffer> {
   doc
     .font(LAYOUT.font.header.family)
     .fontSize(LAYOUT.font.header.size)
-    .text('Requesição', { align: 'center' });
+    .text(DOCUMENT_TITLE, { align: 'center' });
 
   doc
     .font(LAYOUT.font.body.family)
@@ -94,16 +97,14 @@ export async function DesistenciaPdf(data: any): Promise<Buffer> {
     .font(LAYOUT.font.body.family) // sem negrito
     .fontSize(LAYOUT.font.body.size);
 
-  let textoPrincipal = `Declaro, sob as penas de Lei, para fins de comprovação junto aos órgãos de controle interno e externo que eu, ${patient.name || 'N/A'}, portador(a) do CPF nº ${patient.cpf || 'N/A'
-    }, residente  no endereço especificado: ${patient.address || 'N/A'}, ${patient.neighborhood || ''
-    }, ${patient.city || ''}/${patient.state || ''}, venho solicitar `;
+    let textoPrincipal = `Eu, ${patient?.name || 'N/A'}, inscrito(a) no CPF sob o numero ${patient?.cpf || 'N/A'}, residente e domiciliado(a) em ${patient?.address || 'N/A'}, ${patient?.neighborhood || ''}, ${patient?.city || ''}/${patient?.state || ''}, DECLARO, para fins de instrucao do processo administrativo de regulacao e sob as penas da lei (art. 299 do Codigo Penal), que solicito os seguintes procedimentos/servicos de saude: `;
 
   // === Cuidados (texto corrido em uma linha) ===
   if (Array.isArray(data.cares) && data.cares.length > 0) {
 
     const frases = data.cares.map((c) => {
       const nomeCuidado = Str(c.care?.name || '').limit(60, '...').toString();
-      const quantidade = parseInt(c.quantity) || 0;
+      const quantidade = Number(c.quantity) || 0;
 
       // Se quantidade for 1 → não mostra número
       if (quantidade === 1) {
@@ -137,11 +138,14 @@ export async function DesistenciaPdf(data: any): Promise<Buffer> {
     paragraphGap: 5,
     continued: false,
   });
-  doc.text(" E, para constar, firmo a presente em duas vias de igual teor para surta todos os seus efeitos legais. Dou fé"), {
+    doc.text('Declaro, ainda, que as informacoes prestadas sao verdadeiras e autorizo o tratamento dos dados pessoais para fins administrativos, de auditoria e de controle, nos termos da Lei 13.709/2018 (LGPD).', {
     align: 'justify',
     paragraphGap: 5,
-    continued: true,
-  };
+  });
+  doc.text('E, para que produza seus efeitos legais, firmo a presente.', {
+    align: 'justify',
+    paragraphGap: 5,
+  });
   doc.moveDown(1);
   doc.text(`${subscriber.municipality_name}/${subscriber.state_acronym}, ${requestDate}`, { align: 'right' });
   // === Assinaturas ===

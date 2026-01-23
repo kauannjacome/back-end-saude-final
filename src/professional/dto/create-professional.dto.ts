@@ -39,6 +39,26 @@ export class CreateProfessionalDto {
   email?: string;
 
   @IsOptional()
+  @IsString()
+  cns?: string;
+
+  @IsOptional()
+  @IsString()
+  professional_registry?: string;
+
+  @IsOptional()
+  @IsString()
+  registry_type?: string;
+
+  @IsOptional()
+  @IsString()
+  registry_number?: string;
+
+  @IsOptional()
+  @IsString()
+  registry_state?: string;
+
+  @IsOptional()
   @IsEnum(role)
   role?: role;
 

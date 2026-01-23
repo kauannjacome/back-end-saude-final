@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { Requerimento1Pdf } from './pdf/requerimento-1';
@@ -29,6 +29,9 @@ export class DeclarationService {
         },
       },
     });
+    if (!regulation) {
+      throw new NotFoundException('Regulacao nao encontrada');
+    }
 
 
 
@@ -53,6 +56,9 @@ export class DeclarationService {
         },
       },
     });
+    if (!regulation) {
+      throw new NotFoundException('Regulacao nao encontrada');
+    }
 
 
 
@@ -77,6 +83,9 @@ export class DeclarationService {
         },
       },
     });
+    if (!regulation) {
+      throw new NotFoundException('Regulacao nao encontrada');
+    }
 
 
 
@@ -101,6 +110,9 @@ export class DeclarationService {
         },
       },
     });
+    if (!regulation) {
+      throw new NotFoundException('Regulacao nao encontrada');
+    }
 
 
 
@@ -125,6 +137,9 @@ export class DeclarationService {
         },
       },
     });
+    if (!regulation) {
+      throw new NotFoundException('Regulacao nao encontrada');
+    }
 
 
 
@@ -149,6 +164,9 @@ export class DeclarationService {
         },
       },
     });
+    if (!regulation) {
+      throw new NotFoundException('Regulacao nao encontrada');
+    }
 
 
 
@@ -173,6 +191,9 @@ export class DeclarationService {
         },
       },
     });
+    if (!regulation) {
+      throw new NotFoundException('Regulacao nao encontrada');
+    }
 
 
 

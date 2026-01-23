@@ -28,13 +28,13 @@ export class AuthController {
   @UseGuards(AuthTokenGuard)
   @Post('impersonate')
   async impersonate(
-    @Body() body: { subscriber_id: number },
+    @Body() body: { subscriber_id: number; role?: string },
     @TokenPayloadParam() payload: any
   ) {
     if (payload.role !== 'admin_manager') {
       throw new UnauthorizedException('Apenas Super Admins podem realizar esta ação.');
     }
-    return this.authService.impersonate(body.subscriber_id);
+    return this.authService.impersonate(body.subscriber_id, body.role, payload.user_id);
   }
 
   @UseGuards(AuthTokenGuard)

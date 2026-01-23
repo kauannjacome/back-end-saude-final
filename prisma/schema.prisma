@@ -86,21 +86,21 @@ model care {
   resource_origin resource_origin? @default(nao_especificado)
   unit_measure    unit_measure
 
-  type_declaration type_declaration?
-  value            Float?
-  amount           Int?
+  type_declaration  type_declaration?
+  value             Float?
+  amount            Int?
   min_deadline_days Int?
-  group_id         Int?
-  professional_id  Int?
-  supplier_id      Int?
-  created_at       DateTime          @default(now())
-  updated_at       DateTime          @updatedAt
-  deleted_at       DateTime?
-  group            group?            @relation(fields: [group_id], references: [id])
-  professional     professional?     @relation(fields: [professional_id], references: [id])
-  subscriber       subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
-  supplier         supplier?         @relation(fields: [supplier_id], references: [id])
-  regulations      care_regulation[]
+  group_id          Int?
+  professional_id   Int?
+  supplier_id       Int?
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+  deleted_at        DateTime?
+  group             group?            @relation(fields: [group_id], references: [id])
+  professional      professional?     @relation(fields: [professional_id], references: [id])
+  subscriber        subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  supplier          supplier?         @relation(fields: [supplier_id], references: [id])
+  regulations       care_regulation[]
 
   @@index([subscriber_id])
   @@index([group_id])
@@ -201,6 +201,11 @@ model professional {
   birth_date             DateTime?
   phone_number           String?
   email                  String?
+  cns                    String? // Cartão Nacional de Saúde
+  professional_registry  String? // Ex: "CRM-SP 123456" - Campo composto/display
+  registry_type          String? // Ex: "CRM", "COREN", "CRO"
+  registry_number        String? // Ex: "123456"
+  registry_state         String? // Ex: "SP", "RJ"
   role                   role?               @default(typist)
   password_hash          String?
   is_password_temp       Boolean             @default(false)
@@ -370,16 +375,16 @@ model whatsapp_config {
 }
 
 model suggestion {
-  id              Int      @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   subscriber_id   Int
   user_id         Int
   field_name      String
   term            String
   term_normalized String
-  usage_count     Int      @default(1)
+  usage_count     Int       @default(1)
   last_used_at    DateTime?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
 
   professional professional @relation(fields: [user_id], references: [id], onDelete: Cascade)
   subscriber   subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
@@ -387,7 +392,6 @@ model suggestion {
   @@unique([subscriber_id, user_id, field_name, term_normalized])
   @@index([subscriber_id, user_id, field_name])
 }
-
 
 enum audit_action {
   create
