@@ -1,12 +1,62 @@
+# Environment files
 .env
+.env.local
+.env.*.local
+
+# Git
 .git
 .gitignore
-coverage
-debug_log.txt
+
+# Build artifacts
 dist
 dist_seed
 generated
+coverage
+
+# Dependencies
 node_modules
-npm-debug.log
-test
+
+# Logs
 *.log
+debug_log.txt
+build_log.txt
+build_output*.log
+debug_output.txt
+seed_error.log
+seed_output_final.txt
+seed_run_output.txt
+ping_output.txt
+npm-debug.log
+
+# Test files
+test
+*.spec.ts
+
+# Debug scripts
+debug_scripts
+debug_*.ts
+diagnose_*.ts
+test-email-standalone.ts
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+README.md
+DOCKER.md
+
+# Misc
+hash.txt
+Procfile

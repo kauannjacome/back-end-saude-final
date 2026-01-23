@@ -27,6 +27,8 @@ import { NotificationModule } from '../notification/notification.module';
 import { ZapModule } from '../zap/module';
 import { SuggestionModule } from '../suggestion/suggestion.module';
 import { QueueModule } from '../common/queue/queue.module';
+import { ChatIaModule } from '../chat-ia/chat-ia.module';
+import { PrismaModule } from '../common/prisma/prisma.module';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { QueueModule } from '../common/queue/queue.module';
     }),
     LoggerModule.forRoot({
       pinoHttp: {
+        level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
         transport: process.env.NODE_ENV === 'development'
           ? {
             target: 'pino-pretty',
@@ -73,12 +76,13 @@ import { QueueModule } from '../common/queue/queue.module';
     SeedsModule,
     AuthModule,
     HealthModule,
-    HealthModule,
     EmailModule,
     NotificationModule,
     ZapModule,
     SuggestionModule,
-    QueueModule
+    QueueModule,
+    PrismaModule,
+    ChatIaModule
   ],
   controllers: [AppController],
   providers: [

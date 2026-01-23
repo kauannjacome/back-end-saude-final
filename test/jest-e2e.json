@@ -1,9 +1,19 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": ".",
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
+  "rootDir": "..",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1",
+    "^node-fetch$": "<rootDir>/src/test-utils/node-fetch.mock.ts",
+    "^p-queue$": "<rootDir>/src/test-utils/p-queue.mock.ts",
+    "^nanoid$": "<rootDir>/src/test-utils/nanoid.mock.ts"
   }
 }

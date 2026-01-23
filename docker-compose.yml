@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: saude-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: saude
+      POSTGRES_PASSWORD: saude123
+      POSTGRES_DB: saude_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U saude -d saude_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - saude-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: saude-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3000" # Changed to 3001 to avoid conflict with dev server
+    env_file:
+      - .env.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - saude-network
+    volumes:
+      # Mount prisma folder for migrations
+      - ./prisma:/app/prisma
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  saude-network:
+    driver: bridge

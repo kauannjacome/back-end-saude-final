@@ -7,13 +7,13 @@ datasource db {
 }
 
 model subscriber {
-  id                  Int              @id @default(autoincrement())
-  uuid                String           @unique @default(uuid())
+  id                  Int                 @id @default(autoincrement())
+  uuid                String              @unique @default(uuid())
   name                String
   municipality_name   String
   email               String
   telephone           String
-  cnpj                String           @unique
+  cnpj                String              @unique
   postal_code         String
   city                String
   neighborhood        String
@@ -24,10 +24,10 @@ model subscriber {
   state_logo          String?
   municipal_logo      String?
   administration_logo String?
-  payment             Boolean          @default(true)
-  is_blocked          Boolean          @default(false)
-  created_at          DateTime         @default(now())
-  updated_at          DateTime         @updatedAt
+  payment             Boolean             @default(true)
+  is_blocked          Boolean             @default(false)
+  created_at          DateTime            @default(now())
+  updated_at          DateTime            @updatedAt
   deleted_at          DateTime?
   audit_logs          audit_log[]
   cares               care[]
@@ -41,6 +41,7 @@ model subscriber {
   notifications       notification[]
   whatsapp_config     whatsapp_config?
   suggestions         suggestion[]
+  chatConversations   chat_conversation[]
 }
 
 model unit {
@@ -391,6 +392,46 @@ model suggestion {
 
   @@unique([subscriber_id, user_id, field_name, term_normalized])
   @@index([subscriber_id, user_id, field_name])
+}
+
+// ============================================
+// CHAT IA - IARA (Sistema de Chat Inteligente)
+// ============================================
+
+model chat_conversation {
+  id            Int       @id @default(autoincrement())
+  uuid          String    @unique @default(uuid())
+  subscriber_id Int
+  user_id       Int? // professional_id ou patient_id
+  user_type     String? // 'professional' ou 'patient'
+  started_at    DateTime  @default(now())
+  ended_at      DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  subscriber subscriber     @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  messages   chat_message[]
+
+  @@index([subscriber_id])
+  @@index([user_id, user_type])
+  @@index([subscriber_id, started_at])
+}
+
+model chat_message {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique @default(uuid())
+  conversation_id Int
+  role            String // 'user', 'assistant', 'system'
+  content         String   @db.Text
+  tokens_used     Int?
+  model           String?
+  metadata        Json? // Informações extras como fontes, tempo de execução, etc
+  created_at      DateTime @default(now())
+
+  conversation chat_conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id])
+  @@index([created_at])
 }
 
 enum audit_action {
