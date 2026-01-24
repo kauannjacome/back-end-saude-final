@@ -190,6 +190,17 @@ export class PatientService {
       throw new NotFoundException(`Patient #${id} not found`);
     }
 
+    // 🔥 Manual Cascade: Delete related regulations
+    await this.prisma.regulation.deleteMany({
+      where: {
+        OR: [
+          { patient_id: id },
+          { responsible_id: id }
+        ],
+        subscriber_id
+      }
+    });
+
     return this.prisma.patient.delete({
       where: { id, subscriber_id },
     });

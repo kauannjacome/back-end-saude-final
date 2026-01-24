@@ -105,7 +105,6 @@ export class CareService {
    */
   async create(createCareDto: CreateCareDto, subscriber_id: number) {
     const {
-      priority: _priority,
       resource: legacyResource,
       resource_origin,
       ...data
@@ -200,7 +199,6 @@ export class CareService {
     }
 
     const {
-      priority: _priority,
       resource: legacyResource,
       resource_origin,
       ...data
@@ -283,7 +281,132 @@ export class CareService {
         unit_measure: true,
         min_deadline_days: true,
         deleted_at: true,
+        priority: true,
+        status: true,
       },
     });
+  }
+
+  // ==================================================================
+  // CARE USAGE RANKING
+  // ==================================================================
+
+  /**
+   * Retorna os cuidados mais utilizados pelo usuário (ou geral do assinante)
+   */
+  async findTopUsed(subscriber_id: number, user_id?: number) {
+    // Busca ranking específico do usuário
+    let ranks = await this.prisma.care_usage_rank.findMany({
+      where: {
+        subscriber_id,
+        user_id: user_id ?? undefined, // se user_id for null/undefined, busca geral?
+      },
+      orderBy: [
+        { usage_count: 'desc' },
+        { last_used_at: 'desc' },
+      ],
+      take: 20,
+      include: {
+        care: true,
+      },
+    });
+
+    // Se não tiver ranking suficiente para o usuário, busca o geral (user_id = null)
+    if (user_id && ranks.length < 5) {
+      const generalRanks = await this.prisma.care_usage_rank.findMany({
+        where: {
+          subscriber_id,
+          user_id: null,
+        },
+        orderBy: [
+          { usage_count: 'desc' },
+          { last_used_at: 'desc' },
+        ],
+        take: 20 - ranks.length,
+        include: {
+          care: true,
+        },
+      });
+
+      // Mescla removendo duplicados
+      const existingIds = new Set(ranks.map(r => r.care_id));
+      for (const r of generalRanks) {
+        if (!existingIds.has(r.care_id)) {
+          ranks.push(r);
+          existingIds.add(r.care_id);
+        }
+      }
+    }
+
+    return ranks.map(r => r.care); // Retorna apenas os objetos care
+  }
+
+  /**
+   * Registra o uso de um cuidado e atualiza o ranking
+   */
+  async registerUsage(subscriber_id: number, care_id: number, user_id?: number) {
+    // 1. Atualiza/Cria o ranking para o Usuário
+    if (user_id) {
+      await this.upsertRank(subscriber_id, care_id, user_id);
+      await this.pruneRanks(subscriber_id, user_id);
+    }
+
+    // 2. Atualiza/Cria o ranking Geral (user_id = null)
+    await this.upsertRank(subscriber_id, care_id, null);
+    await this.pruneRanks(subscriber_id, null);
+  }
+
+  private async upsertRank(subscriber_id: number, care_id: number, user_id: number | null) {
+    // Verifica se já existe
+    const existing = await this.prisma.care_usage_rank.findFirst({
+      where: { subscriber_id, user_id, care_id }
+    });
+
+    if (existing) {
+      await this.prisma.care_usage_rank.update({
+        where: { id: existing.id },
+        data: {
+          usage_count: { increment: 1 },
+          last_used_at: new Date(),
+        },
+      });
+    } else {
+      await this.prisma.care_usage_rank.create({
+        data: {
+          subscriber_id,
+          user_id,
+          care_id,
+          usage_count: 1,
+          last_used_at: new Date(),
+        },
+      });
+    }
+  }
+
+  private async pruneRanks(subscriber_id: number, user_id: number | null) {
+    const count = await this.prisma.care_usage_rank.count({
+      where: { subscriber_id, user_id },
+    });
+
+    if (count > 20) {
+      // Encontra os excedentes (menor usage_count, ou mais antigo)
+      const toDelete = await this.prisma.care_usage_rank.findMany({
+        where: { subscriber_id, user_id },
+        orderBy: [
+          { usage_count: 'asc' },
+          { last_used_at: 'asc' },
+        ],
+        take: count - 20,
+        select: { id: true },
+      });
+
+      if (toDelete.length > 0) {
+        await this.prisma.care_usage_rank.deleteMany({
+          where: {
+            id: { in: toDelete.map(r => r.id) },
+          },
+        });
+      }
+    }
   }
 }

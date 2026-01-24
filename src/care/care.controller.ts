@@ -15,6 +15,23 @@ export class CareController {
   create(@Body() createCareDto: CreateCareDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.careService.create(createCareDto, Number(TokenPayload.sub_id));
   }
+
+  // 🚀 Endpoint de sugestão inicial (mais usados)
+  @Get()
+  findTopUsed(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+    return this.careService.findTopUsed(Number(tokenPayload.sub_id), Number(tokenPayload.user_id));
+  }
+
+  // 🖱️ Endpoint para registrar uso (manual/teste)
+  @Post(':id/use')
+  registerUsage(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+    return this.careService.registerUsage(
+      Number(tokenPayload.sub_id),
+      Number(id),
+      Number(tokenPayload.user_id)
+    );
+  }
+
   // 🔍 Endpoint de busca
   @Get('search')
   search(
@@ -39,16 +56,13 @@ export class CareController {
 
   @Get('deleted/list')
   findAllDeleted(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
-    if (tokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
-    }
     return this.careService.findAllDeleted(Number(tokenPayload.sub_id));
   }
 
-  @Get()
-  findAll(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
-    return this.careService.findAll(Number(tokenPayload.sub_id));
-  }
+  // @Get()
+  // findAll(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+  //   return this.careService.findAll(Number(tokenPayload.sub_id));
+  // }
 
   @Get(':id')
   findOne(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
@@ -62,9 +76,6 @@ export class CareController {
 
   @Patch(':id/restore')
   restore(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
-    if (tokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
-    }
     return this.careService.restore(+id, Number(tokenPayload.sub_id));
   }
 

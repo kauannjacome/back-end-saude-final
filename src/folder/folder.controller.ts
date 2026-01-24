@@ -19,9 +19,6 @@ export class FolderController {
 
   @Get('deleted/list')
   findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
-    }
     return this.folderService.findAllDeleted(Number(TokenPayload.sub_id));
   }
 
@@ -66,9 +63,6 @@ export class FolderController {
 
   @Patch(':id/restore')
   restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
-    }
     return this.folderService.restore(+id, Number(TokenPayload.sub_id));
   }
 

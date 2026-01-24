@@ -46,13 +46,13 @@ export class FolderService {
   async findAll(subscriber_id: number) {
     return this.prisma.folder.findMany({
       where: { subscriber_id, deleted_at: null },
-      include: {
-
-        regulations: true,
-        responsible: true,
-      },
       orderBy: { created_at: 'desc' },
-    });
+      select: {
+        id: true,
+        name: true,
+        // responsible: { select: { name: true } } // Optional: keep if frontend displays responsible name in list
+      }
+    }); // Keeping it simple as requested: "sem informações amais"
   }
 
 
@@ -205,6 +205,7 @@ export class FolderService {
         name: true,
         description: true,
         deleted_at: true,
+        responsible: { select: { name: true } },
       },
     });
   }

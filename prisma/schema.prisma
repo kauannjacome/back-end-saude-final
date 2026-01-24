@@ -43,6 +43,7 @@ model subscriber {
   suggestions         suggestion[]
   chatConversations   chat_conversation[]
   care_regulations    care_regulation[]
+  care_usage_ranks    care_usage_rank[]
   notification_reads  notification_read[]
   chat_messages       chat_message[]
 }
@@ -88,6 +89,7 @@ model care {
   description     String?
   status          status?          @default(in_progress)
   resource_origin resource_origin? @default(nao_especificado)
+  priority        priority?        @default(eletivo)
   unit_measure    unit_measure
 
   type_declaration  type_declaration?
@@ -105,6 +107,7 @@ model care {
   subscriber        subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   supplier          supplier?         @relation(fields: [supplier_id], references: [id])
   regulations       care_regulation[]
+  usage_ranks       care_usage_rank[]
 
   @@index([subscriber_id])
   @@index([group_id])
@@ -230,6 +233,7 @@ model professional {
   regulations_analyzed   regulation[]        @relation("regulation_analyzer")
   regulations_created    regulation[]        @relation("regulation_creator")
   regulations_printed    regulation[]        @relation("regulation_printer")
+  care_usage_ranks       care_usage_rank[]
   notification_reads     notification_read[]
   suggestions            suggestion[]
 
@@ -329,6 +333,28 @@ model care_regulation {
   @@index([care_id])
   @@index([regulation_id])
   @@index([subscriber_id])
+}
+
+model care_usage_rank {
+  id            Int      @id @default(autoincrement())
+  subscriber_id Int
+  user_id       Int? // null = ranking geral do subscriber
+  care_id       Int
+  usage_count   Int      @default(1)
+  last_used_at  DateTime @default(now())
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  subscriber   subscriber    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  professional professional? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  care         care          @relation(fields: [care_id], references: [id], onDelete: Cascade)
+
+  @@unique([subscriber_id, user_id, care_id])
+  @@index([subscriber_id])
+  @@index([subscriber_id, user_id])
+  @@index([care_id])
+  @@index([usage_count(sort: Desc)])
+  @@index([last_used_at(sort: Desc)])
 }
 
 model notification {

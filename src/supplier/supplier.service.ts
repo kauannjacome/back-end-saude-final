@@ -63,7 +63,7 @@ export class SupplierService {
   async findAll(subscriber_id: number) {
     return this.prisma.supplier.findMany({
       where: { subscriber_id, deleted_at: null },
-      include: { regulations: true },
+      // include: { regulations: true }, // Removed to optimize
       orderBy: { created_at: 'desc' },
     });
   }
@@ -133,6 +133,7 @@ export class SupplierService {
         name: true,
         cnpj: true,
         deleted_at: true,
+        trade_name: true,
       },
     });
   }

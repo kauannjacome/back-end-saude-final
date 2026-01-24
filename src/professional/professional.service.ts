@@ -331,6 +331,8 @@ export class ProfessionalService {
         email: true,
         deleted_at: true,
         role: true,
+        cargo: true,
+        birth_date: true,
       },
     });
   }

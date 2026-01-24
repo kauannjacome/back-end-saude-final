@@ -332,6 +332,11 @@ export class RegulationService {
       orderBy: { deleted_at: 'desc' },
       include: {
         patient: { select: { name: true } },
+        cares: {
+          include: {
+            care: { select: { name: true } },
+          },
+        },
       },
     });
   }

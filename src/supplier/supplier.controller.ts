@@ -18,9 +18,6 @@ export class SupplierController {
 
   @Get('deleted/list')
   findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
-    }
     return this.supplierService.findAllDeleted(Number(TokenPayload.sub_id));
   }
 
@@ -57,9 +54,6 @@ export class SupplierController {
 
   @Patch(':id/restore')
   restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
-    }
     return this.supplierService.restore(+id, Number(TokenPayload.sub_id));
   }
 
