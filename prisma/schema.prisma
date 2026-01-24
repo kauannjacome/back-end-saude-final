@@ -404,6 +404,7 @@ model chat_conversation {
   subscriber_id Int
   user_id       Int? // professional_id ou patient_id
   user_type     String? // 'professional' ou 'patient'
+  context       Json? // Contexto da conversa (lista de pacientes pendentes, intenção original, etc)
   started_at    DateTime  @default(now())
   ended_at      DateTime?
   created_at    DateTime  @default(now())

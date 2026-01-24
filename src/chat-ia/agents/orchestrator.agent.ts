@@ -28,6 +28,8 @@ export interface OrchestratorOutput {
     executionTimeMs?: number;
     intent?: string;
     error?: string;
+    context?: any;
+    clearContext?: boolean;
   };
 }
 
@@ -53,8 +55,9 @@ export class OrchestratorAgent {
     this.logger.debug(`[Orchestrator] 📥 Input: ${JSON.stringify(input, null, 2)}`);
 
     try {
-      // 1. Rotear e extrair dados
-      const routerResult = await this.routerAgent.process(input.message);
+      // 1. Rotear e extrair dados (com histórico se disponível)
+      const conversationHistory = input.metadata?.conversationHistory || [];
+      const routerResult = await this.routerAgent.process(input.message, conversationHistory);
 
       // 2. Validar dados extraídos
       const validation = this.validatorAgent.validate(routerResult.extracted);
@@ -74,6 +77,142 @@ export class OrchestratorAgent {
             routerResult.extracted,
           );
           response = await this.formatterAgent.formatPatients(patients);
+          break;
+
+        case 'patient_selection' as any:
+          this.logger.debug(`🎯 Seleção de paciente detectada: ${routerResult.extracted.selectionValue} (${routerResult.extracted.selectionType})`);
+
+          if (!input.metadata?.context?.pendingPatients) {
+            response = 'Não encontrei nenhuma lista de pacientes para selecionar. Por favor, faça uma nova busca.';
+            break;
+          }
+
+          const pendingPatients = input.metadata.context.pendingPatients;
+          let selectedPatient: any = null;
+
+          // Lógica de seleção
+          if (routerResult.extracted.selectionType === 'index') {
+            const index = parseInt(routerResult.extracted.selectionValue || '0') - 1;
+            if (index >= 0 && index < pendingPatients.length) {
+              selectedPatient = pendingPatients[index];
+            }
+          } else if (routerResult.extracted.selectionType === 'cpf') {
+            const cpf = routerResult.extracted.selectionValue;
+            selectedPatient = pendingPatients.find((p: any) => this.validatorAgent.normalizeCPF(p.cpf) === cpf);
+          } else if (routerResult.extracted.selectionType === 'cns') {
+            const cns = routerResult.extracted.selectionValue;
+            selectedPatient = pendingPatients.find((p: any) => p.cns && this.validatorAgent.normalizeCNS(p.cns) === cns);
+          } else if (routerResult.extracted.selectionType === 'birthDate') {
+            // Simplificação: compara apenas a string da data formatada ou tenta match
+            // Ideal seria normalizar data, mas vamos assumir DD/MM/YYYY
+            const date = routerResult.extracted.selectionValue;
+            selectedPatient = pendingPatients.find((p: any) => {
+              const pDate = new Date(p.birthDate).toLocaleDateString('pt-BR');
+              return pDate === date;
+            });
+          }
+
+          if (selectedPatient) {
+            this.logger.log(`✅ Paciente selecionado via contexto: ${selectedPatient.name}`);
+
+            // Retomar ação original
+            const originalIntent = input.metadata.context.originalIntent;
+
+            if (originalIntent === 'patient_regulation_search') {
+              const examType = input.metadata.context.originalExamType;
+
+              const patientRegulations = await this.regulationAgent.search(
+                input.subscriberId,
+                {
+                  patientId: selectedPatient.id,
+                  examType: examType,
+                },
+              );
+
+              if (patientRegulations.length === 0) {
+                response = `Paciente **${selectedPatient.name}** selecionado. Não encontrei regulações${examType ? ` de "${examType}"` : ''}.`;
+              } else {
+                response = `**Regulações${examType ? ` de "${examType}"` : ''}** do paciente **${selectedPatient.name}**:\n\n`;
+                response += await this.formatterAgent.formatRegulations(patientRegulations);
+              }
+            } else {
+              // Default: apenas mostrar paciente selecionado
+              response = await this.formatterAgent.formatPatients([selectedPatient]);
+            }
+
+            // Limpar contexto após sucesso
+            return {
+              message: response,
+              metadata: {
+                timestamp: new Date().toISOString(),
+                agent: this.name,
+                conversationId: input.conversationId,
+                userId: input.userId,
+                executionTimeMs: Date.now() - startTime,
+                intent: 'patient_selection',
+                clearContext: true
+              }
+            };
+
+          } else {
+            response = 'Não consegui identificar qual paciente você quis dizer. Tente responder com o número (ex: "1"), o CPF ou a data de nascimento.';
+          }
+          break;
+
+        case 'patient_regulation_search':
+          // Fluxo em 2 etapas: buscar paciente → buscar regulações do paciente
+          this.logger.debug(`🔄 Iniciando busca em 2 etapas: paciente + regulações`);
+
+          // Etapa 1: Buscar paciente
+          const foundPatients = await this.patientAgent.search(
+            input.subscriberId,
+            routerResult.extracted,
+          );
+
+          if (foundPatients.length === 0) {
+            response = `Não encontrei nenhum paciente com o nome ${routerResult.extracted.name}.`;
+          } else if (foundPatients.length > 1) {
+            // Múltiplos pacientes encontrados - pedir esclarecimento E SALVAR CONTEXTO
+            response = await this.formatterAgent.formatPatients(foundPatients);
+            response += '\n\n⚠️ Por favor, informe o CPF, CNS, data de nascimento ou o número da lista para selecionar.';
+
+            return {
+              message: response,
+              metadata: {
+                timestamp: new Date().toISOString(),
+                agent: this.name,
+                conversationId: input.conversationId,
+                userId: input.userId,
+                executionTimeMs: Date.now() - startTime,
+                intent: routerResult.intent,
+                context: {
+                  pendingPatients: foundPatients,
+                  originalIntent: 'patient_regulation_search',
+                  originalExamType: routerResult.extracted.examType
+                }
+              }
+            };
+          } else {
+            // Exatamente 1 paciente encontrado - buscar suas regulações
+            const patient = foundPatients[0];
+            this.logger.log(`✅ Paciente identificado: ${patient.name} (ID: ${patient.id})`);
+
+            // Etapa 2: Buscar regulações do paciente
+            const patientRegulations = await this.regulationAgent.search(
+              input.subscriberId,
+              {
+                patientId: patient.id,
+                examType: routerResult.extracted.examType,
+              },
+            );
+
+            if (patientRegulations.length === 0) {
+              response = `Não encontrei regulações${routerResult.extracted.examType ? ` de ${routerResult.extracted.examType}` : ''} para o paciente **${patient.name}**.`;
+            } else {
+              response = `**Regulações${routerResult.extracted.examType ? ` de ${routerResult.extracted.examType}` : ''}** do paciente **${patient.name}**:\n\n`;
+              response += await this.formatterAgent.formatRegulations(patientRegulations);
+            }
+          }
           break;
 
         case 'regulation_search':

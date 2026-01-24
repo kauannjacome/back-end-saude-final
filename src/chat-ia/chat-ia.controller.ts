@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Query, Req } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, Query, Req } from '@nestjs/common';
 import { ChatIaService } from './chat-ia.service';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
@@ -16,7 +16,7 @@ export class SendMessageDto {
 
 export class ChatResponseDto {
   message: string;
-  conversationId?: string|null;
+  conversationId?: string | null;
   metadata: {
     timestamp: string;
     tokensUsed?: number;
@@ -69,5 +69,14 @@ export class ChatIaController {
     const subscriberId = request.user?.subscriber_id || 1;
 
     return this.chatIaService.getConversation(subscriberId, conversationId);
+  }
+
+  @Delete('conversations')
+  @ApiOperation({ summary: 'Limpar todas as conversas do usuário' })
+  async clearAllConversations(@Req() request: any) {
+    const subscriberId = request.user?.subscriber_id || 1;
+    const userId = request.user?.id;
+
+    return this.chatIaService.clearAllConversations(subscriberId, userId);
   }
 }

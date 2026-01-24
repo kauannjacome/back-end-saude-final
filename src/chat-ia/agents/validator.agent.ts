@@ -6,107 +6,90 @@ export interface ValidationResult {
   warnings: string[];
 }
 
-/**
- * VALIDATOR AGENT
- * 
- * Responsabilidade: Validar dados extraídos (SEM LLM)
- * 
- * Validações:
- * - ✅ CPF (11 dígitos numéricos)
- * - ✅ CNS (15 dígitos numéricos)
- * - ✅ Datas (formato válido, não futuras)
- * - ✅ Prioridade (eletivo, urgência, emergência)
- * - ✅ Status (in_progress, approved, denied, cancelled)
- * 
- * Vantagens:
- * - ✅ Rápido (validação TypeScript pura)
- * - ✅ Barato (sem tokens LLM)
- * - ✅ Resiliente (evita erros antes de buscar no banco)
- * - ✅ Mensagens de erro claras
- * 
- * @example
- * const result = validatorAgent.validate({ cpf: '12345678900' });
- * if (!result.valid) {
- *   console.log(result.errors); // ["CPF deve ter 11 dígitos"]
- * }
- */
 @Injectable()
 export class ValidatorAgent {
   private readonly logger = new Logger(ValidatorAgent.name);
 
-  /**
-   * Valida dados extraídos pelo Router
-   * @param data - Dados para validar
-   * @returns Resultado com valid (boolean), errors (string[]), warnings (string[])
-   */
   validate(data: any): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Validar CPF
-    if (data.cpf) {
-      if (!/^\d{11}$/.test(data.cpf)) {
-        errors.push('CPF deve ter 11 dígitos');
+    // CPF
+    if (data.cpf && !this.isValidCPF(data.cpf)) errors.push('CPF inválido');
+
+    // CNPJ
+    if (data.cnpj && !this.isValidCNPJ(data.cnpj)) errors.push('CNPJ inválido');
+
+    // CNS
+    if (data.cns && !/^\d{15}$/.test(this.normalizeCNS(data.cns))) errors.push('CNS inválido');
+
+    // Datas
+    ['birthDate', 'dateFrom', 'dateTo'].forEach(field => {
+      if (data[field]) {
+        const date = new Date(data[field]);
+        if (isNaN(date.getTime())) errors.push(`${field} inválida`);
+        else if (field === 'birthDate' && date > new Date()) errors.push('Data de nascimento não pode ser futura');
       }
+    });
+
+    // Prioridade
+    if (data.priority && !['eletivo', 'urgencia', 'emergencia'].includes(data.priority)) {
+      warnings.push(`Prioridade "${data.priority}" desconhecida`);
     }
 
-    // Validar CNS
-    if (data.cns) {
-      if (!/^\d{15}$/.test(data.cns)) {
-        errors.push('CNS deve ter 15 dígitos');
-      }
+    // Status
+    if (data.status && !['in_progress', 'approved', 'denied', 'cancelled'].includes(data.status)) {
+      warnings.push(`Status "${data.status}" desconhecido`);
     }
 
-    // Validar datas
-    if (data.birthDate) {
-      const date = new Date(data.birthDate);
-      if (isNaN(date.getTime())) {
-        errors.push('Data de nascimento inválida');
-      } else if (date > new Date()) {
-        errors.push('Data de nascimento não pode ser futura');
-      }
+    if (errors.length) this.logger.warn(`❌ Validação falhou: ${errors.join(', ')}`);
+    if (warnings.length) this.logger.debug(`⚠️ Avisos: ${warnings.join(', ')}`);
+
+    return { valid: errors.length === 0, errors, warnings };
+  }
+
+  normalizeCPF(cpf: string): string { return cpf.replace(/\D/g, ''); }
+  normalizeCNPJ(cnpj: string): string { return cnpj.replace(/\D/g, ''); }
+  normalizeCNS(cns: string): string { return cns.replace(/\D/g, ''); }
+
+  isValidCPF(cpf: string): boolean {
+    const c = this.normalizeCPF(cpf);
+    if (!c || c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+    let sum = 0, r;
+    for (let i = 1; i <= 9; i++) sum += parseInt(c[i - 1]) * (11 - i);
+    r = (sum * 10) % 11; if (r === 10 || r === 11) r = 0; if (r !== parseInt(c[9])) return false;
+    sum = 0;
+    for (let i = 1; i <= 10; i++) sum += parseInt(c[i - 1]) * (12 - i);
+    r = (sum * 10) % 11; if (r === 10 || r === 11) r = 0; if (r !== parseInt(c[10])) return false;
+    return true;
+  }
+
+  isValidCNPJ(cnpj: string): boolean {
+    const c = this.normalizeCNPJ(cnpj);
+    if (!c || c.length !== 14 || /^(\d)\1+$/.test(c)) return false;
+
+    // First check digit
+    let sum = 0;
+    let weight = 5;
+    for (let i = 0; i < 12; i++) {
+      sum += parseInt(c[i]) * weight;
+      weight = weight === 2 ? 9 : weight - 1;
     }
+    let r = sum % 11;
+    const digit1 = r < 2 ? 0 : 11 - r;
+    if (digit1 !== parseInt(c[12])) return false;
 
-    if (data.dateFrom) {
-      const date = new Date(data.dateFrom);
-      if (isNaN(date.getTime())) {
-        errors.push('Data inicial inválida');
-      }
+    // Second check digit
+    sum = 0;
+    weight = 6;
+    for (let i = 0; i < 13; i++) {
+      sum += parseInt(c[i]) * weight;
+      weight = weight === 2 ? 9 : weight - 1;
     }
+    r = sum % 11;
+    const digit2 = r < 2 ? 0 : 11 - r;
+    if (digit2 !== parseInt(c[13])) return false;
 
-    if (data.dateTo) {
-      const date = new Date(data.dateTo);
-      if (isNaN(date.getTime())) {
-        errors.push('Data final inválida');
-      }
-    }
-
-    // Validar prioridade
-    if (data.priority) {
-      const validPriorities = ['eletivo', 'urgencia', 'emergencia'];
-      if (!validPriorities.includes(data.priority)) {
-        warnings.push(`Prioridade "${data.priority}" pode não existir`);
-      }
-    }
-
-    // Validar status
-    if (data.status) {
-      const validStatuses = ['in_progress', 'approved', 'denied', 'cancelled'];
-      if (!validStatuses.includes(data.status)) {
-        warnings.push(`Status "${data.status}" pode não existir`);
-      }
-    }
-
-    const valid = errors.length === 0;
-
-    if (!valid) {
-      this.logger.warn(`❌ Validação falhou: ${errors.join(', ')}`);
-    } else if (warnings.length > 0) {
-      this.logger.debug(`⚠️  Avisos: ${warnings.join(', ')}`);
-    } else {
-      this.logger.debug(`✅ Validação OK`);
-    }
-
-    return { valid, errors, warnings };
+    return true;
   }
 }

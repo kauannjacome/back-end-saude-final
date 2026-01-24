@@ -1,105 +1,123 @@
+
 import { Injectable, Logger } from '@nestjs/common';
-import { OpenAIProvider } from '../llm/openai.provider';
 import { PatientResult } from './patient.agent';
 import { RegulationResult } from './regulation.agent';
 
-/**
- * FORMATTER AGENT
-... (omitted JSDoc for brevity in thought, but I will provide full match)
- */
 @Injectable()
 export class FormatterAgent {
   private readonly logger = new Logger(FormatterAgent.name);
 
-  constructor(private readonly openAIProvider: OpenAIProvider) { }
+  async formatPatients(p: PatientResult[]): Promise<string> {
+    if (!p.length) return '❌ Nenhum paciente encontrado.';
 
-  /**
-   * Formata lista de pacientes
-   * @param patients - Lista de pacientes encontrados
-   * @returns Texto formatado para exibição
-   */
-  async formatPatients(patients: PatientResult[]): Promise<string> {
-    this.logger.debug(`[FormatterAgent] 🏗️ Formatando ${patients.length} pacientes`);
-    if (patients.length === 0) {
-      return 'Nenhum paciente encontrado com os critérios informados.';
+    if (p.length === 1) {
+      const pt = p[0];
+      return `👤 **Paciente Encontrado**\n\n` +
+        `📋 **Nome:** ${pt.name}\n` +
+        `🆔 **CPF:** ${this.formatCPF(pt.cpf)}\n` +
+        `${pt.cns ? `🏥 **CNS:** ${pt.cns}\n` : ''}` +
+        `🎂 **Nascimento:** ${pt.birthDate.toLocaleDateString('pt-BR')} (${pt.age} anos)`;
     }
 
-    if (patients.length === 1) {
-      const p = patients[0];
-      return `Encontrei o paciente:
-- **Nome**: ${p.name}
-- **CPF**: ${this.formatCPF(p.cpf)}
-${p.cns ? `- **CNS**: ${p.cns}` : ''}
-- **Nascimento**: ${this.formatDate(p.birthDate)} (${p.age} anos)`;
-    }
-
-    let response = `Encontrei ${patients.length} pacientes:\n\n`;
-    patients.forEach((p, idx) => {
-      response += `${idx + 1}. **${p.name}**\n`;
-      response += `   - CPF: ${this.formatCPF(p.cpf)}\n`;
-      if (p.cns) response += `   - CNS: ${p.cns}\n`;
-      response += `   - Nascimento: ${this.formatDate(p.birthDate)} (${p.age} anos)\n\n`;
+    let resp = `👥 **Encontrei ${p.length} pacientes:**\n\n`;
+    p.forEach((pt, idx) => {
+      resp += `**${idx + 1}.** ${pt.name}\n`;
+      resp += `   └ CPF: ${this.formatCPF(pt.cpf)} | Nascimento: ${pt.birthDate.toLocaleDateString('pt-BR')}\n`;
     });
-
-    return response + 'Qual deles você procura?';
+    resp += '\n💡 *Informe o número, CPF ou CNS para selecionar.*';
+    return resp;
   }
 
-  async formatRegulations(regulations: RegulationResult[]): Promise<string> {
-    this.logger.debug(`[FormatterAgent] 🏗️ Formatando ${regulations.length} regulações`);
-    if (regulations.length === 0) {
-      return 'Nenhuma regulação encontrada com os critérios informados.';
-    }
+  async formatRegulations(r: RegulationResult[]): Promise<string> {
+    if (!r.length) return '❌ Nenhuma regulação encontrada.';
 
-    let response = `Encontrei ${regulations.length} regulação(ões):\n\n`;
-    regulations.forEach((r, idx) => {
-      response += `${idx + 1}. **${r.idCode || `Regulação #${r.id}`}**\n`;
-      if (r.patientName) response += `   - Paciente: ${r.patientName}\n`;
-      if (r.clinicalIndication) {
-        const indication = r.clinicalIndication.substring(0, 100);
-        response += `   - Indicação: ${indication}${r.clinicalIndication.length > 100 ? '...' : ''}\n`;
-      }
-      if (r.priority) response += `   - Prioridade: ${this.translatePriority(r.priority)}\n`;
-      if (r.status) response += `   - Status: ${this.translateStatus(r.status)}\n`;
-      response += `   - Criada em: ${this.formatDate(r.createdAt)}\n\n`;
+    let resp = `📋 **Encontrei ${r.length} regulação${r.length > 1 ? 'ões' : ''}:**\n\n`;
+    r.forEach((reg, idx) => {
+      const statusEmoji = this.getStatusEmoji(reg.status);
+      const priorityEmoji = this.getPriorityEmoji(reg.priority);
+
+      resp += `**${idx + 1}.** ${reg.idCode || `REG-${reg.id}`} ${statusEmoji}\n`;
+      if (reg.patientName) resp += `   👤 Paciente: ${reg.patientName}\n`;
+      if (reg.clinicalIndication) resp += `   🔬 Exame: ${reg.clinicalIndication}\n`;
+      if (reg.priority) resp += `   ${priorityEmoji} Prioridade: ${this.formatPriority(reg.priority)}\n`;
+      if (reg.status) resp += `   📊 Status: ${this.formatStatus(reg.status)}\n`;
+      resp += `   📅 Criado: ${reg.createdAt.toLocaleDateString('pt-BR')}\n\n`;
     });
 
-    return response;
+    return resp.trim();
   }
 
   async formatError(errors: string[]): Promise<string> {
-    this.logger.debug(`[FormatterAgent] 🏗️ Formatando erro: ${errors.join(', ')}`);
-    if (errors.length === 1) {
-      return `❌ ${errors[0]}. Por favor, corrija e tente novamente.`;
+    if (!errors.length) return '';
+
+    let resp = '⚠️ **Encontrei alguns problemas:**\n\n';
+    errors.forEach((e, idx) => {
+      resp += `${idx + 1}. ❌ ${e}\n`;
+    });
+
+    // Add helpful suggestions
+    resp += '\n💡 **Dicas:**\n';
+    if (errors.some(e => e.includes('CPF'))) {
+      resp += '• CPF deve ter 11 dígitos (ex: 123.456.789-00)\n';
+    }
+    if (errors.some(e => e.includes('CNS'))) {
+      resp += '• CNS deve ter 15 dígitos\n';
+    }
+    if (errors.some(e => e.includes('CNPJ'))) {
+      resp += '• CNPJ deve ter 14 dígitos (ex: 12.345.678/0001-99)\n';
+    }
+    if (errors.some(e => e.includes('data'))) {
+      resp += '• Use formato de data DD/MM/AAAA\n';
     }
 
-    return `❌ Encontrei alguns problemas:\n${errors.map((e) => `- ${e}`).join('\n')}\n\nPor favor, corrija e tente novamente.`;
+    return resp;
   }
 
   private formatCPF(cpf: string): string {
+    if (cpf.length !== 11) return cpf;
     return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
 
-  private formatDate(date: Date | string): string {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('pt-BR');
+  private formatCNPJ(cnpj: string): string {
+    if (cnpj.length !== 14) return cnpj;
+    return cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   }
 
-  private translatePriority(priority: string): string {
-    const map: Record<string, string> = {
-      eletivo: 'Eletivo',
-      urgencia: 'Urgência',
-      emergencia: 'Emergência',
+  private formatStatus(status: string): string {
+    const statusMap: Record<string, string> = {
+      'in_progress': 'Em Andamento',
+      'approved': 'Aprovado',
+      'denied': 'Negado',
+      'cancelled': 'Cancelado'
     };
-    return map[priority] || priority;
+    return statusMap[status] || status;
   }
 
-  private translateStatus(status: string): string {
-    const map: Record<string, string> = {
-      in_progress: 'Em Andamento',
-      approved: 'Aprovado',
-      denied: 'Negado',
-      cancelled: 'Cancelado',
+  private formatPriority(priority: string): string {
+    const priorityMap: Record<string, string> = {
+      'eletivo': 'Eletivo',
+      'urgencia': 'Urgência',
+      'emergencia': 'Emergência'
     };
-    return map[status] || status;
+    return priorityMap[priority] || priority;
+  }
+
+  private getStatusEmoji(status?: string): string {
+    const emojiMap: Record<string, string> = {
+      'in_progress': '🔄',
+      'approved': '✅',
+      'denied': '❌',
+      'cancelled': '🚫'
+    };
+    return status ? emojiMap[status] || '📄' : '📄';
+  }
+
+  private getPriorityEmoji(priority?: string): string {
+    const emojiMap: Record<string, string> = {
+      'eletivo': '📅',
+      'urgencia': '⚡',
+      'emergencia': '🚨'
+    };
+    return priority ? emojiMap[priority] || '📌' : '📌';
   }
 }

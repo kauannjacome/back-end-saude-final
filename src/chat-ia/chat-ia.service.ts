@@ -42,8 +42,63 @@ export class ChatIaService {
         },
       });
 
+      // Carregar histórico de mensagens (últimas 5 por padrão)
+      const historyLimit = parseInt(process.env.CHAT_CONTEXT_MESSAGES || '5');
+      const recentMessages = await this.prisma.chat_message.findMany({
+        where: { conversation_id: conversation.id },
+        orderBy: { created_at: 'desc' },
+        take: historyLimit,
+        select: { role: true, content: true },
+      });
+
+      // Inverter ordem (mais antiga primeiro) e adicionar ao input
+      const conversationHistory = recentMessages.reverse();
+
+      // Summarize context if conversation is getting long
+      let contextSummary: string | undefined = undefined;
+      if (conversationHistory.length >= historyLimit) {
+        const olderMessages = conversationHistory.slice(0, -3); // Keep last 3 in full
+        if (olderMessages.length > 0) {
+          contextSummary = `Resumo: Conversa sobre ${olderMessages.filter(m => m.role === 'user').map(m => m.content.substring(0, 30)).join(', ')}`;
+        }
+      }
+
+      // Adicionar contexto ao input (se existir)
+      if (conversation.context) {
+        input.metadata = {
+          ...input.metadata,
+          context: conversation.context,
+          conversationHistory,
+          contextSummary
+        };
+        this.logger.debug(`[ChatIaService] 📥 Contexto carregado: ${JSON.stringify(conversation.context)}`);
+      } else {
+        input.metadata = {
+          ...input.metadata,
+          conversationHistory,
+          contextSummary
+        };
+      }
+
+      this.logger.debug(`[ChatIaService] 📜 Histórico: ${conversationHistory.length} mensagens`);
+
       // Processar com orchestrator
       const response = await this.orchestratorAgent.handle(input);
+
+      // Atualizar contexto da conversa (se houver novo contexto)
+      if (response.metadata.context) {
+        await this.prisma.chat_conversation.update({
+          where: { id: conversation.id },
+          data: { context: response.metadata.context as any },
+        });
+        this.logger.debug(`[ChatIaService] 💾 Contexto atualizado: ${JSON.stringify(response.metadata.context)}`);
+      } else if (response.metadata.clearContext) {
+        await this.prisma.chat_conversation.update({
+          where: { id: conversation.id },
+          data: { context: null as any }, // Limpar contexto explicitamente
+        });
+        this.logger.debug(`[ChatIaService] 🧹 Contexto limpo`);
+      }
 
       // Salvar resposta da IARA
       await this.prisma.chat_message.create({
@@ -95,12 +150,7 @@ export class ChatIaService {
       take: limit,
     });
 
-    return conversations.map((conv) => ({
-      id: conv.uuid,
-      startedAt: conv.started_at,
-      lastMessage: conv.messages[0]?.content,
-      lastMessageAt: conv.messages[0]?.created_at,
-    }));
+    return conversations;
   }
 
   async getConversation(subscriberId: number, conversationId: string) {
@@ -120,15 +170,30 @@ export class ChatIaService {
       throw new Error('Conversa não encontrada');
     }
 
+    return conversation;
+  }
+
+  async clearAllConversations(subscriberId: number, userId?: string) {
+    const where: any = {
+      subscriber_id: subscriberId,
+    };
+
+    if (userId) {
+      where.OR = [
+        { user_id: parseInt(userId) },
+        { user_id: null },
+      ];
+    }
+
+    const result = await this.prisma.chat_conversation.deleteMany({
+      where,
+    });
+
+    this.logger.log(`🧹 Limpeza de conversas: ${result.count} conversas removidas para usuário ${userId || 'todos'} (Subscriber: ${subscriberId})`);
+
     return {
-      id: conversation.uuid,
-      startedAt: conversation.started_at,
-      messages: conversation.messages.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-        createdAt: msg.created_at,
-        tokensUsed: msg.tokens_used,
-      })),
+      message: 'Todas as conversas foram excluídas com sucesso.',
+      count: result.count,
     };
   }
 }
