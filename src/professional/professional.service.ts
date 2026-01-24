@@ -278,11 +278,60 @@ export class ProfessionalService {
   }
 
   // ✅ REMOVER (soft delete)
+  // ✅ REMOVER (soft delete)
   async remove(id: number, subscriber_id: number) {
-    await this.findOne(id, subscriber_id);
+    const professional = await this.prisma.professional.findUnique({ where: { id, subscriber_id } });
+    if (!professional || professional.deleted_at) {
+      throw new NotFoundException(`Professional #${id} not found`);
+    }
+
     return this.prisma.professional.update({
       where: { id, subscriber_id },
       data: { deleted_at: new Date() },
+    });
+  }
+
+  // ✅ RESTAURAR (apenas admin_manager)
+  async restore(id: number, subscriber_id: number) {
+    const professional = await this.prisma.professional.findUnique({ where: { id, subscriber_id } });
+    if (!professional) {
+      throw new NotFoundException(`Professional #${id} not found`);
+    }
+    if (!professional.deleted_at) {
+      throw new BadRequestException(`Professional #${id} is not deleted`);
+    }
+
+    return this.prisma.professional.update({
+      where: { id, subscriber_id },
+      data: { deleted_at: null },
+    });
+  }
+
+  // ✅ DELETAR DE VEZ (apenas admin_manager)
+  async hardDelete(id: number, subscriber_id: number) {
+    const professional = await this.prisma.professional.findUnique({ where: { id, subscriber_id } });
+    if (!professional) {
+      throw new NotFoundException(`Professional #${id} not found`);
+    }
+
+    return this.prisma.professional.delete({
+      where: { id, subscriber_id },
+    });
+  }
+
+  // ✅ LISTAR DELETADOS (apenas admin_manager)
+  async findAllDeleted(subscriber_id: number) {
+    return this.prisma.professional.findMany({
+      where: { subscriber_id, deleted_at: { not: null } },
+      orderBy: { deleted_at: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        cpf: true,
+        email: true,
+        deleted_at: true,
+        role: true,
+      },
     });
   }
 }

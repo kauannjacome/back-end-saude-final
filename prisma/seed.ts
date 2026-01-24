@@ -303,6 +303,7 @@ async function main() {
     create: {
       care_id: care1.id,
       regulation_id: regulation1.id,
+      subscriber_id: subscriber1.id,
       quantity: 1,
     },
   })
@@ -458,6 +459,7 @@ async function main() {
     create: {
       care_id: careRJ.id,
       regulation_id: regulationRJ.id,
+      subscriber_id: subscriber2.id,
       quantity: 1,
     },
   })

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
@@ -159,10 +159,53 @@ export class FolderService {
   }
 
   async remove(id: number, subscriber_id: number) {
-    await this.findOne(id, subscriber_id);
+    const folder = await this.prisma.folder.findUnique({ where: { id, subscriber_id } });
+    if (!folder || folder.deleted_at) {
+      throw new NotFoundException(`Folder #${id} not found`);
+    }
+
     return this.prisma.folder.update({
       where: { id, subscriber_id },
       data: { deleted_at: new Date() },
+    });
+  }
+
+  async restore(id: number, subscriber_id: number) {
+    const folder = await this.prisma.folder.findUnique({ where: { id, subscriber_id } });
+    if (!folder) {
+      throw new NotFoundException(`Folder #${id} not found`);
+    }
+    if (!folder.deleted_at) {
+      throw new BadRequestException(`Folder #${id} is not deleted`);
+    }
+
+    return this.prisma.folder.update({
+      where: { id, subscriber_id },
+      data: { deleted_at: null },
+    });
+  }
+
+  async hardDelete(id: number, subscriber_id: number) {
+    const folder = await this.prisma.folder.findUnique({ where: { id, subscriber_id } });
+    if (!folder) {
+      throw new NotFoundException(`Folder #${id} not found`);
+    }
+
+    return this.prisma.folder.delete({
+      where: { id, subscriber_id },
+    });
+  }
+
+  async findAllDeleted(subscriber_id: number) {
+    return this.prisma.folder.findMany({
+      where: { subscriber_id, deleted_at: { not: null } },
+      orderBy: { deleted_at: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        deleted_at: true,
+      },
     });
   }
 }

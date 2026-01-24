@@ -234,8 +234,56 @@ export class CareService {
       where: { id },
       data: { deleted_at: new Date() },
     });
+  }
 
-    // Para excluir definitivamente:
-    // return this.prisma.care.delete({ where: { id } });
+  /**
+   * Restaura um cuidado deletado (apenas admin_manager)
+   */
+  async restore(id: number, subscriber_id: number) {
+    const care = await this.prisma.care.findUnique({ where: { id, subscriber_id } });
+    if (!care) {
+      throw new NotFoundException(`Care #${id} não encontrado.`);
+    }
+    if (!care.deleted_at) {
+      throw new BadRequestException(`Care #${id} não está deletado.`);
+    }
+
+    return this.prisma.care.update({
+      where: { id },
+      data: { deleted_at: null },
+    });
+  }
+
+  /**
+   * Remove permanentemente um cuidado (apenas admin_manager)
+   */
+  async hardDelete(id: number, subscriber_id: number) {
+    const care = await this.prisma.care.findUnique({ where: { id, subscriber_id } });
+    if (!care) {
+      throw new NotFoundException(`Care #${id} não encontrado.`);
+    }
+
+    return this.prisma.care.delete({
+      where: { id },
+    });
+  }
+
+  /**
+   * Lista apenas cuidados deletados (apenas admin_manager)
+   */
+  async findAllDeleted(subscriber_id: number) {
+    return this.prisma.care.findMany({
+      where: { subscriber_id, deleted_at: { not: null } },
+      orderBy: { deleted_at: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        acronym: true,
+        description: true,
+        unit_measure: true,
+        min_deadline_days: true,
+        deleted_at: true,
+      },
+    });
   }
 }

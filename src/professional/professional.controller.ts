@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ForbiddenException } from '@nestjs/common';
 import { ProfessionalService } from './professional.service';
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
@@ -14,6 +14,14 @@ export class ProfessionalController {
   @Post()
   create(@Body() createProfessionalDto: CreateProfessionalDto) {
     return this.professionalService.create(createProfessionalDto);
+  }
+
+  @Get('deleted/list')
+  findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
+    }
+    return this.professionalService.findAllDeleted(Number(TokenPayload.sub_id));
   }
 
   @Get('search/simple')
@@ -48,8 +56,24 @@ export class ProfessionalController {
     return this.professionalService.update(+id, updateProfessionalDto, Number(TokenPayload.sub_id));
   }
 
+  @Patch(':id/restore')
+  restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
+    }
+    return this.professionalService.restore(+id, Number(TokenPayload.sub_id));
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.professionalService.remove(+id, Number(TokenPayload.sub_id));
+  }
+
+  @Delete(':id/hard')
+  hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    }
+    return this.professionalService.hardDelete(+id, Number(TokenPayload.sub_id));
   }
 }

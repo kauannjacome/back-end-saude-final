@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ForbiddenException } from '@nestjs/common';
 import { GroupService } from './group.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -16,6 +16,14 @@ export class GroupController {
     return this.groupService.create(createGroupDto, Number(TokenPayload.sub_id));
   }
 
+  @Get('deleted/list')
+  findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
+    }
+    return this.groupService.findAllDeleted(Number(TokenPayload.sub_id));
+  }
+
   // 🔍 Endpoint de busca
   @Get('search')
   search(@Query('term') term: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
@@ -26,8 +34,6 @@ export class GroupController {
   findMinimal(@Query('term') term: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.groupService.search(Number(TokenPayload.sub_id), term);
   }
-
-
 
   @Get()
   findAll(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
@@ -44,8 +50,24 @@ export class GroupController {
     return this.groupService.update(+id, updateGroupDto, Number(TokenPayload.sub_id));
   }
 
+  @Patch(':id/restore')
+  restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
+    }
+    return this.groupService.restore(+id, Number(TokenPayload.sub_id));
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.groupService.remove(+id, Number(TokenPayload.sub_id));
+  }
+
+  @Delete(':id/hard')
+  hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    }
+    return this.groupService.hardDelete(+id, Number(TokenPayload.sub_id));
   }
 }

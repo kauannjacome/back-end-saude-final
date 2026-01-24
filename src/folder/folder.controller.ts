@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, UseGuards, ForbiddenException } from '@nestjs/common';
 import type { Response } from 'express';
 import { FolderService } from './folder.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
@@ -15,6 +15,14 @@ export class FolderController {
   @Post()
   create(@Body() createFolderDto: CreateFolderDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.folderService.create(createFolderDto, Number(TokenPayload.sub_id));
+  }
+
+  @Get('deleted/list')
+  findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
+    }
+    return this.folderService.findAllDeleted(Number(TokenPayload.sub_id));
   }
 
   // 🔍 Endpoint de busca
@@ -56,8 +64,24 @@ export class FolderController {
     return this.folderService.update(+id, updateFolderDto, Number(TokenPayload.sub_id));
   }
 
+  @Patch(':id/restore')
+  restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
+    }
+    return this.folderService.restore(+id, Number(TokenPayload.sub_id));
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.folderService.remove(+id, Number(TokenPayload.sub_id));
+  }
+
+  @Delete(':id/hard')
+  hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    }
+    return this.folderService.hardDelete(+id, Number(TokenPayload.sub_id));
   }
 }

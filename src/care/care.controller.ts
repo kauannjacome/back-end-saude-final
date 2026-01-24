@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ForbiddenException } from '@nestjs/common';
 import { CareService } from './care.service';
 import { CreateCareDto } from './dto/create-care.dto';
 import { UpdateCareDto } from './dto/update-care.dto';
@@ -37,26 +37,47 @@ export class CareController {
     );
   }
 
+  @Get('deleted/list')
+  findAllDeleted(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+    if (tokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
+    }
+    return this.careService.findAllDeleted(Number(tokenPayload.sub_id));
+  }
+
   @Get()
   findAll(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
     return this.careService.findAll(Number(tokenPayload.sub_id));
   }
 
   @Get(':id')
-  @Get(':id')
   findOne(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
     return this.careService.findOne(+id, Number(tokenPayload.sub_id));
   }
 
   @Patch(':id')
-  @Patch(':id')
   update(@Param('id') id: string, @Body() updateCareDto: UpdateCareDto, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
     return this.careService.update(+id, updateCareDto, Number(tokenPayload.sub_id));
   }
 
-  @Delete(':id')
+  @Patch(':id/restore')
+  restore(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+    if (tokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
+    }
+    return this.careService.restore(+id, Number(tokenPayload.sub_id));
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
     return this.careService.remove(+id, Number(tokenPayload.sub_id));
+  }
+
+  @Delete(':id/hard')
+  hardDelete(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+    if (tokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    }
+    return this.careService.hardDelete(+id, Number(tokenPayload.sub_id));
   }
 }

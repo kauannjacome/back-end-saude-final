@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRegulationDto } from './dto/create-regulation.dto';
 import { UpdateRegulationDto } from './dto/update-regulation.dto';
@@ -50,7 +50,7 @@ export class RegulationService {
           ? {
             create: cares.map((c) => ({
               care: { connect: { id: c.care_id } },
-              subscriber_id: subscriber_id,
+              subscriber: { connect: { id: subscriber_id } },
               quantity: c.quantity,
             })),
           }
@@ -286,10 +286,53 @@ export class RegulationService {
 
 
   async remove(id: number, subscriber_id: number) {
-    await this.findOne(id, subscriber_id);
+    const regulation = await this.prisma.regulation.findUnique({ where: { id, subscriber_id } });
+    if (!regulation || regulation.deleted_at) {
+      throw new NotFoundException(`Regulation #${id} not found`);
+    }
+
     return this.prisma.regulation.update({
       where: { id, subscriber_id },
       data: { deleted_at: new Date() },
+    });
+  }
+
+  async restore(id: number, subscriber_id: number) {
+    const regulation = await this.prisma.regulation.findUnique({ where: { id, subscriber_id } });
+    if (!regulation) {
+      throw new NotFoundException(`Regulation #${id} not found`);
+    }
+    if (!regulation.deleted_at) {
+      throw new BadRequestException(`Regulation #${id} is not deleted`);
+    }
+
+    return this.prisma.regulation.update({
+      where: { id, subscriber_id },
+      data: { deleted_at: null },
+    });
+  }
+
+  async hardDelete(id: number, subscriber_id: number) {
+    const regulation = await this.prisma.regulation.findUnique({ where: { id, subscriber_id } });
+    if (!regulation) {
+      throw new NotFoundException(`Regulation #${id} not found`);
+    }
+
+    // Since cascade delete should handle relations, check schema
+    // Assuming Prisma relations are set to cascade or manually handling dependencies might be needed if not.
+    // The previous schema edits showed 'onDelete: Cascade' for many relations.
+    return this.prisma.regulation.delete({
+      where: { id, subscriber_id },
+    });
+  }
+
+  async findAllDeleted(subscriber_id: number) {
+    return this.prisma.regulation.findMany({
+      where: { subscriber_id, deleted_at: { not: null } },
+      orderBy: { deleted_at: 'desc' },
+      include: {
+        patient: { select: { name: true } },
+      },
     });
   }
 }

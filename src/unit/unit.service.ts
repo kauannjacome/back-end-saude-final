@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
@@ -53,10 +53,52 @@ export class UnitService {
   }
 
   async remove(id: number, subscriber_id: number) {
-    await this.findOne(id, subscriber_id);
+    const unit = await this.prisma.unit.findUnique({ where: { id, subscriber_id } });
+    if (!unit || unit.deleted_at) {
+      throw new NotFoundException(`Unit #${id} not found`);
+    }
+
     return this.prisma.unit.update({
       where: { id, subscriber_id },
       data: { deleted_at: new Date() },
+    });
+  }
+
+  async restore(id: number, subscriber_id: number) {
+    const unit = await this.prisma.unit.findUnique({ where: { id, subscriber_id } });
+    if (!unit) {
+      throw new NotFoundException(`Unit #${id} not found`);
+    }
+    if (!unit.deleted_at) {
+      throw new BadRequestException(`Unit #${id} is not deleted`);
+    }
+
+    return this.prisma.unit.update({
+      where: { id, subscriber_id },
+      data: { deleted_at: null },
+    });
+  }
+
+  async hardDelete(id: number, subscriber_id: number) {
+    const unit = await this.prisma.unit.findUnique({ where: { id, subscriber_id } });
+    if (!unit) {
+      throw new NotFoundException(`Unit #${id} not found`);
+    }
+
+    return this.prisma.unit.delete({
+      where: { id, subscriber_id },
+    });
+  }
+
+  async findAllDeleted(subscriber_id: number) {
+    return this.prisma.unit.findMany({
+      where: { subscriber_id, deleted_at: { not: null } },
+      orderBy: { deleted_at: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        deleted_at: true,
+      },
     });
   }
 }

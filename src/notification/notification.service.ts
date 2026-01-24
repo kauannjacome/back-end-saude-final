@@ -155,6 +155,7 @@ export class NotificationService {
     const notifications = await this.prisma.notification.findMany({
       where: {
         subscriber_id: subscriberId,
+        deleted_at: null,
         reads: {
           none: {
             professional_id: professionalId,

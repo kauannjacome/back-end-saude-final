@@ -158,10 +158,55 @@ export class PatientService {
   }
 
   async remove(id: number, subscriber_id: number) {
-    await this.findOne(id, subscriber_id);
+    const patient = await this.prisma.patient.findUnique({ where: { id, subscriber_id } });
+    if (!patient || patient.deleted_at) {
+      throw new NotFoundException(`Patient #${id} not found`);
+    }
+
     return this.prisma.patient.update({
       where: { id, subscriber_id },
       data: { deleted_at: new Date() },
+    });
+  }
+
+  async restore(id: number, subscriber_id: number) {
+    const patient = await this.prisma.patient.findUnique({ where: { id, subscriber_id } });
+    if (!patient) {
+      throw new NotFoundException(`Patient #${id} not found`);
+    }
+    if (!patient.deleted_at) {
+      throw new BadRequestException(`Patient #${id} is not deleted`);
+    }
+
+    return this.prisma.patient.update({
+      where: { id, subscriber_id },
+      data: { deleted_at: null },
+    });
+  }
+
+  async hardDelete(id: number, subscriber_id: number) {
+    const patient = await this.prisma.patient.findUnique({ where: { id, subscriber_id } });
+    if (!patient) {
+      throw new NotFoundException(`Patient #${id} not found`);
+    }
+
+    return this.prisma.patient.delete({
+      where: { id, subscriber_id },
+    });
+  }
+
+  async findAllDeleted(subscriber_id: number) {
+    return this.prisma.patient.findMany({
+      where: { subscriber_id, deleted_at: { not: null } },
+      orderBy: { deleted_at: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        cpf: true,
+        birth_date: true,
+        deleted_at: true,
+        email: true,
+      },
     });
   }
 }

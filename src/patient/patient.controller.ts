@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ForbiddenException } from '@nestjs/common';
 import { PatientService } from './patient.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
@@ -15,6 +15,14 @@ export class PatientController {
   @Post()
   create(@Body() createPatientDto: CreatePatientDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.patientService.create(createPatientDto, Number(TokenPayload.sub_id));
+  }
+
+  @Get('deleted/list')
+  findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
+    }
+    return this.patientService.findAllDeleted(Number(TokenPayload.sub_id));
   }
 
   @Get()
@@ -41,8 +49,24 @@ export class PatientController {
     return this.patientService.update(+id, updatePatientDto, Number(TokenPayload.sub_id));
   }
 
+  @Patch(':id/restore')
+  restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
+    }
+    return this.patientService.restore(+id, Number(TokenPayload.sub_id));
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.patientService.remove(+id, Number(TokenPayload.sub_id));
+  }
+
+  @Delete(':id/hard')
+  hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    }
+    return this.patientService.hardDelete(+id, Number(TokenPayload.sub_id));
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ForbiddenException } from '@nestjs/common';
 import { UnitService } from './unit.service';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateUnitDto } from './dto/update-unit.dto';
@@ -15,7 +15,15 @@ export class UnitController {
   create(@Body() createUnitDto: CreateUnitDto) {
     return this.unitService.create(createUnitDto);
   }
-  // 🔍 Endpoint de busca
+
+  @Get('deleted/list')
+  findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
+    }
+    return this.unitService.findAllDeleted(Number(TokenPayload.sub_id));
+  }
+
   @Get('search')
   search(
     @Query('term') term: string,
@@ -23,7 +31,6 @@ export class UnitController {
   ) {
     return this.unitService.search(Number(TokenPayload.sub_id), term);
   }
-
 
   @Get()
   findAll(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
@@ -39,8 +46,24 @@ export class UnitController {
     return this.unitService.update(+id, updateUnitDto, Number(TokenPayload.sub_id));
   }
 
+  @Patch(':id/restore')
+  restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
+    }
+    return this.unitService.restore(+id, Number(TokenPayload.sub_id));
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.unitService.remove(+id, Number(TokenPayload.sub_id));
+  }
+
+  @Delete(':id/hard')
+  hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    }
+    return this.unitService.hardDelete(+id, Number(TokenPayload.sub_id));
   }
 }

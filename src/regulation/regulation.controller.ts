@@ -10,6 +10,7 @@ import {
   Res,
   UseGuards,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import type { Response } from 'express'; // ✅ import type
 import { RegulationService } from './regulation.service';
@@ -59,6 +60,14 @@ export class RegulationController {
   @Post()
   create(@Body() createRegulationDto: CreateRegulationDto, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.regulationService.create(createRegulationDto, Number(TokenPayload.sub_id));
+  }
+
+  @Get('deleted/list')
+  findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
+    }
+    return this.regulationService.findAllDeleted(Number(TokenPayload.sub_id));
   }
 
   // 🔍 Endpoint de busca
@@ -121,8 +130,24 @@ export class RegulationController {
     return this.regulationService.update(+id, updateRegulationDto, Number(TokenPayload.sub_id));
   }
 
+  @Patch(':id/restore')
+  restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
+    }
+    return this.regulationService.restore(+id, Number(TokenPayload.sub_id));
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
     return this.regulationService.remove(+id, Number(TokenPayload.sub_id));
+  }
+
+  @Delete(':id/hard')
+  hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    if (TokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    }
+    return this.regulationService.hardDelete(+id, Number(TokenPayload.sub_id));
   }
 }

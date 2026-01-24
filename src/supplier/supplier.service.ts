@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
@@ -7,12 +7,12 @@ import { UpdateSupplierDto } from './dto/update-supplier.dto';
 export class SupplierService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createSupplierDto: CreateSupplierDto,subscriber_id: number) {
+  async create(createSupplierDto: CreateSupplierDto, subscriber_id: number) {
     return this.prisma.supplier.create({
       data: {
         ...createSupplierDto,
         subscriber_id: subscriber_id
-      },  
+      },
     });
   }
   async search(subscriber_id: number, term: string) {
@@ -87,10 +87,53 @@ export class SupplierService {
   }
 
   async remove(id: number, subscriber_id: number) {
-    await this.findOne(id, subscriber_id);
+    const supplier = await this.prisma.supplier.findUnique({ where: { id, subscriber_id } });
+    if (!supplier || supplier.deleted_at) {
+      throw new NotFoundException(`Supplier #${id} not found`);
+    }
+
     return this.prisma.supplier.update({
       where: { id, subscriber_id },
       data: { deleted_at: new Date() },
+    });
+  }
+
+  async restore(id: number, subscriber_id: number) {
+    const supplier = await this.prisma.supplier.findUnique({ where: { id, subscriber_id } });
+    if (!supplier) {
+      throw new NotFoundException(`Supplier #${id} not found`);
+    }
+    if (!supplier.deleted_at) {
+      throw new BadRequestException(`Supplier #${id} is not deleted`);
+    }
+
+    return this.prisma.supplier.update({
+      where: { id, subscriber_id },
+      data: { deleted_at: null },
+    });
+  }
+
+  async hardDelete(id: number, subscriber_id: number) {
+    const supplier = await this.prisma.supplier.findUnique({ where: { id, subscriber_id } });
+    if (!supplier) {
+      throw new NotFoundException(`Supplier #${id} not found`);
+    }
+
+    return this.prisma.supplier.delete({
+      where: { id, subscriber_id },
+    });
+  }
+
+  async findAllDeleted(subscriber_id: number) {
+    return this.prisma.supplier.findMany({
+      where: { subscriber_id, deleted_at: { not: null } },
+      orderBy: { deleted_at: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        cnpj: true,
+        deleted_at: true,
+      },
     });
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -92,10 +92,53 @@ export class GroupService {
   }
 
   async remove(id: number, subscriber_id: number) {
-    await this.findOne(id, subscriber_id);
+    const group = await this.prisma.group.findUnique({ where: { id, subscriber_id } });
+    if (!group || group.deleted_at) {
+      throw new NotFoundException(`Group #${id} not found`);
+    }
+
     return this.prisma.group.update({
       where: { id, subscriber_id },
       data: { deleted_at: new Date() },
+    });
+  }
+
+  async restore(id: number, subscriber_id: number) {
+    const group = await this.prisma.group.findUnique({ where: { id, subscriber_id } });
+    if (!group) {
+      throw new NotFoundException(`Group #${id} not found`);
+    }
+    if (!group.deleted_at) {
+      throw new BadRequestException(`Group #${id} is not deleted`);
+    }
+
+    return this.prisma.group.update({
+      where: { id, subscriber_id },
+      data: { deleted_at: null },
+    });
+  }
+
+  async hardDelete(id: number, subscriber_id: number) {
+    const group = await this.prisma.group.findUnique({ where: { id, subscriber_id } });
+    if (!group) {
+      throw new NotFoundException(`Group #${id} not found`);
+    }
+
+    return this.prisma.group.delete({
+      where: { id, subscriber_id },
+    });
+  }
+
+  async findAllDeleted(subscriber_id: number) {
+    return this.prisma.group.findMany({
+      where: { subscriber_id, deleted_at: { not: null } },
+      orderBy: { deleted_at: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        deleted_at: true,
+      },
     });
   }
 }
