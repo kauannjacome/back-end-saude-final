@@ -50,6 +50,7 @@ export class RegulationService {
           ? {
             create: cares.map((c) => ({
               care: { connect: { id: c.care_id } },
+              subscriber_id: subscriber_id,
               quantity: c.quantity,
             })),
           }

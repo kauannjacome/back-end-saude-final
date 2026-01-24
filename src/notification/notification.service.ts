@@ -288,6 +288,7 @@ export class NotificationService {
           data: {
             notification_id: n.id,
             professional_id: professionalId,
+            subscriber_id: subscriberId,
             read_at: new Date()
           }
         });
@@ -324,6 +325,7 @@ export class NotificationService {
           data: {
             notification_id: n.id,
             professional_id: professionalId,
+            subscriber_id: subscriberId,
             cleared_at: new Date(),
             read_at: new Date() // implicitly read if cleared
           }

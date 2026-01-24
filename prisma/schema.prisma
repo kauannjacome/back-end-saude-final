@@ -42,6 +42,9 @@ model subscriber {
   whatsapp_config     whatsapp_config?
   suggestions         suggestion[]
   chatConversations   chat_conversation[]
+  care_regulations    care_regulation[]
+  notification_reads  notification_read[]
+  chat_messages       chat_message[]
 }
 
 model unit {
@@ -310,18 +313,22 @@ model supplier {
 }
 
 model care_regulation {
-  id            Int        @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
+  subscriber_id Int
   care_id       Int
   regulation_id Int
-  quantity      Int        @default(1)
-  created_at    DateTime   @default(now())
-  updated_at    DateTime   @updatedAt
-  care          care       @relation(fields: [care_id], references: [id], onDelete: Cascade)
-  regulation    regulation @relation(fields: [regulation_id], references: [id], onDelete: Cascade)
+  quantity      Int      @default(1)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  subscriber subscriber @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+  care       care       @relation(fields: [care_id], references: [id], onDelete: Cascade)
+  regulation regulation @relation(fields: [regulation_id], references: [id], onDelete: Cascade)
 
   @@unique([care_id, regulation_id])
   @@index([care_id])
   @@index([regulation_id])
+  @@index([subscriber_id])
 }
 
 model notification {
@@ -349,15 +356,18 @@ model notification {
 
 model notification_read {
   id              Int       @id @default(autoincrement())
+  subscriber_id   Int
   notification_id Int
   professional_id Int
   read_at         DateTime?
   cleared_at      DateTime?
 
+  subscriber   subscriber   @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   notification notification @relation(fields: [notification_id], references: [id], onDelete: Cascade)
   professional professional @relation(fields: [professional_id], references: [id], onDelete: Cascade)
 
   @@unique([notification_id, professional_id])
+  @@index([subscriber_id])
 }
 
 model whatsapp_config {
@@ -411,6 +421,7 @@ model chat_conversation {
   ended_at      DateTime?
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
 
   subscriber subscriber     @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   messages   chat_message[]
@@ -421,20 +432,24 @@ model chat_conversation {
 }
 
 model chat_message {
-  id              Int      @id @default(autoincrement())
-  uuid            String   @unique @default(uuid())
+  id              Int       @id @default(autoincrement())
+  uuid            String    @unique @default(uuid())
+  subscriber_id   Int
   conversation_id Int
   role            String // 'user', 'assistant', 'system'
-  content         String   @db.Text
+  content         String    @db.Text
   tokens_used     Int?
   model           String?
   metadata        Json? // Informações extras como fontes, tempo de execução, etc
-  created_at      DateTime @default(now())
+  created_at      DateTime  @default(now())
+  deleted_at      DateTime?
 
+  subscriber   subscriber        @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
   conversation chat_conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
 
   @@index([conversation_id])
   @@index([created_at])
+  @@index([subscriber_id])
 }
 
 enum audit_action {

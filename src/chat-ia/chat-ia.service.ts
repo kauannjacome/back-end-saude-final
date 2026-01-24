@@ -37,6 +37,7 @@ export class ChatIaService {
       await this.prisma.chat_message.create({
         data: {
           conversation_id: conversation.id,
+          subscriber_id: conversation.subscriber_id,
           role: 'user',
           content: input.message,
         },
@@ -45,7 +46,7 @@ export class ChatIaService {
       // Carregar histórico de mensagens (últimas 5 por padrão)
       const historyLimit = parseInt(process.env.CHAT_CONTEXT_MESSAGES || '5');
       const recentMessages = await this.prisma.chat_message.findMany({
-        where: { conversation_id: conversation.id },
+        where: { conversation_id: conversation.id, deleted_at: null },
         orderBy: { created_at: 'desc' },
         take: historyLimit,
         select: { role: true, content: true },
@@ -104,6 +105,7 @@ export class ChatIaService {
       await this.prisma.chat_message.create({
         data: {
           conversation_id: conversation.id,
+          subscriber_id: conversation.subscriber_id,
           role: 'assistant',
           content: response.message,
           tokens_used: response.metadata.tokensUsed,
@@ -137,9 +139,11 @@ export class ChatIaService {
       where: {
         subscriber_id: subscriberId,
         user_id: userId ? parseInt(userId) : undefined,
+        deleted_at: null,
       },
       include: {
         messages: {
+          where: { deleted_at: null },
           orderBy: { created_at: 'desc' },
           take: 1,
         },
@@ -158,9 +162,11 @@ export class ChatIaService {
       where: {
         uuid: conversationId,
         subscriber_id: subscriberId,
+        deleted_at: null,
       },
       include: {
         messages: {
+          where: { deleted_at: null },
           orderBy: { created_at: 'asc' },
         },
       },
@@ -185,8 +191,14 @@ export class ChatIaService {
       ];
     }
 
-    const result = await this.prisma.chat_conversation.deleteMany({
-      where,
+    const result = await this.prisma.chat_conversation.updateMany({
+      where: {
+        ...where,
+        deleted_at: null,
+      },
+      data: {
+        deleted_at: new Date(),
+      },
     });
 
     this.logger.log(`🧹 Limpeza de conversas: ${result.count} conversas removidas para usuário ${userId || 'todos'} (Subscriber: ${subscriberId})`);
