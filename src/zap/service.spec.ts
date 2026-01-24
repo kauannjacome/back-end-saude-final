@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ZapService } from './service';
-import { HttpService } from '@nestjs/axios';
 import { PrismaService } from '../prisma/prisma.service';
 
 describe('ZapService', () => {
@@ -11,7 +10,15 @@ describe('ZapService', () => {
       providers: [
         ZapService,
         { provide: PrismaService, useValue: {} },
-        { provide: HttpService, useValue: { get: jest.fn(), post: jest.fn(), delete: jest.fn() } },
+        {
+          provide: 'WHATSAPP_PROVIDER',
+          useValue: {
+            checkStatus: jest.fn(),
+            connect: jest.fn(),
+            disconnect: jest.fn(),
+            sendMessage: jest.fn(),
+          }
+        },
       ],
     }).compile();
 

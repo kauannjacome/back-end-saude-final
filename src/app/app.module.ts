@@ -29,6 +29,7 @@ import { SuggestionModule } from '../suggestion/suggestion.module';
 import { QueueModule } from '../common/queue/queue.module';
 import { ChatIaModule } from '../chat-ia/chat-ia.module';
 import { PrismaModule } from '../common/prisma/prisma.module';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
   imports: [
@@ -82,7 +83,13 @@ import { PrismaModule } from '../common/prisma/prisma.module';
     SuggestionModule,
     QueueModule,
     PrismaModule,
-    ChatIaModule
+    ChatIaModule,
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+      },
+    }),
   ],
   controllers: [AppController],
   providers: [

@@ -366,6 +366,8 @@ model whatsapp_config {
   subscriber_id Int      @unique
   instance_name String   @unique
   api_key       String?
+  provider      String   @default("evolution") // 'evolution', 'official', 'mock'
+  credentials   Json? // Store extra configs like Webhook Verify Token, WABA ID, etc.
   is_active     Boolean  @default(true)
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt

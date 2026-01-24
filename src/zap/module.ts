@@ -1,13 +1,33 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
+import { HttpModule, HttpService } from '@nestjs/axios';
 import { ZapController } from './controller';
 import { ZapService } from './service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { EvolutionApiProvider } from './providers/evolution-api.provider';
+import { OfficialWhatsappProvider } from './providers/official-whatsapp.provider';
+import { MockWhatsAppProvider } from './providers/mock.provider';
+
+import { BullModule } from '@nestjs/bull';
+import { WhatsAppConsumer } from './consumers/whatsapp.consumer';
+import { WhatsAppProviderRegistry } from './registry/provider.registry';
 
 @Module({
-  imports: [PrismaModule, HttpModule],
+  imports: [
+    PrismaModule,
+    HttpModule,
+    BullModule.registerQueue({
+      name: 'whatsapp',
+    }),
+  ],
   controllers: [ZapController],
-  providers: [ZapService],
+  providers: [
+    ZapService,
+    WhatsAppConsumer,
+    EvolutionApiProvider,
+    OfficialWhatsappProvider,
+    MockWhatsAppProvider,
+    WhatsAppProviderRegistry, // Uses logic to choose provider dynamically
+  ],
   exports: [ZapService],
 })
 export class ZapModule { }
