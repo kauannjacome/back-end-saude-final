@@ -19,9 +19,7 @@ export class PatientController {
 
   @Get('deleted/list')
   findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
-    }
+    // Permite que qualquer usuário autenticado (do subscriber) veja a lixeira
     return this.patientService.findAllDeleted(Number(TokenPayload.sub_id));
   }
 
@@ -51,15 +49,8 @@ export class PatientController {
 
   @Patch(':id/restore')
   restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
-    }
+    // Permite restaurar (verifique se sua regra de negócio permite typist restaurar)
     return this.patientService.restore(+id, Number(TokenPayload.sub_id));
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    return this.patientService.remove(+id, Number(TokenPayload.sub_id));
   }
 
   @Delete(':id/hard')
@@ -68,5 +59,10 @@ export class PatientController {
       throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
     }
     return this.patientService.hardDelete(+id, Number(TokenPayload.sub_id));
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
+    return this.patientService.remove(+id, Number(TokenPayload.sub_id));
   }
 }
