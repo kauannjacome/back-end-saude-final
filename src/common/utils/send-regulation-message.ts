@@ -35,7 +35,7 @@ export async function sendRegulationStatusMessage(
       case 'denied':
         text = `Olá *${patientName}*, atualizamos o status da sua solicitação para *denied* após análise técnica. Para compreender o motivo ou regularizar pendências, procure sua Unidade de Saúde.`;
         break;
-      case 'cancelled':
+      case 'returned':
         text = `Olá *${patientName}*, informamos que sua solicitação foi cancelada/removida do sistema. Caso tenha dúvidas, entre em contato com sua Unidade de Saúde.`;
         break;
       default:

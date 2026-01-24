@@ -11,7 +11,7 @@ export enum StatusEnum {
   in_progress = 'in_progress',
   approved = 'approved',
   denied = 'denied',
-  cancelled = 'cancelled',
+  returned = 'returned',
 }
 
 export class ReportFilterDto {

@@ -38,7 +38,7 @@ export class ValidatorAgent {
     }
 
     // Status
-    if (data.status && !['in_progress', 'approved', 'denied', 'cancelled'].includes(data.status)) {
+    if (data.status && !['in_progress', 'approved', 'denied', 'returned'].includes(data.status)) {
       warnings.push(`Status "${data.status}" desconhecido`);
     }
 

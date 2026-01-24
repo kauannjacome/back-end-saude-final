@@ -88,7 +88,7 @@ export class FormatterAgent {
       'in_progress': 'Em Andamento',
       'approved': 'Aprovado',
       'denied': 'Negado',
-      'cancelled': 'Cancelado'
+      'returned': 'Devolvido'
     };
     return statusMap[status] || status;
   }
@@ -107,7 +107,7 @@ export class FormatterAgent {
       'in_progress': '🔄',
       'approved': '✅',
       'denied': '❌',
-      'cancelled': '🚫'
+      'returned': '↩️'
     };
     return status ? emojiMap[status] || '📄' : '📄';
   }
