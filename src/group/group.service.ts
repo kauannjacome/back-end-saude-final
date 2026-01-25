@@ -27,8 +27,10 @@ export class GroupService {
           { description: { contains: term, mode: 'insensitive' } },
         ],
       },
-      include: {
-        cares: { select: { name: true } },
+      select: {
+        id: true,
+        name: true,
+        description: true,
       },
       take: 10,
       skip: 0,

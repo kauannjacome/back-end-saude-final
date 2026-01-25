@@ -90,19 +90,19 @@ export class PatientService {
         father_name: true,
         phone: true,
         email: true,
-        postal_code: true,
-        state: true,
-        city: true,
-        address: true,
-        number: true,
-        complement: true,
-        neighborhood: true,
-        nationality: true,
-        naturalness: true,
-        marital_status: true,
-        blood_type: true,
-        created_at: true,
-        updated_at: true
+        // postal_code: true, // excluded
+        // state: true, // excluded
+        // city: true, // excluded
+        // address: true, // excluded
+        // number: true, // excluded
+        // complement: true, // excluded
+        // neighborhood: true, // excluded
+        // nationality: true, // excluded
+        // naturalness: true, // excluded
+        // marital_status: true, // excluded
+        // blood_type: true, // excluded
+        // created_at: true, // excluded
+        // updated_at: true // excluded
       },
     });
 

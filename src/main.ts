@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -28,6 +29,9 @@ async function bootstrap() {
       transform: true,            // Converte tipos (string para number, etc)
     }),
   );
+
+  // Interceptor global de Logging
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // Configuração do Swagger
   const config = new DocumentBuilder()

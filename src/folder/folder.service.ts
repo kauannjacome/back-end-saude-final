@@ -30,11 +30,33 @@ export class FolderService {
           { description: { contains: term, mode: 'insensitive' } },
         ],
       },
-      include: {
+      select: {
+        id: true,
+        uuid: true,
+        name: true,
+        // subscriber_id: false, // excluded
+        // id_code: false, // excluded
+        // description: false, // excluded
+        // responsible_id: false, // excluded
+        // start_date: false, // excluded
+        // end_date: false, // excluded
+        // created_at: false, // excluded
+        // updated_at: false, // excluded
+        // deleted_at: false, // excluded
 
-        regulations: true,
-        responsible: true,
+        // regulations: false, // excluded
 
+        responsible: {
+          select: {
+            id: true,
+            uuid: true,
+            cpf: true,
+            name: true,
+            name_normalized: true,
+            cargo: true,
+            sex: true,
+          }
+        },
       },
       take: 10,
       skip: 0,

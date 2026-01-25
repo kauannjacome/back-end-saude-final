@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ZapService } from './service';
 import { PrismaService } from '../prisma/prisma.service';
+import { WhatsAppProviderRegistry } from './registry/provider.registry';
+import { getQueueToken } from '@nestjs/bull';
 
 describe('ZapService', () => {
   let service: ZapService;
@@ -11,12 +13,15 @@ describe('ZapService', () => {
         ZapService,
         { provide: PrismaService, useValue: {} },
         {
-          provide: 'WHATSAPP_PROVIDER',
+          provide: WhatsAppProviderRegistry, // Correct class injection
           useValue: {
-            checkStatus: jest.fn(),
-            connect: jest.fn(),
-            disconnect: jest.fn(),
-            sendMessage: jest.fn(),
+            getProvider: jest.fn(),
+          }
+        },
+        {
+          provide: getQueueToken('whatsapp'),
+          useValue: {
+            add: jest.fn(),
           }
         },
       ],

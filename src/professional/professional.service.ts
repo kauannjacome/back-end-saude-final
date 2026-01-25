@@ -106,12 +106,28 @@ export class ProfessionalService {
         take: 10,
         skip: 0,
         orderBy: { name: 'asc' },
-        include: {
-          cares: true,
-          audit_logs: true,
-          regulations_created: true,
-          regulations_analyzed: true,
-          regulations_printed: true,
+        select: {
+          id: true,
+          uuid: true,
+          name: true,
+          name_normalized: true,
+          email: true,
+          cpf: true,
+          cargo: true,
+          role: true,
+          sex: true,
+          birth_date: true,
+          phone_number: true,
+          created_at: true,
+          updated_at: true,
+          is_blocked: true,
+          accepted_terms: true,
+          // subscriber_id: false, // excluded
+          // cares: false, // excluded
+          // audit_logs: false, // excluded
+          // regulations_created: false, // excluded
+          // regulations_analyzed: false, // excluded
+          // regulations_printed: false, // excluded
         },
       });
 

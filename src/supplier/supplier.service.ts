@@ -27,10 +27,19 @@ export class SupplierService {
           { cnpj: { contains: term, mode: 'insensitive' } },
         ],
       },
-      include: {
-        regulations: {
-          select: { id: true, id_code: true, status: true },
-        },
+      select: {
+        id: true,
+        uuid: true,
+        name: true,
+        trade_name: true,
+        cnpj: true,
+        // postal_code: false, // excluded
+        // city: false, // excluded
+        // state: false, // excluded
+        // created_at: false, // excluded
+        // updated_at: false, // excluded
+        // deleted_at: false, // excluded
+        // regulations: false, // excluded
       },
       take: 10,
       skip: 0,

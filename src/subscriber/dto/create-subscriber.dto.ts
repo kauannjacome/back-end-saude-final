@@ -52,4 +52,8 @@ export class CreateSubscriberDto {
   @IsOptional()
   @IsBoolean()
   payment?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  is_blocked?: boolean;
 }

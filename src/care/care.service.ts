@@ -162,9 +162,28 @@ export class CareService {
       take: 10,
       skip: 0,
       orderBy: { name: 'asc' },
-      include: {
-        group: { select: { name: true } },
-        professional: { select: { name: true } },
+      select: {
+        id: true,
+        name: true,
+        name_normalized: false, // Internal
+        acronym: true,
+        description: true,
+        unit_measure: true,
+        status: true,
+        // resource_origin: false, // excluded
+        // type_declaration: false, // excluded
+        // value: false, // excluded
+        // amount: false, // excluded
+        // min_deadline_days: false, // excluded
+        // group_id: false, // excluded
+        // professional_id: false, // excluded
+        // supplier_id: false, // excluded
+        // created_at: false, // excluded
+        // updated_at: false, // excluded
+        // deleted_at: false, // excluded
+
+        // group: { select: { name: true } }, // excluded relation
+        // professional: { select: { name: true } }, // excluded relation
       },
     });
   }
