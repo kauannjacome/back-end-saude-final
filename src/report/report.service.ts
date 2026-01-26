@@ -130,14 +130,14 @@ export class ReportService {
       doc.fontSize(18).text('Relatório de Regulações', { align: 'center' });
       doc.moveDown();
       doc.fontSize(10).text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, { align: 'right' });
-      doc.text(`Total de Registros: ${data.length}`, { align: 'right' });
+      doc.text(`Total de Registros: ${data.total}`, { align: 'right' });
       doc.moveDown();
 
       // Tabela
       const table = {
         title: '',
         headers: ['Protocolo', 'Paciente', 'Cuidado', 'Prioridade', 'Status', 'Data', 'Dias'],
-        rows: data.map(item => [
+        rows: data.data.map(item => [
           item.protocol.substring(0, 8), // Encurtar protocolo visualmente
           item.patient_name.substring(0, 20),
           item.care_type.substring(0, 20),
