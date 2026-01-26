@@ -66,4 +66,19 @@ export class SearchRegulationDto {
   @Type(() => Number)
   @IsNumber()
   responsibleId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  limit?: number = 10;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  offset?: number = 0;
 }

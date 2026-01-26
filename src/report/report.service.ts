@@ -49,29 +49,50 @@ export class ReportService {
   // --- Core List Logic (JSON) ---
   async findAllRegulations(filters: ReportFilterDto) {
     const where = this.buildRegulationWhere(filters);
-    const take = filters.take ? Number(filters.take) : undefined;
 
-    const regulations = await this.prisma.regulation.findMany({
-      where,
-      take,
-      include: {
-        patient: { select: { name: true, cpf: true, birth_date: true } },
-        cares: { include: { care: { select: { name: true } } } },
-        supplier: { select: { name: true } },
-      },
-      // Ordenação primária por Prioridade e secundária por Data (será refinada em memória se o banco não suportar enum sort direto)
-      orderBy: { created_at: 'asc' }
-    });
+    // Resilience: ensure defaults
+    const page = filters.page && filters.page > 0 ? filters.page : 1;
+    const limit = filters.limit && filters.limit > 0 ? filters.limit : 10;
+    const skip = (page - 1) * limit;
 
-    // Ordenação Customizada: Emergencia (3) > Urgencia (2) > Eletivo (1)
+    // Se "ids" for passado (seleção manual), ignoramos paginação e retornamos todos
+    const isManualSelection = filters.ids && filters.ids.length > 0;
+    const take = isManualSelection ? undefined : limit;
+    const skipValue = isManualSelection ? undefined : skip;
+
+    // Se formos paginar no banco, perdemos a ordenação customizada completa (apenas na página).
+    // Para manter a ordenação business (Emergencia > Urgencia > Eletivo), teríamos que trazer tudo.
+    // Mas para performance, vamos paginar no banco e ordenar o resultado.
+    // TODO: Mover ordenação de prioridade para o banco se possívelfuturamente.
+
+    const [regulations, total] = await Promise.all([
+      this.prisma.regulation.findMany({
+        where,
+        take: take,
+        skip: skipValue,
+        include: {
+          patient: { select: { name: true, cpf: true, birth_date: true } },
+          cares: { include: { care: { select: { name: true } } } },
+          supplier: { select: { name: true } },
+        },
+        // Ordenação primária por Prioridade e secundária por Data
+        // Nota: Prisma ordena enums como strings. Se precisar de ordem customizada, ideal é RawSQL ou Numérico.
+        // Aqui mantemos created_at para estabilidade.
+        orderBy: [
+          { priority: 'asc' }, // A-Z (Eletivo, Emergencia, Urgencia) - Não é o ideal (Emergencia deveria ser topo).
+          { created_at: 'asc' }
+        ]
+      }),
+      this.prisma.regulation.count({ where }),
+    ]);
+
+    // Ordenação Customizada em Memória (apenas da página atual)
     const priorityWeight = { 'emergencia': 3, 'urgencia': 2, 'eletivo': 1 };
 
-    return regulations.sort((a, b) => {
+    const sortedData = regulations.sort((a, b) => {
       const pA = a.priority ? priorityWeight[a.priority] : 0;
       const pB = b.priority ? priorityWeight[b.priority] : 0;
-      // Maior peso vem primeiro (3 > 2 > 1)
       if (pA !== pB) return pB - pA;
-      // Se peso igual, data mais antiga vem primeiro (FIFO)
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     }).map(reg => ({
       id: reg.id,
@@ -84,6 +105,14 @@ export class ReportService {
       created_at: reg.created_at,
       wait_time_days: Math.floor((new Date().getTime() - new Date(reg.created_at).getTime()) / (1000 * 3600 * 24))
     }));
+
+    return {
+      data: sortedData,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   // --- PDF Generation Logic ---

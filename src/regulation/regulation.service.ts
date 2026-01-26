@@ -154,62 +154,54 @@ export class RegulationService {
       }
     }
 
-    return this.prisma.regulation.findMany({
-      where,
-      select: {
-        id: true,
-        uuid: true,
-        id_code: true,
-        // subscriber_id: false, // excluded
-        patient_id: true, // keeping ID for reference if needed, but user didn't ask to remove
-        // responsible_id: false, // excluded
-        // request_date: false, // excluded
-        scheduled_date: true,
-        status: true,
-        notes: true,
-        // clinical_indication: false, // excluded
-        // cid: false, // excluded
-        // url_requirement: false, // excluded
-        // url_pre_document: false, // excluded
-        // url_current_document: false, // excluded
-        // folder_id: false, // excluded
-        // relationship: false, // excluded
-        priority: true,
-        // type_declaration: false, // excluded
-        // requesting_professional: false, // excluded
-        // creator_id: false, // excluded
-        // analyzed_id: false, // excluded
-        // printer_id: false, // excluded
-        // supplier_id: false, // excluded
-        // history: false, // excluded
-        // version_document: false, // excluded
-        created_at: true,
-        updated_at: true,
-        // deleted_at: false, // excluded
+    // Resilience: ensure defaults
+    const page = filters.page && filters.page > 0 ? filters.page : 1;
+    const limit = filters.limit && filters.limit > 0 ? filters.limit : 10;
+    const skip = (page - 1) * limit;
 
-        patient: { select: { name: true } },
-        // supplier: { select: { name: true } },
-        cares: {
-          select: {
-            id: true,
-            quantity: true,
-            // subscriber_id: false, // excluded
-            // created_at: false, // excluded
-            // updated_at: false, // excluded
-            care: {
-              select: {
-                id: true,
-                name: true,
-                acronym: true
+    const [data, total] = await Promise.all([
+      this.prisma.regulation.findMany({
+        where,
+        select: {
+          id: true,
+          uuid: true,
+          id_code: true,
+          patient_id: true,
+          scheduled_date: true,
+          status: true,
+          notes: true,
+          priority: true,
+          created_at: true,
+          updated_at: true,
+          patient: { select: { name: true } },
+          cares: {
+            select: {
+              id: true,
+              quantity: true,
+              care: {
+                select: {
+                  id: true,
+                  name: true,
+                  acronym: true
+                }
               }
             }
-          }
+          },
         },
-      },
-      take: 10,
-      skip: 0,
-      orderBy: { created_at: 'desc' },
-    });
+        take: limit,
+        skip: skip,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.regulation.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
 

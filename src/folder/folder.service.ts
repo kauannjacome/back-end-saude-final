@@ -19,49 +19,56 @@ export class FolderService {
     });
   }
 
-  async search(subscriber_id: number, term: string) {
+  async search(subscriber_id: number, term: string, page: number = 1, limit: number = 10) {
+    const safePage = page && page > 0 ? page : 1;
+    const safeLimit = limit && limit > 0 ? limit : 10;
+    const skip = (safePage - 1) * safeLimit;
 
-    return this.prisma.folder.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { description: { contains: term, mode: 'insensitive' } },
-        ],
-      },
-      select: {
-        id: true,
-        uuid: true,
-        name: true,
-        // subscriber_id: false, // excluded
-        // id_code: false, // excluded
-        // description: false, // excluded
-        // responsible_id: false, // excluded
-        // start_date: false, // excluded
-        // end_date: false, // excluded
-        // created_at: false, // excluded
-        // updated_at: false, // excluded
-        // deleted_at: false, // excluded
+    const where: any = {
+      subscriber_id,
+      deleted_at: null,
+    };
 
-        // regulations: false, // excluded
+    if (term) {
+      where.OR = [
+        { name: { contains: term, mode: 'insensitive' } },
+        { description: { contains: term, mode: 'insensitive' } },
+      ];
+    }
 
-        responsible: {
-          select: {
-            id: true,
-            uuid: true,
-            cpf: true,
-            name: true,
-            name_normalized: true,
-            cargo: true,
-            sex: true,
-          }
+    const [data, total] = await Promise.all([
+      this.prisma.folder.findMany({
+        where,
+        select: {
+          id: true,
+          uuid: true,
+          name: true,
+          responsible: {
+            select: {
+              id: true,
+              uuid: true,
+              cpf: true,
+              name: true,
+              name_normalized: true,
+              cargo: true,
+              sex: true,
+            }
+          },
         },
-      },
-      take: 10,
-      skip: 0,
-      orderBy: { name: 'asc' },
-    });
+        take: safeLimit,
+        skip: skip,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.folder.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    };
   }
 
 

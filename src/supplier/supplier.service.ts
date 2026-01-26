@@ -15,36 +15,48 @@ export class SupplierService {
       },
     });
   }
-  async search(subscriber_id: number, term: string) {
+  async search(subscriber_id: number, term: string, page: number = 1, limit: number = 10) {
+    const safePage = page && page > 0 ? page : 1;
+    const safeLimit = limit && limit > 0 ? limit : 10;
+    const skip = (safePage - 1) * safeLimit;
 
-    return this.prisma.supplier.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { trade_name: { contains: term, mode: 'insensitive' } },
-          { cnpj: { contains: term, mode: 'insensitive' } },
-        ],
-      },
-      select: {
-        id: true,
-        uuid: true,
-        name: true,
-        trade_name: true,
-        cnpj: true,
-        // postal_code: false, // excluded
-        // city: false, // excluded
-        // state: false, // excluded
-        // created_at: false, // excluded
-        // updated_at: false, // excluded
-        // deleted_at: false, // excluded
-        // regulations: false, // excluded
-      },
-      take: 10,
-      skip: 0,
-      orderBy: { name: 'asc' },
-    });
+    const where: any = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (term) {
+      where.OR = [
+        { name: { contains: term, mode: 'insensitive' } },
+        { trade_name: { contains: term, mode: 'insensitive' } },
+        { cnpj: { contains: term, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.supplier.findMany({
+        where,
+        select: {
+          id: true,
+          uuid: true,
+          name: true,
+          trade_name: true,
+          cnpj: true,
+        },
+        take: safeLimit,
+        skip: skip,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.supplier.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    };
   }
 
   async searchSimples(subscriber_id: number, term: string) {

@@ -32,9 +32,16 @@ export class ProfessionalController {
   @Get('search')
   search(
     @Query('term') term: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
     @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    return this.professionalService.search(Number(TokenPayload.sub_id), term);
+    return this.professionalService.search(
+      Number(TokenPayload.sub_id),
+      term,
+      Number(page) || 1,
+      Number(limit) || 10
+    );
   }
 
 

@@ -83,60 +83,62 @@ export class ProfessionalService {
     });
   }
 
-  async search(subscriber_id: number, term?: string) {
-
+  async search(subscriber_id: number, term?: string, page: number = 1, limit: number = 10) {
     try {
-
+      const safePage = page && page > 0 ? page : 1;
+      const safeLimit = limit && limit > 0 ? limit : 10;
+      const skip = (safePage - 1) * safeLimit;
 
       const where: Prisma.professionalWhereInput = {
         subscriber_id,
         deleted_at: null,
-        OR: [
+      };
+
+      if (term) {
+        where.OR = [
           { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { name_normalized: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { email: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { cargo: { contains: term, mode: Prisma.QueryMode.insensitive } },
-        ],
+        ];
+      }
+
+      const [data, total] = await Promise.all([
+        this.prisma.professional.findMany({
+          where,
+          take: safeLimit,
+          skip: skip,
+          orderBy: { name: 'asc' },
+          select: {
+            id: true,
+            uuid: true,
+            name: true,
+            name_normalized: true,
+            email: true,
+            cpf: true,
+            cargo: true,
+            role: true,
+            sex: true,
+            birth_date: true,
+            phone_number: true,
+            created_at: true,
+            updated_at: true,
+            is_blocked: true,
+            accepted_terms: true,
+          },
+        }),
+        this.prisma.professional.count({ where }),
+      ]);
+
+      return {
+        data,
+        total,
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.ceil(total / safeLimit),
       };
-
-
-      const results = await this.prisma.professional.findMany({
-        where,
-        take: 10,
-        skip: 0,
-        orderBy: { name: 'asc' },
-        select: {
-          id: true,
-          uuid: true,
-          name: true,
-          name_normalized: true,
-          email: true,
-          cpf: true,
-          cargo: true,
-          role: true,
-          sex: true,
-          birth_date: true,
-          phone_number: true,
-          created_at: true,
-          updated_at: true,
-          is_blocked: true,
-          accepted_terms: true,
-          // subscriber_id: false, // excluded
-          // cares: false, // excluded
-          // audit_logs: false, // excluded
-          // regulations_created: false, // excluded
-          // regulations_analyzed: false, // excluded
-          // regulations_printed: false, // excluded
-        },
-      });
-
-      return results;
     } catch (error) {
-      console.error('❌ Erro detalhado no ProfessionalService.search:');
-      console.error('Mensagem:', error.message);
-      console.error('Stack:', error.stack);
-      console.error('Detalhes Prisma:', error);
       console.error('❌ Erro no ProfessionalService.search:', error);
       throw new HttpException(
         { message: 'Erro ao buscar profissionais', detail: error.message },

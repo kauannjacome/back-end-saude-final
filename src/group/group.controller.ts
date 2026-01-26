@@ -23,8 +23,18 @@ export class GroupController {
 
   // 🔍 Endpoint de busca
   @Get('search')
-  search(@Query('term') term: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    return this.groupService.search(Number(TokenPayload.sub_id), term);
+  search(
+    @Query('term') term: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
+  ) {
+    return this.groupService.search(
+      Number(TokenPayload.sub_id),
+      term,
+      Number(page) || 1,
+      Number(limit) || 10
+    );
   }
   // 🔍 Endpoint de busca
   @Get('search/simples')

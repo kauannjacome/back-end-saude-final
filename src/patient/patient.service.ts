@@ -42,70 +42,80 @@ export class PatientService {
     });
   }
 
-  async search(subscriber_id: number, term?: string) {
+  async search(
+    subscriber_id: number,
+    term?: string,
+    page: number = 1,
+    limit: number = 10
+  ) {
+    // Resilience: Ensure defaults even if DTO fails or direct call is made
+    const safePage = page && page > 0 ? page : 1;
+    const safeLimit = limit && limit > 0 ? limit : 10;
+    const skip = (safePage - 1) * safeLimit;
 
-    return this.prisma.patient.findMany({
+    const where: Prisma.patientWhereInput = {
+      subscriber_id,
+      deleted_at: null,
+    };
 
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          {
-            name_normalized: {
-              contains: term,
-              mode: 'insensitive',
-            }
+    if (term) {
+      where.OR = [
+        {
+          name_normalized: {
+            contains: term,
+            mode: 'insensitive',
+          }
+        },
+        {
+          name: {
+            contains: term,
+            mode: 'insensitive',
           },
-          {
-            name: {
-              contains: term,
-              mode: 'insensitive', // <-- ignora maiúsculas/minúsculas
-            },
+        },
+        {
+          cpf: {
+            contains: term,
+            mode: 'insensitive',
           },
-          {
-            cpf: {
-              contains: term,
-              mode: 'insensitive', // <-- idem para CPF
-            },
-          },
-        ],
-      },
-      take: 10,
-      skip: 0,
-      orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        uuid: true,
-        subscriber_id: true,
-        cpf: true,
-        cns: true,
-        name: true,
-        social_name: true,
-        gender: true,
-        race: true,
-        sex: true,
-        birth_date: true,
-        death_date: true,
-        mother_name: true,
-        father_name: true,
-        phone: true,
-        email: true,
-        // postal_code: true, // excluded
-        // state: true, // excluded
-        // city: true, // excluded
-        // address: true, // excluded
-        // number: true, // excluded
-        // complement: true, // excluded
-        // neighborhood: true, // excluded
-        // nationality: true, // excluded
-        // naturalness: true, // excluded
-        // marital_status: true, // excluded
-        // blood_type: true, // excluded
-        // created_at: true, // excluded
-        // updated_at: true // excluded
-      },
-    });
+        },
+      ];
+    }
 
+    const [data, total] = await Promise.all([
+      this.prisma.patient.findMany({
+        where,
+        take: safeLimit,
+        skip: skip,
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          uuid: true,
+          subscriber_id: true,
+          cpf: true,
+          cns: true,
+          name: true,
+          social_name: true,
+          gender: true,
+          race: true,
+          sex: true,
+          birth_date: true,
+          death_date: true,
+          mother_name: true,
+          father_name: true,
+          phone: true,
+          email: true,
+        },
+      }),
+      this.prisma.patient.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    };
   }
 
   async findOne(id: number, subscriber_id: number) {

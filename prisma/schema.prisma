@@ -366,7 +366,11 @@ model notification {
   message         String
   type            notification_type
   milestone       String?
-  metadata        Json? // ⭐ NOVO - Dados pré-processados
+  patient_name    String?
+  cares_summary   String?
+  days_count      Int?
+  scheduled_date  DateTime?
+  priority        priority?
   is_read         Boolean           @default(false)
   read_at         DateTime?
   created_at      DateTime          @default(now())

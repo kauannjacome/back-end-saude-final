@@ -12,20 +12,39 @@ export class UnitService {
       data: createUnitDto,
     });
   }
-  async search(subscriber_id: number, term: string) {
+  async search(subscriber_id: number, term: string, page: number = 1, limit: number = 10) {
+    const safePage = page && page > 0 ? page : 1;
+    const safeLimit = limit && limit > 0 ? limit : 10;
+    const skip = (safePage - 1) * safeLimit;
 
-    return this.prisma.unit.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-        ],
-      },
-      take: 10,
-      skip: 0,
-      orderBy: { name: 'asc' },
-    });
+    const where: any = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (term) {
+      where.OR = [
+        { name: { contains: term, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.unit.findMany({
+        where,
+        take: safeLimit,
+        skip: skip,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.unit.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    };
   }
 
   async findAll(subscriber_id: number) {

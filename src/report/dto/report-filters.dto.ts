@@ -75,4 +75,19 @@ export class ReportFilterDto {
   @Type(() => Number)
   @IsInt()
   take?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  limit?: number = 10;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  offset?: number = 0;
 }

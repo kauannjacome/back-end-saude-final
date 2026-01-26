@@ -8,11 +8,13 @@ import {
   resource_origin,
   relationship,
   audit_action,
+  Prisma,
 } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import * as dotenv from 'dotenv'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
+import dayjs from 'dayjs'
 
 dotenv.config()
 
@@ -25,6 +27,155 @@ const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
 const DEFAULT_PASSWORD = '123456'
+
+// Função auxiliar para gerar dados em massa sem apagar os existentes
+async function generateMassData(params: {
+  subscriber_id: number,
+  location_name: string,
+  passwordHash: string,
+  unit_id: number,
+  group_id: number,
+  supplier_id: number,
+}) {
+  const { subscriber_id, location_name, passwordHash, unit_id, group_id, supplier_id } = params;
+
+  console.log(`📦 Gerando dados em massa para ${location_name}...`);
+
+  // Helper
+  const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+  // 1. PROFISSIONAIS (Batch)
+  console.log(`   - Profissionais...`);
+  const professionalsData: Prisma.professionalCreateManyInput[] = [];
+  const totalProfessionals = randomInt(10, 120);
+  for (let i = 1; i <= totalProfessionals; i++) {
+    const cpf = `999${(subscriber_id * 1000 + i).toString().padStart(8, '0')}`.substring(0, 11);
+    professionalsData.push({
+      subscriber_id,
+      cpf,
+      name: `Profissional ${i} (${location_name})`,
+      cargo: i % 2 === 0 ? 'Médico' : 'Enfermeiro',
+      email: `prof${i}_sub${subscriber_id}@sistema.gov.br`,
+      role: role.typist,
+      password_hash: passwordHash,
+      accepted_terms: true,
+    });
+  }
+  await prisma.professional.createMany({ data: professionalsData, skipDuplicates: true });
+
+
+  // 2. FORNECEDORES (Batch)
+  console.log(`   - Fornecedores...`);
+  const suppliersData: Prisma.supplierCreateManyInput[] = [];
+  const totalSuppliers = randomInt(10, 100);
+  for (let i = 1; i <= totalSuppliers; i++) {
+    const cnpj = `888${(subscriber_id * 1000 + i).toString().padStart(11, '0')}`.substring(0, 14);
+    suppliersData.push({
+      subscriber_id,
+      name: `Fornecedor ${i} (${location_name})`,
+      trade_name: `Trade ${i} ${location_name}`,
+      cnpj,
+      city: location_name,
+      state: 'BR',
+    });
+  }
+  await prisma.supplier.createMany({ data: suppliersData, skipDuplicates: true });
+
+  // 3. PASTAS (Batch)
+  console.log(`   - Pastas...`);
+  const foldersData: Prisma.folderCreateManyInput[] = [];
+  const totalFolders = randomInt(20, 40);
+  for (let i = 1; i <= totalFolders; i++) {
+    const uuid = `55555555-0000-0000-${subscriber_id.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}`;
+    foldersData.push({
+      uuid,
+      subscriber_id,
+      name: `Pasta Extra ${i} (${location_name})`,
+      description: `Pasta gerada automaticamente para testes de carga em ${location_name}`,
+    });
+  }
+  await prisma.folder.createMany({ data: foldersData, skipDuplicates: true });
+
+  // 4. CUIDADOS (Batch)
+  console.log(`   - Cuidados...`);
+  const caresData: Prisma.careCreateManyInput[] = [];
+  const totalCares = randomInt(300, 400);
+  for (let i = 1; i <= totalCares; i++) {
+    const uuid = `44444444-0000-0000-${subscriber_id.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}`;
+    caresData.push({
+      uuid,
+      subscriber_id,
+      name: `Procedimento ${i} (${location_name})`,
+      acronym: `P${i}`,
+      unit_measure: unit_measure.un,
+      group_id,
+    });
+  }
+  await prisma.care.createMany({ data: caresData, skipDuplicates: true });
+
+  // 5. PACIENTES (Batch)
+  console.log(`   - Pacientes...`);
+  const patientsData: Prisma.patientCreateManyInput[] = [];
+  const totalPatients = randomInt(400, 500);
+  for (let i = 1; i <= totalPatients; i++) {
+    const cpf = `777${(subscriber_id * 10000 + i).toString().padStart(8, '0')}`.substring(0, 11);
+    patientsData.push({
+      subscriber_id,
+      cpf,
+      name: `Paciente ${i} (${location_name})`,
+      birth_date: new Date('1990-01-01'),
+      city: location_name,
+      cns: `7${(subscriber_id * 10000 + i).toString().padStart(14, '0')}`.substring(0, 15),
+    });
+  }
+  await prisma.patient.createMany({ data: patientsData, skipDuplicates: true });
+
+  // 6. REGULAÇÕES (Limited Batch - complex relationships)
+  // For regulations we need IDs, so we can't easily do createMany if we need to link to other IDs we just created without fetching them.
+  // However, we can fetch the patients/cares we just created to link them.
+  console.log(`   - Regulações...`);
+
+  // Fetch sample IDs to link
+  const samplePatient = await prisma.patient.findFirst({ where: { subscriber_id, cpf: { startsWith: '777' } } });
+  const sampleCare = await prisma.care.findFirst({ where: { subscriber_id, uuid: { startsWith: '4444' } } });
+
+  if (samplePatient && sampleCare) {
+    const regulationsData: Prisma.regulationCreateManyInput[] = [];
+    // We create regulations first
+    const totalRegulations = randomInt(20, 40);
+    for (let i = 1; i <= totalRegulations; i++) {
+      const uuid = `99999999-1111-2222-${subscriber_id.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}`;
+      regulationsData.push({
+        uuid,
+        subscriber_id,
+        id_code: `REG-EXTRA-${subscriber_id}-${i}`,
+        patient_id: samplePatient.id,
+        status: status.in_progress,
+        supplier_id,
+        priority: priority.eletivo,
+      });
+    }
+    await prisma.regulation.createMany({ data: regulationsData, skipDuplicates: true });
+
+    // Now we need to link creating care_regulation.
+    // Fetch the inserted regulations to get their IDs
+    const insertedRegs = await prisma.regulation.findMany({
+      where: { subscriber_id, uuid: { startsWith: '99999999-1111-2222-' } },
+      select: { id: true }
+    });
+
+    const careRegulationsData = insertedRegs.map(reg => ({
+      care_id: sampleCare.id,
+      regulation_id: reg.id,
+      subscriber_id,
+      quantity: 1,
+    }));
+
+    if (careRegulationsData.length > 0) {
+      await prisma.care_regulation.createMany({ data: careRegulationsData, skipDuplicates: true });
+    }
+  }
+}
 
 async function main() {
   console.log('🌱 Iniciando seed - 3 Municípios (SEM LAÇOS)\n')
@@ -491,7 +642,7 @@ async function main() {
       patient_id: pacSP1.id,
       status: status.in_progress,
       notes: 'Regulação SP 1',
-      request_date: new Date('2025-01-10'),
+      request_date: dayjs().subtract(10, 'day').toDate(),
       supplier_id: suppSP1.id,
       creator_id: adminSP.id,
       folder_id: folderSP1.id,
@@ -520,7 +671,8 @@ async function main() {
       patient_id: pacSP2.id,
       status: status.approved,
       notes: 'Regulação SP 2',
-      request_date: new Date('2025-01-11'),
+      request_date: dayjs().subtract(9, 'day').toDate(),
+      scheduled_date: dayjs().add(2, 'day').toDate(), // Will trigger "2 days remaining" alert
       supplier_id: suppSP2.id,
       creator_id: typistSP.id,
       folder_id: folderSP2.id,
@@ -549,7 +701,8 @@ async function main() {
       patient_id: pacSP3.id,
       status: status.in_progress,
       notes: 'Regulação SP 3',
-      request_date: new Date('2025-01-12'),
+      request_date: dayjs().subtract(8, 'day').toDate(),
+      scheduled_date: dayjs().add(5, 'day').toDate(), // Will trigger "5 days remaining" alert
       supplier_id: suppSP3.id,
       creator_id: adminSP.id,
       folder_id: folderSP3.id,
@@ -627,6 +780,16 @@ async function main() {
   })
 
   console.log('✅ 5 Regulações SP criadas')
+
+  await generateMassData({
+    subscriber_id: sub1.id,
+    location_name: 'São Paulo',
+    passwordHash,
+    unit_id: unitSP1.id,
+    group_id: groupSP1.id,
+    supplier_id: suppSP1.id,
+  });
+
   console.log('✅ SÃO PAULO COMPLETO!\n')
 
   // ==========================================
@@ -1178,6 +1341,16 @@ async function main() {
   })
 
   console.log('✅ 5 Regulações RJ criadas')
+
+  await generateMassData({
+    subscriber_id: sub2.id,
+    location_name: 'Rio de Janeiro',
+    passwordHash,
+    unit_id: unitRJ1.id,
+    group_id: groupRJ1.id,
+    supplier_id: suppRJ1.id,
+  });
+
   console.log('✅ RIO DE JANEIRO COMPLETO!\n')
 
   // ==========================================
@@ -1729,6 +1902,16 @@ async function main() {
   })
 
   console.log('✅ 5 Regulações MG criadas')
+
+  await generateMassData({
+    subscriber_id: sub3.id,
+    location_name: 'Belo Horizonte',
+    passwordHash,
+    unit_id: unitMG1.id,
+    group_id: groupMG1.id,
+    supplier_id: suppMG1.id,
+  });
+
   console.log('✅ BELO HORIZONTE COMPLETO!\n')
 
   // ==========================================
@@ -1784,17 +1967,17 @@ async function main() {
   console.log('\n📊 ========== RESUMO ==========')
   console.log('✅ 1 Admin Manager (kauannjacome@gmail.com)')
   console.log('✅ 3 Municípios: São Paulo, Rio de Janeiro, Belo Horizonte')
-  console.log('✅ Cada município tem:')
-  console.log('   - 2 profissionais (admin_municipal + typist)')
-  console.log('   - 3 unidades de saúde')
-  console.log('   - 5 pacientes')
-  console.log('   - 2 grupos')
-  console.log('   - 5 fornecedores')
-  console.log('   - 5 cuidados/procedimentos')
-  console.log('   - 3 pastas')
-  console.log('   - 5 regulações')
+  console.log('✅ Cada município tem (dados base + randomicos):')
+  console.log('   - 10~120 profissionais (+2 fixos)')
+  console.log('   - 3 unidades de saúde (fixas)')
+  console.log('   - 400~500 pacientes (+5 fixos)')
+  console.log('   - 2 grupos (fixos)')
+  console.log('   - 10~100 fornecedores (+5 fixos)')
+  console.log('   - 300~400 cuidados/procedimentos (+5 fixos)')
+  console.log('   - 20~40 pastas (+3 fixas)')
+  console.log('   - 20~40 regulações (+5 fixas)')
   console.log(`\n🔐 Senha padrão: ${DEFAULT_PASSWORD}`)
-  console.log('\n✅ Seed executado com sucesso - SEM LAÇOS DE REPETIÇÃO!')
+  console.log('\n✅ Seed executado com sucesso!')
 }
 
 main()

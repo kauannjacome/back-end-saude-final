@@ -62,26 +62,21 @@ export class NotificationService {
         const patientName = reg.patient?.name || 'Paciente não identificado';
         const message = `${patientName} - ${caresSummary}`;
 
-        const metadata = {
-          regulation_uuid: reg.uuid,
-          patient_id: reg.patient_id,
-          patient_name: patientName,
-          days_remaining: diffDays,
-          scheduled_date: reg.scheduled_date,
-          scheduled_date_formatted: dayjs(reg.scheduled_date).format('DD/MM/YYYY'),
-          cares_summary: caresSummary
-        };
 
-        await this.createNotificationIfNotExists(
-          reg.subscriber_id,
-          reg.id,
+
+        await this.createNotificationIfNotExists({
+          subscriberId: reg.subscriber_id,
+          regulationId: reg.id,
           title,
           message,
-          notification_type.PRAZO,
+          type: notification_type.PRAZO,
           milestone,
-          reg.responsible_id ?? undefined,
-          metadata
-        );
+          professionalId: reg.responsible_id ?? undefined,
+          patientName,
+          caresSummary,
+          daysCount: diffDays,
+          scheduledDate: reg.scheduled_date
+        });
       }
     }
   }
@@ -113,62 +108,66 @@ export class NotificationService {
         const patientName = reg.patient?.name || 'Paciente não identificado';
         const message = `${patientName} - ${caresSummary} (${diffDays} dias)`;
 
-        const metadata = {
-          regulation_uuid: reg.uuid,
-          patient_id: reg.patient_id,
-          patient_name: patientName,
-          days_pending: diffDays,
-          priority: reg.priority,
-          cares_summary: caresSummary
-        };
 
-        await this.createNotificationIfNotExists(
-          reg.subscriber_id,
-          reg.id,
+
+        await this.createNotificationIfNotExists({
+          subscriberId: reg.subscriber_id,
+          regulationId: reg.id,
           title,
           message,
-          notification_type.PRIORIDADE,
+          type: notification_type.PRIORIDADE,
           milestone,
-          reg.responsible_id ?? undefined,
-          metadata
-        );
+          professionalId: reg.responsible_id ?? undefined,
+          patientName,
+          caresSummary,
+          daysCount: diffDays,
+          priority: reg.priority ?? undefined
+        });
       }
     }
   }
 
-  private async createNotificationIfNotExists(
-    subscriberId: number,
-    regulationId: number,
-    title: string,
-    message: string,
-    type: notification_type,
-    milestone: string,
-    professionalId?: number,
-    metadata?: any
-  ) {
+  private async createNotificationIfNotExists(params: {
+    subscriberId: number;
+    regulationId: number;
+    title: string;
+    message: string;
+    type: notification_type;
+    milestone: string;
+    professionalId?: number;
+    patientName?: string;
+    caresSummary?: string;
+    daysCount?: number;
+    scheduledDate?: Date;
+    priority?: Prisma.notificationCreateInput['priority'];
+  }) {
     const exists = await this.prisma.notification.findFirst({
       where: {
-        regulation_id: regulationId,
-        milestone: milestone,
-        professional_id: professionalId // Unique per professional now
+        regulation_id: params.regulationId,
+        milestone: params.milestone,
+        professional_id: params.professionalId // Unique per professional now
       },
     });
 
     if (!exists) {
       await this.prisma.notification.create({
         data: {
-          subscriber_id: subscriberId,
-          regulation_id: regulationId,
-          professional_id: professionalId,
-          title,
-          message,
-          type,
-          milestone,
-          metadata: metadata ?? Prisma.JsonNull,
+          subscriber_id: params.subscriberId,
+          regulation_id: params.regulationId,
+          professional_id: params.professionalId,
+          title: params.title,
+          message: params.message,
+          type: params.type,
+          milestone: params.milestone,
+          patient_name: params.patientName,
+          cares_summary: params.caresSummary,
+          days_count: params.daysCount,
+          scheduled_date: params.scheduledDate,
+          priority: params.priority,
           is_read: false,
         },
       });
-      this.logger.log(`Notification created for regulation ${regulationId} - ${milestone}`);
+      this.logger.log(`Notification created for regulation ${params.regulationId} - ${params.milestone}`);
     }
   }
 
@@ -205,16 +204,16 @@ export class NotificationService {
         milestone: true,
         created_at: true,
         is_read: true,
-        metadata: true
+        patient_name: true,
+        cares_summary: true,
+        days_count: true,
+        scheduled_date: true,
+        priority: true
       }
     });
 
     return {
-      notifications: notifications.map(n => ({
-        ...n,
-        // Ensure metadata is object, handle potential nulls from DB if needed
-        metadata: n.metadata as any
-      }))
+      notifications
     };
   }
 

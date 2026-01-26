@@ -11,10 +11,17 @@ export class SearchPaginationDto {
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()
-  @Min(0)
+  @Min(1)
   limit?: number = 10;
 
-  // paginação: offset
+  // paginação: página atual (1-based)
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  // paginação: offset (opcional, calculado se não enviado)
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()

@@ -148,44 +148,50 @@ export class CareService {
   }
 
 
-  async search(subscriber_id: number, term: string) {
-    return this.prisma.care.findMany({
-      where: {
-        subscriber_id,
-        deleted_at: null,
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },   // ✅ ignora maiúsculas/minúsculas
-          { name_normalized: { contains: term, mode: 'insensitive' } },
-          { acronym: { contains: term, mode: 'insensitive' } } // ✅ idem
-        ],
-      },
-      take: 10,
-      skip: 0,
-      orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        name_normalized: false, // Internal
-        acronym: true,
-        description: true,
-        unit_measure: true,
-        status: true,
-        // resource_origin: false, // excluded
-        // type_declaration: false, // excluded
-        // value: false, // excluded
-        // amount: false, // excluded
-        // min_deadline_days: false, // excluded
-        // group_id: false, // excluded
-        // professional_id: false, // excluded
-        // supplier_id: false, // excluded
-        // created_at: false, // excluded
-        // updated_at: false, // excluded
-        // deleted_at: false, // excluded
+  async search(subscriber_id: number, term: string, page: number = 1, limit: number = 10) {
+    const safePage = page && page > 0 ? page : 1;
+    const safeLimit = limit && limit > 0 ? limit : 10;
+    const skip = (safePage - 1) * safeLimit;
 
-        // group: { select: { name: true } }, // excluded relation
-        // professional: { select: { name: true } }, // excluded relation
-      },
-    });
+    const where: Prisma.careWhereInput = {
+      subscriber_id,
+      deleted_at: null,
+    };
+
+    if (term) {
+      where.OR = [
+        { name: { contains: term, mode: 'insensitive' } },
+        { name_normalized: { contains: term, mode: 'insensitive' } },
+        { acronym: { contains: term, mode: 'insensitive' } }
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.care.findMany({
+        where,
+        take: safeLimit,
+        skip: skip,
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          name_normalized: false,
+          acronym: true,
+          description: true,
+          unit_measure: true,
+          status: true,
+        },
+      }),
+      this.prisma.care.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    };
   }
 
   /**

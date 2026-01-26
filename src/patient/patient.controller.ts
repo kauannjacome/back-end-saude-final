@@ -30,10 +30,15 @@ export class PatientController {
 
   @Get('search')
   search(
-    @Query('term') term: string,
+    @Query() query: SearchPaginationDto,
     @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    return this.patientService.search(Number(TokenPayload.sub_id), term);
+    return this.patientService.search(
+      Number(TokenPayload.sub_id),
+      query.term,
+      Number(query.page),
+      Number(query.limit)
+    );
   }
 
 

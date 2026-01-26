@@ -27,9 +27,16 @@ export class UnitController {
   @Get('search')
   search(
     @Query('term') term: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
     @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    return this.unitService.search(Number(TokenPayload.sub_id), term);
+    return this.unitService.search(
+      Number(TokenPayload.sub_id),
+      term,
+      Number(page) || 1,
+      Number(limit) || 10
+    );
   }
 
   @Get()
