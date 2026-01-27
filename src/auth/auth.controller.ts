@@ -1,5 +1,6 @@
-import { Body, Controller, Post, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Post, Patch, Get, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { SignInDto } from './dto/signin.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 import { AuthService } from './auth.service';
 import { AuthTokenGuard } from './guard/auth-token-guard';
 import { TokenPayloadParam } from './param/token-payload.param';
@@ -25,6 +26,47 @@ export class AuthController {
     return this.authService.resetPassword(body.token, body.password);
   }
 
+  // =============================================
+  // ROTAS DE DESBLOQUEIO POR EMAIL
+  // =============================================
+  @Post('request-unlock-email')
+  requestUnlockByEmail(@Body() body: { email: string }) {
+    return this.authService.requestUnlockByEmail(body.email);
+  }
+
+  @Post('confirm-unlock-email')
+  confirmUnlockByEmail(@Body() body: { token: string }) {
+    return this.authService.confirmUnlockByEmail(body.token);
+  }
+
+  // =============================================
+  // ROTAS DE DESBLOQUEIO POR WHATSAPP
+  // =============================================
+  @Post('request-unlock-whatsapp')
+  requestUnlockByWhatsApp(@Body() body: { email: string }) {
+    return this.authService.requestUnlockByWhatsApp(body.email);
+  }
+
+  @Post('confirm-unlock-whatsapp')
+  confirmUnlockByWhatsApp(@Body() body: { email: string; code: string }) {
+    return this.authService.confirmUnlockByWhatsApp(body.email, body.code);
+  }
+
+  // =============================================
+  // ROTA DE DESBLOQUEIO POR ADMIN
+  // =============================================
+  @UseGuards(AuthTokenGuard)
+  @Post('admin-unlock')
+  async adminUnlock(
+    @Body() body: { professional_id: number },
+    @TokenPayloadParam() payload: any
+  ) {
+    if (payload.role !== 'admin_manager' && payload.role !== 'admin_municipal') {
+      throw new UnauthorizedException('Apenas administradores podem desbloquear contas.');
+    }
+    return this.authService.adminUnlock(body.professional_id, payload.role);
+  }
+
   @UseGuards(AuthTokenGuard)
   @Post('impersonate')
   async impersonate(
@@ -48,5 +90,33 @@ export class AuthController {
       throw new UnauthorizedException('Senha incorreta.');
     }
     return { success: true };
+  }
+
+  @UseGuards(AuthTokenGuard)
+  @Patch('update-password')
+  async updatePassword(
+    @Body() updatePasswordDto: UpdatePasswordDto,
+    @TokenPayloadParam() payload: any
+  ) {
+    return this.authService.updatePassword(
+      payload.user_id,
+      updatePasswordDto.currentPassword,
+      updatePasswordDto.newPassword
+    );
+  }
+
+  @UseGuards(AuthTokenGuard)
+  @Post('accept-terms')
+  async acceptTerms(
+    @Body() body: { version: string },
+    @TokenPayloadParam() payload: any
+  ) {
+    return this.authService.acceptTerms(payload.user_id, body.version);
+  }
+
+  @UseGuards(AuthTokenGuard)
+  @Get('terms-status')
+  async getTermsStatus(@TokenPayloadParam() payload: any) {
+    return this.authService.getTermsStatus(payload.user_id);
   }
 }

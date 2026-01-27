@@ -58,6 +58,78 @@ export class CreateProfessionalDto {
   @IsString()
   registry_state?: string;
 
+  // Identificação pessoal
+  @IsOptional()
+  @IsString()
+  social_name?: string;
+
+  @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @IsOptional()
+  @IsString()
+  race?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  is_disabled?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  death_date?: string;
+
+  // Filiação
+  @IsOptional()
+  @IsString()
+  mother_name?: string;
+
+  @IsOptional()
+  @IsString()
+  father_name?: string;
+
+  // Endereço
+  @IsOptional()
+  @IsString()
+  postal_code?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  number?: string;
+
+  @IsOptional()
+  @IsString()
+  complement?: string;
+
+  @IsOptional()
+  @IsString()
+  neighborhood?: string;
+
+  // Dados civis
+  @IsOptional()
+  @IsString()
+  nationality?: string;
+
+  @IsOptional()
+  @IsString()
+  naturalness?: string;
+
+  @IsOptional()
+  @IsString()
+  marital_status?: string;
+
   @IsOptional()
   @IsEnum(role)
   role?: role;

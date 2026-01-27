@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Param, UseGuards, Query, HttpCode, HttpStatus, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
 import { TokenPayloadParam } from '../auth/param/token-payload.param';
@@ -20,7 +20,6 @@ export class NotificationController {
   @Post('read-all')
   @HttpCode(HttpStatus.OK)
   markAllAsRead(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
-    // Mantendo nome da rota 'read-all' para compatibilidade, mas chama 'markAsViewed' (Badge reset)
     return this.notificationService.markAsViewed(
       Number(tokenPayload.sub_id),
       Number(tokenPayload.user_id)
@@ -43,5 +42,45 @@ export class NotificationController {
     return this.notificationService.triggerManualCheck(
       subscriberId ? Number(subscriberId) : undefined
     );
+  }
+
+  /**
+   * Retorna todas as notificações com informações de quem visualizou
+   * Apenas para admin_manager
+   */
+  @Get('views')
+  async getNotificationViews(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
+    if (tokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode acessar este recurso');
+    }
+
+    return this.notificationService.getNotificationViews(
+      Number(tokenPayload.sub_id)
+    );
+  }
+
+  /**
+   * Retorna detalhes de visualização de uma notificação específica
+   * Apenas para admin_manager
+   */
+  @Get('views/:id')
+  async getNotificationViewDetails(
+    @TokenPayloadParam() tokenPayload: PayloadTokenDto,
+    @Param('id') id: string
+  ) {
+    if (tokenPayload.role !== 'admin_manager') {
+      throw new ForbiddenException('Apenas admin_manager pode acessar este recurso');
+    }
+
+    const result = await this.notificationService.getNotificationViewDetails(
+      Number(tokenPayload.sub_id),
+      Number(id)
+    );
+
+    if (!result) {
+      throw new NotFoundException('Notificação não encontrada');
+    }
+
+    return result;
   }
 }

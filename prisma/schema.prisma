@@ -180,6 +180,7 @@ model patient {
   password_hash          String?
   is_password_temp       Boolean      @default(false)
   number_try             Int?         @default(0)
+  number_unlock          Int?         @default(0)
   is_blocked             Boolean      @default(false)
   accepted_terms         Boolean      @default(false)
   accepted_terms_at      DateTime?
@@ -196,26 +197,52 @@ model patient {
 }
 
 model professional {
-  id                     Int               @id @default(autoincrement())
-  uuid                   String            @unique @default(uuid())
-  subscriber_id          Int
-  cpf                    String
-  name                   String?
-  name_normalized        String?
-  cargo                  String?
-  sex                    sex?
-  birth_date             DateTime?
-  phone_number           String?
-  email                  String?
-  cns                    String? // Cartão Nacional de Saúde
-  professional_registry  String? // Ex: "CRM-SP 123456" - Campo composto/display
-  registry_type          String? // Ex: "CRM", "COREN", "CRO"
-  registry_number        String? // Ex: "123456"
-  registry_state         String? // Ex: "SP", "RJ"
-  role                   role?             @default(typist)
+  id                    Int       @id @default(autoincrement())
+  uuid                  String    @unique @default(uuid())
+  subscriber_id         Int
+  cpf                   String
+  name                  String?
+  name_normalized       String?
+  cargo                 String?
+  sex                   sex?
+  birth_date            DateTime?
+  phone_number          String?
+  email                 String?
+  cns                   String? // Cartão Nacional de Saúde
+  professional_registry String? // Ex: "CRM-SP 123456" - Campo composto/display
+  registry_type         String? // Ex: "CRM", "COREN", "CRO"
+  registry_number       String? // Ex: "123456"
+  registry_state        String? // Ex: "SP", "RJ"
+  role                  role?     @default(typist)
+  // Identificação pessoal
+  social_name           String?
+  gender                String?
+  race                  String?
+  is_disabled           Boolean   @default(false)
+  death_date            DateTime?
+
+  // Filiação
+  mother_name String?
+  father_name String?
+
+  // Endereço
+  postal_code  String?
+  state        String?
+  city         String?
+  address      String?
+  number       String?
+  complement   String?
+  neighborhood String?
+
+  // Dados civis
+  nationality    String?
+  naturalness    String?
+  marital_status String?
+
   password_hash          String?
   is_password_temp       Boolean           @default(false)
   number_try             Int?              @default(0)
+  number_unlock          Int?              @default(0)
   is_blocked             Boolean           @default(false)
   accepted_terms         Boolean           @default(false)
   accepted_terms_at      DateTime?
@@ -373,6 +400,7 @@ model notification {
   priority        priority?
   is_read         Boolean           @default(false)
   read_at         DateTime?
+  viewed_by       Json?             @default("[]") // Array de {professional_id, name, viewed_at}
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
   deleted_at      DateTime?
@@ -382,10 +410,10 @@ model notification {
   regulation   regulation?   @relation(fields: [regulation_id], references: [id])
 
   @@index([subscriber_id])
-  @@index([professional_id]) // Index to optimize notification queries by professional
+  @@index([professional_id])
   @@index([regulation_id])
   @@index([created_at])
-  @@index([subscriber_id, created_at]) // Otimização para buscar notificações recentes
+  @@index([subscriber_id, created_at])
 }
 
 model whatsapp_config {
@@ -568,4 +596,23 @@ enum notification_type {
   PRIORIDADE
   QUANTIDADE_ATINGIDA
   AGENDAMENTO
+}
+
+// ============================================
+// TERMOS DE USO
+// ============================================
+
+model terms_of_use {
+  id         Int       @id @default(autoincrement())
+  uuid       String    @unique @default(uuid())
+  version    String    @unique
+  title      String
+  content    String    @db.Text
+  is_active  Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  @@index([is_active])
+  @@index([version])
 }

@@ -41,6 +41,31 @@ export class ProfessionalService {
         email: createProfessionalDto.email,
 
         role: createProfessionalDto.role,
+
+        // Novos Campos
+        social_name: createProfessionalDto.social_name,
+        gender: createProfessionalDto.gender,
+        race: createProfessionalDto.race,
+        is_disabled: createProfessionalDto.is_disabled ?? false,
+        death_date: createProfessionalDto.death_date
+          ? new Date(createProfessionalDto.death_date)
+          : null,
+
+        mother_name: createProfessionalDto.mother_name,
+        father_name: createProfessionalDto.father_name,
+
+        postal_code: createProfessionalDto.postal_code,
+        state: createProfessionalDto.state,
+        city: createProfessionalDto.city,
+        address: createProfessionalDto.address,
+        number: createProfessionalDto.number,
+        complement: createProfessionalDto.complement,
+        neighborhood: createProfessionalDto.neighborhood,
+
+        nationality: createProfessionalDto.nationality,
+        naturalness: createProfessionalDto.naturalness,
+        marital_status: createProfessionalDto.marital_status,
+
         password_hash: passwordHash,
 
         is_password_temp: false,
@@ -126,6 +151,25 @@ export class ProfessionalService {
             updated_at: true,
             is_blocked: true,
             accepted_terms: true,
+
+            // Novos Campos
+            social_name: true,
+            gender: true,
+            race: true,
+            is_disabled: true,
+            death_date: true,
+            mother_name: true,
+            father_name: true,
+            postal_code: true,
+            state: true,
+            city: true,
+            address: true,
+            number: true,
+            complement: true,
+            neighborhood: true,
+            nationality: true,
+            naturalness: true,
+            marital_status: true,
           },
         }),
         this.prisma.professional.count({ where }),
@@ -252,6 +296,30 @@ export class ProfessionalService {
 
         role: updateProfessionalDto.role ?? professional.role,
 
+        // Novos Campos
+        social_name: updateProfessionalDto.social_name ?? professional.social_name,
+        gender: updateProfessionalDto.gender ?? professional.gender,
+        race: updateProfessionalDto.race ?? professional.race,
+        is_disabled: updateProfessionalDto.is_disabled ?? professional.is_disabled,
+        death_date: updateProfessionalDto.death_date
+          ? new Date(updateProfessionalDto.death_date)
+          : professional.death_date,
+
+        mother_name: updateProfessionalDto.mother_name ?? professional.mother_name,
+        father_name: updateProfessionalDto.father_name ?? professional.father_name,
+
+        postal_code: updateProfessionalDto.postal_code ?? professional.postal_code,
+        state: updateProfessionalDto.state ?? professional.state,
+        city: updateProfessionalDto.city ?? professional.city,
+        address: updateProfessionalDto.address ?? professional.address,
+        number: updateProfessionalDto.number ?? professional.number,
+        complement: updateProfessionalDto.complement ?? professional.complement,
+        neighborhood: updateProfessionalDto.neighborhood ?? professional.neighborhood,
+
+        nationality: updateProfessionalDto.nationality ?? professional.nationality,
+        naturalness: updateProfessionalDto.naturalness ?? professional.naturalness,
+        marital_status: updateProfessionalDto.marital_status ?? professional.marital_status,
+
         accepted_terms:
           updateProfessionalDto.accepted_terms ?? professional.accepted_terms,
 
@@ -353,5 +421,63 @@ export class ProfessionalService {
         birth_date: true,
       },
     });
+  }
+
+  // ✅ CRIAR SENHA TEMPORÁRIA (admin_municipal ou admin_manager)
+  async setTemporaryPassword(
+    professionalId: number,
+    temporaryPassword: string,
+    subscriber_id: number,
+    adminRole: string
+  ) {
+    // Verificar permissão
+    if (adminRole !== 'admin_manager' && adminRole !== 'admin_municipal') {
+      throw new HttpException(
+        'Apenas administradores podem criar senhas temporárias',
+        HttpStatus.FORBIDDEN
+      );
+    }
+
+    // Buscar profissional
+    const professional = await this.prisma.professional.findFirst({
+      where: {
+        id: professionalId,
+        subscriber_id,
+        deleted_at: null
+      }
+    });
+
+    if (!professional) {
+      throw new NotFoundException(`Profissional #${professionalId} não encontrado`);
+    }
+
+    // Apenas typist pode receber senha temporária de admin_municipal
+    if (adminRole === 'admin_municipal' && professional.role !== 'typist') {
+      throw new HttpException(
+        'Admin municipal só pode criar senha temporária para digitadores',
+        HttpStatus.FORBIDDEN
+      );
+    }
+
+    // Hash da senha temporária
+    const passwordHash = await this.hashingService.hash(temporaryPassword);
+
+    // Atualizar profissional com senha temporária
+    await this.prisma.professional.update({
+      where: { id: professionalId },
+      data: {
+        password_hash: passwordHash,
+        is_password_temp: true,
+        number_try: 0,
+        number_unlock: 0,
+        is_blocked: false
+      }
+    });
+
+    return {
+      message: 'Senha temporária criada com sucesso',
+      professional_id: professionalId,
+      professional_name: professional.name
+    };
   }
 }

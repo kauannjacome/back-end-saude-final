@@ -8,6 +8,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import jwtConfig from './config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
+import { ZapModule } from 'src/zap/module';
 
 // Módulo global - Pode ser usado na aplicação inteira ( não precisa importar em outros módulos pra usar )
 @Global()
@@ -16,7 +17,8 @@ import { JwtModule } from '@nestjs/jwt';
     PrismaModule,
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
-    EmailModule
+    EmailModule,
+    ZapModule
   ],
   providers: [
     {

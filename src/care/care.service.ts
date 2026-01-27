@@ -318,13 +318,14 @@ export class CareService {
 
   /**
    * Retorna os cuidados mais utilizados pelo usuário (ou geral do assinante)
+   * Se não houver rankings, retorna os cuidados mais recentes como fallback
    */
   async findTopUsed(subscriber_id: number, user_id?: number) {
     // Busca ranking específico do usuário
     let ranks = await this.prisma.care_usage_rank.findMany({
       where: {
         subscriber_id,
-        user_id: user_id ?? undefined, // se user_id for null/undefined, busca geral?
+        user_id: user_id ?? undefined,
       },
       orderBy: [
         { usage_count: 'desc' },
@@ -332,9 +333,23 @@ export class CareService {
       ],
       take: 20,
       include: {
-        care: true,
+        care: {
+          select: {
+            id: true,
+            name: true,
+            acronym: true,
+            description: true,
+            unit_measure: true,
+            status: true,
+            professional_id: true,
+            type_declaration: true,
+          },
+        },
       },
     });
+
+    // Filtra ranks cujo care foi deletado (deleted_at != null)
+    ranks = ranks.filter(r => r.care && r.care.id);
 
     // Se não tiver ranking suficiente para o usuário, busca o geral (user_id = null)
     if (user_id && ranks.length < 5) {
@@ -349,21 +364,56 @@ export class CareService {
         ],
         take: 20 - ranks.length,
         include: {
-          care: true,
+          care: {
+            select: {
+              id: true,
+              name: true,
+              acronym: true,
+              description: true,
+              unit_measure: true,
+              status: true,
+              professional_id: true,
+              type_declaration: true,
+            },
+          },
         },
       });
 
       // Mescla removendo duplicados
       const existingIds = new Set(ranks.map(r => r.care_id));
       for (const r of generalRanks) {
-        if (!existingIds.has(r.care_id)) {
+        if (!existingIds.has(r.care_id) && r.care) {
           ranks.push(r);
           existingIds.add(r.care_id);
         }
       }
     }
 
-    return ranks.map(r => r.care); // Retorna apenas os objetos care
+    // FALLBACK: Se não houver rankings, busca os cuidados mais recentes
+    if (ranks.length === 0) {
+      const fallbackCares = await this.prisma.care.findMany({
+        where: {
+          subscriber_id,
+          deleted_at: null,
+        },
+        orderBy: { created_at: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          name: true,
+          acronym: true,
+          description: true,
+          unit_measure: true,
+          status: true,
+          professional_id: true,
+          type_declaration: true,
+        },
+      });
+
+      return fallbackCares;
+    }
+
+    return ranks.map(r => r.care);
   }
 
   /**

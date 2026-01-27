@@ -52,7 +52,7 @@ export class RegulationController {
 
     return this.uploadService.uploadRequirement(
       file,
-      Number(token.sub_id),       // userId
+      Number(token.sub_id),       // assiannte
       Number(regulationId),       // regulationId
     );
   }

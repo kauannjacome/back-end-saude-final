@@ -10,13 +10,15 @@ import { SearchRegulationDto } from './dto/search-regulation.dto';
 import { ZapService } from '../zap/service';
 import { sendRegulationStatusMessage } from '../common/utils/send-regulation-message';
 import { QueueService } from '../common/queue/queue.service';
+import { RegulationGateway } from './regulation.gateway';
 
 @Injectable()
 export class RegulationService {
   constructor(
     private prisma: PrismaService,
     private zapService: ZapService,
-    private queueService: QueueService
+    private queueService: QueueService,
+    private regulationGateway: RegulationGateway,
   ) { }
 
   // ... (existing methods until updateStatus)
@@ -31,6 +33,9 @@ export class RegulationService {
     if (sendMessage) {
       this.queueService.addJob(() => sendRegulationStatusMessage(updated, status, subscriber_id, this.zapService));
     }
+
+    // Notifica via WebSocket que houve atualização para este assinante
+    this.regulationGateway.notifyRegulationUpdate(subscriber_id);
 
     return updated;
   }
@@ -65,6 +70,11 @@ export class RegulationService {
         },
       },
     });
+
+
+
+    // Notifica via WebSocket que houve atualização para este assinante
+    this.regulationGateway.notifyRegulationUpdate(subscriber_id);
 
     return regulation;
   }
@@ -316,6 +326,9 @@ export class RegulationService {
       },
     });
 
+    // Notifica via WebSocket que houve atualização para este assinante
+    this.regulationGateway.notifyRegulationUpdate(subscriber_id);
+
     return updatedRegulation;
   }
 
@@ -326,10 +339,15 @@ export class RegulationService {
       throw new NotFoundException(`Regulation #${id} not found`);
     }
 
-    return this.prisma.regulation.update({
+    const result = await this.prisma.regulation.update({
       where: { id, subscriber_id },
       data: { deleted_at: new Date() },
     });
+
+    // Notifica via WebSocket que houve atualização para este assinante
+    this.regulationGateway.notifyRegulationUpdate(subscriber_id);
+
+    return result;
   }
 
   async restore(id: number, subscriber_id: number) {
@@ -341,10 +359,15 @@ export class RegulationService {
       throw new BadRequestException(`Regulation #${id} is not deleted`);
     }
 
-    return this.prisma.regulation.update({
+    const result = await this.prisma.regulation.update({
       where: { id, subscriber_id },
       data: { deleted_at: null },
     });
+
+    // Notifica via WebSocket que houve atualização para este assinante
+    this.regulationGateway.notifyRegulationUpdate(subscriber_id);
+
+    return result;
   }
 
   async hardDelete(id: number, subscriber_id: number) {
@@ -356,9 +379,14 @@ export class RegulationService {
     // Since cascade delete should handle relations, check schema
     // Assuming Prisma relations are set to cascade or manually handling dependencies might be needed if not.
     // The previous schema edits showed 'onDelete: Cascade' for many relations.
-    return this.prisma.regulation.delete({
+    const result = await this.prisma.regulation.delete({
       where: { id, subscriber_id },
     });
+
+    // Notifica via WebSocket que houve atualização para este assinante
+    this.regulationGateway.notifyRegulationUpdate(subscriber_id);
+
+    return result;
   }
 
   async findAllDeleted(subscriber_id: number) {

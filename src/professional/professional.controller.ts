@@ -77,4 +77,21 @@ export class ProfessionalController {
     }
     return this.professionalService.hardDelete(+id, Number(TokenPayload.sub_id));
   }
+
+  @Post(':id/temporary-password')
+  setTemporaryPassword(
+    @Param('id') id: string,
+    @Body() body: { password: string },
+    @TokenPayloadParam() TokenPayload: PayloadTokenDto
+  ) {
+    if (TokenPayload.role !== 'admin_manager' && TokenPayload.role !== 'admin_municipal') {
+      throw new ForbiddenException('Apenas administradores podem criar senhas temporárias.');
+    }
+    return this.professionalService.setTemporaryPassword(
+      +id,
+      body.password,
+      Number(TokenPayload.sub_id),
+      TokenPayload.role
+    );
+  }
 }

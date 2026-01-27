@@ -17,7 +17,7 @@ export class CareController {
   }
 
   // 🚀 Endpoint de sugestão inicial (mais usados)
-  @Get()
+  @Get('top-used')
   findTopUsed(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
     return this.careService.findTopUsed(Number(tokenPayload.sub_id), Number(tokenPayload.user_id));
   }

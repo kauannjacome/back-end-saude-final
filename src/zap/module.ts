@@ -28,6 +28,6 @@ import { WhatsAppProviderRegistry } from './registry/provider.registry';
     MockWhatsAppProvider,
     WhatsAppProviderRegistry, // Uses logic to choose provider dynamically
   ],
-  exports: [ZapService],
+  exports: [ZapService, WhatsAppProviderRegistry],
 })
 export class ZapModule { }

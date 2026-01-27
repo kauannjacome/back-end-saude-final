@@ -1,0 +1,193 @@
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+
+@Injectable()
+export class TermsService {
+  constructor(private prisma: PrismaService) {}
+
+  // Criar novo termo de uso (apenas admin_manager)
+  async create(data: { version: string; title: string; content: string }) {
+    // Verificar se versão já existe
+    const existingVersion = await this.prisma.terms_of_use.findUnique({
+      where: { version: data.version }
+    });
+
+    if (existingVersion) {
+      throw new HttpException(
+        `Já existe um termo com a versão ${data.version}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    return this.prisma.terms_of_use.create({
+      data: {
+        version: data.version,
+        title: data.title,
+        content: data.content,
+        is_active: false
+      }
+    });
+  }
+
+  // Listar todos os termos
+  async findAll() {
+    return this.prisma.terms_of_use.findMany({
+      where: { deleted_at: null },
+      orderBy: { created_at: 'desc' },
+      select: {
+        id: true,
+        uuid: true,
+        version: true,
+        title: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true
+      }
+    });
+  }
+
+  // Buscar termo por ID
+  async findOne(id: number) {
+    const term = await this.prisma.terms_of_use.findFirst({
+      where: { id, deleted_at: null }
+    });
+
+    if (!term) {
+      throw new NotFoundException(`Termo de uso #${id} não encontrado`);
+    }
+
+    return term;
+  }
+
+  // Buscar termo ativo (versão atual)
+  async findActive() {
+    const term = await this.prisma.terms_of_use.findFirst({
+      where: { is_active: true, deleted_at: null }
+    });
+
+    if (!term) {
+      throw new NotFoundException('Nenhum termo de uso ativo encontrado');
+    }
+
+    return term;
+  }
+
+  // Atualizar termo
+  async update(id: number, data: { title?: string; content?: string }) {
+    const term = await this.prisma.terms_of_use.findFirst({
+      where: { id, deleted_at: null }
+    });
+
+    if (!term) {
+      throw new NotFoundException(`Termo de uso #${id} não encontrado`);
+    }
+
+    if (term.is_active) {
+      throw new HttpException(
+        'Não é possível editar um termo ativo. Desative-o primeiro ou crie uma nova versão.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    return this.prisma.terms_of_use.update({
+      where: { id },
+      data: {
+        title: data.title ?? term.title,
+        content: data.content ?? term.content
+      }
+    });
+  }
+
+  // Ativar termo (desativa todos os outros)
+  async activate(id: number) {
+    const term = await this.prisma.terms_of_use.findFirst({
+      where: { id, deleted_at: null }
+    });
+
+    if (!term) {
+      throw new NotFoundException(`Termo de uso #${id} não encontrado`);
+    }
+
+    // Desativar todos os termos
+    await this.prisma.terms_of_use.updateMany({
+      where: { is_active: true },
+      data: { is_active: false }
+    });
+
+    // Ativar o termo selecionado
+    await this.prisma.terms_of_use.update({
+      where: { id },
+      data: { is_active: true }
+    });
+
+    return {
+      message: `Termo versão ${term.version} ativado com sucesso`,
+      version: term.version
+    };
+  }
+
+  // Soft delete
+  async remove(id: number) {
+    const term = await this.prisma.terms_of_use.findFirst({
+      where: { id, deleted_at: null }
+    });
+
+    if (!term) {
+      throw new NotFoundException(`Termo de uso #${id} não encontrado`);
+    }
+
+    if (term.is_active) {
+      throw new HttpException(
+        'Não é possível remover um termo ativo. Desative-o primeiro.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    return this.prisma.terms_of_use.update({
+      where: { id },
+      data: { deleted_at: new Date() }
+    });
+  }
+
+  // Verificar se usuário precisa aceitar novos termos
+  async checkUserTermsStatus(userId: number) {
+    const professional = await this.prisma.professional.findUnique({
+      where: { id: userId },
+      select: {
+        accepted_terms: true,
+        accepted_terms_version: true
+      }
+    });
+
+    if (!professional) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const activeTerm = await this.prisma.terms_of_use.findFirst({
+      where: { is_active: true, deleted_at: null }
+    });
+
+    if (!activeTerm) {
+      return {
+        needs_acceptance: false,
+        message: 'Nenhum termo de uso ativo'
+      };
+    }
+
+    const needsAcceptance =
+      !professional.accepted_terms ||
+      professional.accepted_terms_version !== activeTerm.version;
+
+    return {
+      needs_acceptance: needsAcceptance,
+      current_version: activeTerm.version,
+      user_accepted_version: professional.accepted_terms_version,
+      term: needsAcceptance ? {
+        id: activeTerm.id,
+        version: activeTerm.version,
+        title: activeTerm.title,
+        content: activeTerm.content
+      } : null
+    };
+  }
+}
