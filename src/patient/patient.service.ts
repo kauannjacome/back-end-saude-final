@@ -13,13 +13,41 @@ export class PatientService {
     try {
       return this.prisma.patient.create({
         data: {
-          ...createPatientDto,
-          name_normalized: normalizeText(createPatientDto.name),
-          subscriber_id: subscriber_id,
-          birth_date: new Date(createPatientDto.birth_date),
-          accepted_terms_at: createPatientDto.accepted_terms_at
+          name: createPatientDto.name,
+          socialName: createPatientDto.social_name,
+          cpf: createPatientDto.cpf,
+          cns: createPatientDto.cns,
+          gender: createPatientDto.gender,
+          race: createPatientDto.race,
+          sex: createPatientDto.sex as any, // Cast if needed or validate enum
+          birthDate: new Date(createPatientDto.birth_date),
+          deathDate: createPatientDto.death_date ? new Date(createPatientDto.death_date) : null,
+          motherName: createPatientDto.mother_name,
+          fatherName: createPatientDto.father_name,
+          phone: createPatientDto.phone,
+          email: createPatientDto.email,
+          postalCode: createPatientDto.postal_code,
+          state: createPatientDto.state,
+          city: createPatientDto.city,
+          address: createPatientDto.address,
+          number: createPatientDto.number,
+          complement: createPatientDto.complement,
+          neighborhood: createPatientDto.neighborhood,
+          nationality: createPatientDto.nationality,
+          naturalness: createPatientDto.naturalness,
+          maritalStatus: createPatientDto.marital_status,
+          bloodType: createPatientDto.blood_type,
+          passwordHash: createPatientDto.password_hash,
+          isPasswordTemp: createPatientDto.is_password_temp,
+          numberTry: createPatientDto.number_try,
+          isBlocked: createPatientDto.is_blocked,
+          acceptedTerms: createPatientDto.accepted_terms,
+          acceptedTermsAt: createPatientDto.accepted_terms_at
             ? new Date(createPatientDto.accepted_terms_at)
             : null,
+          acceptedTermsVersion: createPatientDto.accepted_terms_version,
+          subscriberId: subscriber_id,
+          nameNormalized: normalizeText(createPatientDto.name),
         },
       });
     } catch (error) {
@@ -36,9 +64,9 @@ export class PatientService {
 
   async findAll(subscriber_id: number) {
     return this.prisma.patient.findMany({
-      where: { subscriber_id, deleted_at: null },
+      where: { subscriberId: subscriber_id, deletedAt: null },
       include: { regulations: true },
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -53,15 +81,15 @@ export class PatientService {
     const safeLimit = limit && limit > 0 ? limit : 10;
     const skip = (safePage - 1) * safeLimit;
 
-    const where: Prisma.patientWhereInput = {
-      subscriber_id,
-      deleted_at: null,
+    const where: Prisma.PatientWhereInput = {
+      subscriberId: subscriber_id,
+      deletedAt: null,
     };
 
     if (term) {
       where.OR = [
         {
-          name_normalized: {
+          nameNormalized: {
             contains: term,
             mode: 'insensitive',
           }
@@ -90,18 +118,18 @@ export class PatientService {
         select: {
           id: true,
           uuid: true,
-          subscriber_id: true,
+          subscriberId: true,
           cpf: true,
           cns: true,
           name: true,
-          social_name: true,
+          socialName: true,
           gender: true,
           race: true,
           sex: true,
-          birth_date: true,
-          death_date: true,
-          mother_name: true,
-          father_name: true,
+          birthDate: true,
+          deathDate: true,
+          motherName: true,
+          fatherName: true,
           phone: true,
           email: true,
         },
@@ -120,7 +148,7 @@ export class PatientService {
 
   async findOne(id: number, subscriber_id: number) {
     const patient = await this.prisma.patient.findUnique({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
       include: { regulations: true },
     });
 
@@ -132,27 +160,43 @@ export class PatientService {
     const patient = await this.findOne(id, subscriber_id);
     const { subscriber_id: _subscriberId, ...data } = updatePatientDto;
 
-    if (data.cpf && data.cpf !== patient.cpf) {
-      const existing = await this.prisma.patient.findFirst({
-        where: {
-          subscriber_id,
-          cpf: data.cpf,
-          NOT: { id },
-        },
-        select: { id: true },
-      });
-      if (existing) {
-        throw new BadRequestException('CPF ja cadastrado para este assinante.');
-      }
-    }
-
     try {
       return this.prisma.patient.update({
-        where: { id, subscriber_id },
+        where: { id, subscriberId: subscriber_id },
         data: {
-          ...data,
+          name: data.name,
+          socialName: data.social_name,
+          cpf: data.cpf,
+          cns: data.cns,
+          gender: data.gender,
+          race: data.race,
+          sex: data.sex as any,
+          birthDate: data.birth_date ? new Date(data.birth_date) : undefined,
+          deathDate: data.death_date ? new Date(data.death_date) : undefined,
+          motherName: data.mother_name,
+          fatherName: data.father_name,
+          phone: data.phone,
+          email: data.email,
+          postalCode: data.postal_code,
+          state: data.state,
+          city: data.city,
+          address: data.address,
+          number: data.number,
+          complement: data.complement,
+          neighborhood: data.neighborhood,
+          nationality: data.nationality,
+          naturalness: data.naturalness,
+          maritalStatus: data.marital_status,
+          bloodType: data.blood_type,
+          passwordHash: data.password_hash,
+          isPasswordTemp: data.is_password_temp,
+          numberTry: data.number_try,
+          isBlocked: data.is_blocked,
+          acceptedTerms: data.accepted_terms,
+          acceptedTermsAt: data.accepted_terms_at ? new Date(data.accepted_terms_at) : undefined,
+          acceptedTermsVersion: data.accepted_terms_version,
           ...(data.name && {
-            name_normalized: normalizeText(data.name),
+            nameNormalized: normalizeText(data.name),
           }),
         },
       });
@@ -168,34 +212,34 @@ export class PatientService {
   }
 
   async remove(id: number, subscriber_id: number) {
-    const patient = await this.prisma.patient.findUnique({ where: { id, subscriber_id } });
-    if (!patient || patient.deleted_at) {
+    const patient = await this.prisma.patient.findUnique({ where: { id, subscriberId: subscriber_id } });
+    if (!patient || patient.deletedAt) {
       throw new NotFoundException(`Patient #${id} not found`);
     }
 
     return this.prisma.patient.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: new Date() },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: new Date() },
     });
   }
 
   async restore(id: number, subscriber_id: number) {
-    const patient = await this.prisma.patient.findUnique({ where: { id, subscriber_id } });
+    const patient = await this.prisma.patient.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!patient) {
       throw new NotFoundException(`Patient #${id} not found`);
     }
-    if (!patient.deleted_at) {
+    if (!patient.deletedAt) {
       throw new BadRequestException(`Patient #${id} is not deleted`);
     }
 
     return this.prisma.patient.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: null },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: null },
     });
   }
 
   async hardDelete(id: number, subscriber_id: number) {
-    const patient = await this.prisma.patient.findUnique({ where: { id, subscriber_id } });
+    const patient = await this.prisma.patient.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!patient) {
       throw new NotFoundException(`Patient #${id} not found`);
     }
@@ -204,28 +248,28 @@ export class PatientService {
     await this.prisma.regulation.deleteMany({
       where: {
         OR: [
-          { patient_id: id },
-          { responsible_id: id }
+          { patientId: id },
+          { responsibleId: id }
         ],
-        subscriber_id
+        subscriberId: subscriber_id
       }
     });
 
     return this.prisma.patient.delete({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
     });
   }
 
   async findAllDeleted(subscriber_id: number) {
     return this.prisma.patient.findMany({
-      where: { subscriber_id, deleted_at: { not: null } },
-      orderBy: { deleted_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
       select: {
         id: true,
         name: true,
         cpf: true,
-        birth_date: true,
-        deleted_at: true,
+        birthDate: true,
+        deletedAt: true,
         email: true,
       },
     });

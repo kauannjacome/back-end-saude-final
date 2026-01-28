@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { ZapController } from './controller';
+import { ZapAdminController } from './admin.controller';
 import { ZapService } from './service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { EvolutionApiProvider } from './providers/evolution-api.provider';
@@ -19,7 +20,7 @@ import { WhatsAppProviderRegistry } from './registry/provider.registry';
       name: 'whatsapp',
     }),
   ],
-  controllers: [ZapController],
+  controllers: [ZapController, ZapAdminController],
   providers: [
     ZapService,
     WhatsAppConsumer,

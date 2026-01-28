@@ -16,21 +16,9 @@ export class CareController {
     return this.careService.create(createCareDto, Number(TokenPayload.sub_id));
   }
 
-  // 🚀 Endpoint de sugestão inicial (mais usados)
-  @Get('top-used')
-  findTopUsed(@TokenPayloadParam() tokenPayload: PayloadTokenDto) {
-    return this.careService.findTopUsed(Number(tokenPayload.sub_id), Number(tokenPayload.user_id));
-  }
 
-  // 🖱️ Endpoint para registrar uso (manual/teste)
-  @Post(':id/use')
-  registerUsage(@Param('id') id: string, @TokenPayloadParam() tokenPayload: PayloadTokenDto) {
-    return this.careService.registerUsage(
-      Number(tokenPayload.sub_id),
-      Number(id),
-      Number(tokenPayload.user_id)
-    );
-  }
+
+
 
   // 🔍 Endpoint de busca
   @Get('search')

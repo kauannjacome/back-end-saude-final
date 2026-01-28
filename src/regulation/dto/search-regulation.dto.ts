@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsNumber, IsEnum, IsDateString, IsArray } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { priority } from '@prisma/client';
+import { Priority } from '@prisma/client';
 
 export class SearchRegulationDto {
 
@@ -30,8 +30,8 @@ export class SearchRegulationDto {
   endDate?: string;
 
   @IsOptional()
-  @IsEnum(priority)
-  priority?: priority;
+  @IsEnum(Priority)
+  priority?: Priority;
 
   @IsOptional()
   @Transform(({ value }) => {

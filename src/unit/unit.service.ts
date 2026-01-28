@@ -9,7 +9,10 @@ export class UnitService {
 
   async create(createUnitDto: CreateUnitDto) {
     return this.prisma.unit.create({
-      data: createUnitDto,
+      data: {
+        name: createUnitDto.name,
+        subscriberId: createUnitDto.subscriber_id,
+      },
     });
   }
   async search(subscriber_id: number, term: string, page: number = 1, limit: number = 10) {
@@ -18,8 +21,8 @@ export class UnitService {
     const skip = (safePage - 1) * safeLimit;
 
     const where: any = {
-      subscriber_id,
-      deleted_at: null,
+      subscriberId: subscriber_id,
+      deletedAt: null,
     };
 
     if (term) {
@@ -49,14 +52,14 @@ export class UnitService {
 
   async findAll(subscriber_id: number) {
     return this.prisma.unit.findMany({
-      where: { subscriber_id, deleted_at: null },
-      orderBy: { created_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   async findOne(id: number, subscriber_id: number) {
     const unit = await this.prisma.unit.findUnique({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
     });
 
     if (!unit) throw new NotFoundException(`Unit #${id} not found`);
@@ -66,57 +69,60 @@ export class UnitService {
   async update(id: number, updateUnitDto: UpdateUnitDto, subscriber_id: number) {
     await this.findOne(id, subscriber_id);
     return this.prisma.unit.update({
-      where: { id, subscriber_id },
-      data: updateUnitDto,
+      where: { id, subscriberId: subscriber_id },
+      data: {
+        name: updateUnitDto.name,
+        subscriberId: updateUnitDto.subscriber_id
+      },
     });
   }
 
   async remove(id: number, subscriber_id: number) {
-    const unit = await this.prisma.unit.findUnique({ where: { id, subscriber_id } });
-    if (!unit || unit.deleted_at) {
+    const unit = await this.prisma.unit.findUnique({ where: { id, subscriberId: subscriber_id } });
+    if (!unit || unit.deletedAt) {
       throw new NotFoundException(`Unit #${id} not found`);
     }
 
     return this.prisma.unit.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: new Date() },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: new Date() },
     });
   }
 
   async restore(id: number, subscriber_id: number) {
-    const unit = await this.prisma.unit.findUnique({ where: { id, subscriber_id } });
+    const unit = await this.prisma.unit.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!unit) {
       throw new NotFoundException(`Unit #${id} not found`);
     }
-    if (!unit.deleted_at) {
+    if (!unit.deletedAt) {
       throw new BadRequestException(`Unit #${id} is not deleted`);
     }
 
     return this.prisma.unit.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: null },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: null },
     });
   }
 
   async hardDelete(id: number, subscriber_id: number) {
-    const unit = await this.prisma.unit.findUnique({ where: { id, subscriber_id } });
+    const unit = await this.prisma.unit.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!unit) {
       throw new NotFoundException(`Unit #${id} not found`);
     }
 
     return this.prisma.unit.delete({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
     });
   }
 
   async findAllDeleted(subscriber_id: number) {
     return this.prisma.unit.findMany({
-      where: { subscriber_id, deleted_at: { not: null } },
-      orderBy: { deleted_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
       select: {
         id: true,
         name: true,
-        deleted_at: true,
+        deletedAt: true,
       },
     });
   }

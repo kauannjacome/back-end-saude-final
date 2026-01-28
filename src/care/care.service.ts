@@ -16,8 +16,8 @@ export class CareService {
     }
 
     const care = await this.prisma.care.findFirst({
-      where: { id: careId, subscriber_id, deleted_at: null },
-      select: { id: true, min_deadline_days: true },
+      where: { id: careId, subscriberId: subscriber_id, deletedAt: null },
+      select: { id: true, minDeadlineDays: true },
     });
 
     if (!care) {
@@ -25,7 +25,7 @@ export class CareService {
     }
 
     const patient = await this.prisma.patient.findFirst({
-      where: { id: patientId, subscriber_id, deleted_at: null },
+      where: { id: patientId, subscriberId: subscriber_id, deletedAt: null },
       select: { id: true },
     });
 
@@ -33,7 +33,7 @@ export class CareService {
       throw new NotFoundException(`Paciente #${patientId} nao encontrado.`);
     }
 
-    const minDeadlineDays = care.min_deadline_days ?? 0;
+    const minDeadlineDays = care.minDeadlineDays ?? 0;
     if (minDeadlineDays <= 0) {
       return {
         care_id: care.id,
@@ -49,17 +49,17 @@ export class CareService {
 
     const lastRegulation = await this.prisma.regulation.findFirst({
       where: {
-        subscriber_id,
-        patient_id: patientId,
-        deleted_at: null,
-        status: { in: ['in_progress', 'approved'] },
-        cares: { some: { care_id: careId } },
+        subscriberId: subscriber_id,
+        patientId: patientId,
+        deletedAt: null,
+        status: { in: ['IN_PROGRESS', 'APPROVED'] },
+        cares: { some: { careId: careId } },
       },
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        created_at: true,
-        request_date: true,
+        createdAt: true,
+        requestDate: true,
       },
     });
 
@@ -77,7 +77,7 @@ export class CareService {
       };
     }
 
-    const lastDate = lastRegulation.request_date ?? lastRegulation.created_at;
+    const lastDate = lastRegulation.requestDate ?? lastRegulation.createdAt;
     const today = dayjs().startOf('day');
     const last = dayjs(lastDate).startOf('day');
     const diffDays = today.diff(last, 'day');
@@ -112,10 +112,22 @@ export class CareService {
     try {
       return await this.prisma.care.create({
         data: {
-          ...data,
-          resource_origin: resource_origin ?? legacyResource,
-          subscriber_id: subscriber_id,
-          name_normalized: normalizeText(data.name),
+          name: data.name,
+          acronym: data.acronym,
+          description: data.description,
+          status: data.status,
+          priority: data.priority,
+          unitMeasure: data.unit_measure,
+          typeDeclaration: data.type_declaration,
+          value: data.value,
+          amount: data.amount,
+          minDeadlineDays: data.min_deadline_days,
+          groupId: data.group_id,
+          professionalId: data.professional_id,
+          supplierId: data.supplier_id,
+          resourceOrigin: resource_origin ?? legacyResource,
+          subscriberId: subscriber_id,
+          nameNormalized: normalizeText(data.name),
         }
       });
     } catch (error) {
@@ -134,15 +146,15 @@ export class CareService {
    */
   async findAll(subscriber_id: number) {
     return this.prisma.care.findMany({
-      where: { subscriber_id, deleted_at: null },
-      orderBy: { created_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         name: true,
         acronym: true,
         description: true,
-        unit_measure: true,
-        min_deadline_days: true,
+        unitMeasure: true,
+        minDeadlineDays: true,
       },
     });
   }
@@ -153,15 +165,15 @@ export class CareService {
     const safeLimit = limit && limit > 0 ? limit : 10;
     const skip = (safePage - 1) * safeLimit;
 
-    const where: Prisma.careWhereInput = {
-      subscriber_id,
-      deleted_at: null,
+    const where: Prisma.CareWhereInput = {
+      subscriberId: subscriber_id,
+      deletedAt: null,
     };
 
     if (term) {
       where.OR = [
         { name: { contains: term, mode: 'insensitive' } },
-        { name_normalized: { contains: term, mode: 'insensitive' } },
+        { nameNormalized: { contains: term, mode: 'insensitive' } },
         { acronym: { contains: term, mode: 'insensitive' } }
       ];
     }
@@ -175,10 +187,10 @@ export class CareService {
         select: {
           id: true,
           name: true,
-          name_normalized: false,
+          nameNormalized: false,
           acronym: true,
           description: true,
-          unit_measure: true,
+          unitMeasure: true,
           status: true,
         },
       }),
@@ -199,7 +211,7 @@ export class CareService {
    */
   async findOne(id: number, subscriber_id: number) {
     const care = await this.prisma.care.findUnique({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
       include: {
         subscriber: { select: { name: true } },
         group: { select: { name: true } },
@@ -207,7 +219,7 @@ export class CareService {
       },
     });
 
-    if (!care || care.deleted_at) {
+    if (!care || care.deletedAt) {
       throw new NotFoundException(`Care #${id} não encontrado.`);
     }
 
@@ -218,8 +230,8 @@ export class CareService {
    * Atualiza um cuidado existente
    */
   async update(id: number, updateCareDto: UpdateCareDto, subscriber_id: number) {
-    const care = await this.prisma.care.findUnique({ where: { id, subscriber_id } });
-    if (!care || care.deleted_at) {
+    const care = await this.prisma.care.findUnique({ where: { id, subscriberId: subscriber_id } });
+    if (!care || care.deletedAt) {
       throw new NotFoundException(`Care #${id} não encontrado.`);
     }
 
@@ -233,12 +245,24 @@ export class CareService {
     return this.prisma.care.update({
       where: { id },
       data: {
-        ...data,
+        name: data.name,
+        acronym: data.acronym,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        unitMeasure: data.unit_measure,
+        typeDeclaration: data.type_declaration,
+        value: data.value,
+        amount: data.amount,
+        minDeadlineDays: data.min_deadline_days,
+        groupId: data.group_id,
+        professionalId: data.professional_id,
+        supplierId: data.supplier_id,
         ...(resolvedResourceOrigin && {
-          resource_origin: resolvedResourceOrigin,
+          resourceOrigin: resolvedResourceOrigin,
         }),
         ...(data.name && {
-          name_normalized: normalizeText(data.name),
+          nameNormalized: normalizeText(data.name),
         }),
       },
     });
@@ -248,14 +272,14 @@ export class CareService {
    * Realiza soft delete de um cuidado
    */
   async remove(id: number, subscriber_id: number) {
-    const care = await this.prisma.care.findUnique({ where: { id, subscriber_id } });
-    if (!care || care.deleted_at) {
+    const care = await this.prisma.care.findUnique({ where: { id, subscriberId: subscriber_id } });
+    if (!care || care.deletedAt) {
       throw new NotFoundException(`Care #${id} não encontrado.`);
     }
 
     return this.prisma.care.update({
       where: { id },
-      data: { deleted_at: new Date() },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -263,17 +287,17 @@ export class CareService {
    * Restaura um cuidado deletado (apenas admin_manager)
    */
   async restore(id: number, subscriber_id: number) {
-    const care = await this.prisma.care.findUnique({ where: { id, subscriber_id } });
+    const care = await this.prisma.care.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!care) {
       throw new NotFoundException(`Care #${id} não encontrado.`);
     }
-    if (!care.deleted_at) {
+    if (!care.deletedAt) {
       throw new BadRequestException(`Care #${id} não está deletado.`);
     }
 
     return this.prisma.care.update({
       where: { id },
-      data: { deleted_at: null },
+      data: { deletedAt: null },
     });
   }
 
@@ -281,7 +305,7 @@ export class CareService {
    * Remove permanentemente um cuidado (apenas admin_manager)
    */
   async hardDelete(id: number, subscriber_id: number) {
-    const care = await this.prisma.care.findUnique({ where: { id, subscriber_id } });
+    const care = await this.prisma.care.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!care) {
       throw new NotFoundException(`Care #${id} não encontrado.`);
     }
@@ -296,192 +320,21 @@ export class CareService {
    */
   async findAllDeleted(subscriber_id: number) {
     return this.prisma.care.findMany({
-      where: { subscriber_id, deleted_at: { not: null } },
-      orderBy: { deleted_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
       select: {
         id: true,
         name: true,
         acronym: true,
         description: true,
-        unit_measure: true,
-        min_deadline_days: true,
-        deleted_at: true,
+        unitMeasure: true,
+        minDeadlineDays: true,
+        deletedAt: true,
         priority: true,
         status: true,
       },
     });
   }
 
-  // ==================================================================
-  // CARE USAGE RANKING
-  // ==================================================================
 
-  /**
-   * Retorna os cuidados mais utilizados pelo usuário (ou geral do assinante)
-   * Se não houver rankings, retorna os cuidados mais recentes como fallback
-   */
-  async findTopUsed(subscriber_id: number, user_id?: number) {
-    // Busca ranking específico do usuário
-    let ranks = await this.prisma.care_usage_rank.findMany({
-      where: {
-        subscriber_id,
-        user_id: user_id ?? undefined,
-      },
-      orderBy: [
-        { usage_count: 'desc' },
-        { last_used_at: 'desc' },
-      ],
-      take: 20,
-      include: {
-        care: {
-          select: {
-            id: true,
-            name: true,
-            acronym: true,
-            description: true,
-            unit_measure: true,
-            status: true,
-            professional_id: true,
-            type_declaration: true,
-          },
-        },
-      },
-    });
-
-    // Filtra ranks cujo care foi deletado (deleted_at != null)
-    ranks = ranks.filter(r => r.care && r.care.id);
-
-    // Se não tiver ranking suficiente para o usuário, busca o geral (user_id = null)
-    if (user_id && ranks.length < 5) {
-      const generalRanks = await this.prisma.care_usage_rank.findMany({
-        where: {
-          subscriber_id,
-          user_id: null,
-        },
-        orderBy: [
-          { usage_count: 'desc' },
-          { last_used_at: 'desc' },
-        ],
-        take: 20 - ranks.length,
-        include: {
-          care: {
-            select: {
-              id: true,
-              name: true,
-              acronym: true,
-              description: true,
-              unit_measure: true,
-              status: true,
-              professional_id: true,
-              type_declaration: true,
-            },
-          },
-        },
-      });
-
-      // Mescla removendo duplicados
-      const existingIds = new Set(ranks.map(r => r.care_id));
-      for (const r of generalRanks) {
-        if (!existingIds.has(r.care_id) && r.care) {
-          ranks.push(r);
-          existingIds.add(r.care_id);
-        }
-      }
-    }
-
-    // FALLBACK: Se não houver rankings, busca os cuidados mais recentes
-    if (ranks.length === 0) {
-      const fallbackCares = await this.prisma.care.findMany({
-        where: {
-          subscriber_id,
-          deleted_at: null,
-        },
-        orderBy: { created_at: 'desc' },
-        take: 20,
-        select: {
-          id: true,
-          name: true,
-          acronym: true,
-          description: true,
-          unit_measure: true,
-          status: true,
-          professional_id: true,
-          type_declaration: true,
-        },
-      });
-
-      return fallbackCares;
-    }
-
-    return ranks.map(r => r.care);
-  }
-
-  /**
-   * Registra o uso de um cuidado e atualiza o ranking
-   */
-  async registerUsage(subscriber_id: number, care_id: number, user_id?: number) {
-    // 1. Atualiza/Cria o ranking para o Usuário
-    if (user_id) {
-      await this.upsertRank(subscriber_id, care_id, user_id);
-      await this.pruneRanks(subscriber_id, user_id);
-    }
-
-    // 2. Atualiza/Cria o ranking Geral (user_id = null)
-    await this.upsertRank(subscriber_id, care_id, null);
-    await this.pruneRanks(subscriber_id, null);
-  }
-
-  private async upsertRank(subscriber_id: number, care_id: number, user_id: number | null) {
-    // Verifica se já existe
-    const existing = await this.prisma.care_usage_rank.findFirst({
-      where: { subscriber_id, user_id, care_id }
-    });
-
-    if (existing) {
-      await this.prisma.care_usage_rank.update({
-        where: { id: existing.id },
-        data: {
-          usage_count: { increment: 1 },
-          last_used_at: new Date(),
-        },
-      });
-    } else {
-      await this.prisma.care_usage_rank.create({
-        data: {
-          subscriber_id,
-          user_id,
-          care_id,
-          usage_count: 1,
-          last_used_at: new Date(),
-        },
-      });
-    }
-  }
-
-  private async pruneRanks(subscriber_id: number, user_id: number | null) {
-    const count = await this.prisma.care_usage_rank.count({
-      where: { subscriber_id, user_id },
-    });
-
-    if (count > 20) {
-      // Encontra os excedentes (menor usage_count, ou mais antigo)
-      const toDelete = await this.prisma.care_usage_rank.findMany({
-        where: { subscriber_id, user_id },
-        orderBy: [
-          { usage_count: 'asc' },
-          { last_used_at: 'asc' },
-        ],
-        take: count - 20,
-        select: { id: true },
-      });
-
-      if (toDelete.length > 0) {
-        await this.prisma.care_usage_rank.deleteMany({
-          where: {
-            id: { in: toDelete.map(r => r.id) },
-          },
-        });
-      }
-    }
-  }
 }

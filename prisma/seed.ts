@@ -1,13 +1,13 @@
 import {
   PrismaClient,
-  sex,
-  role,
-  status,
-  priority,
-  unit_measure,
-  resource_origin,
-  relationship,
-  audit_action,
+  Sex,
+  Role,
+  Status,
+  Priority,
+  UnitMeasure,
+  ResourceOrigin,
+  Relationship,
+  AuditAction,
   Prisma,
 } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
@@ -30,14 +30,14 @@ const DEFAULT_PASSWORD = '123456'
 
 // Função auxiliar para gerar dados em massa sem apagar os existentes
 async function generateMassData(params: {
-  subscriber_id: number,
+  subscriberId: number,
   location_name: string,
   passwordHash: string,
   unit_id: number,
-  group_id: number,
-  supplier_id: number,
+  groupId: number,
+  supplierId: number,
 }) {
-  const { subscriber_id, location_name, passwordHash, unit_id, group_id, supplier_id } = params;
+  const { subscriberId, location_name, passwordHash, unit_id, groupId, supplierId } = params;
 
   console.log(`📦 Gerando dados em massa para ${location_name}...`);
 
@@ -46,19 +46,19 @@ async function generateMassData(params: {
 
   // 1. PROFISSIONAIS (Batch)
   console.log(`   - Profissionais...`);
-  const professionalsData: Prisma.professionalCreateManyInput[] = [];
+  const professionalsData: Prisma.ProfessionalCreateManyInput[] = [];
   const totalProfessionals = randomInt(10, 120);
   for (let i = 1; i <= totalProfessionals; i++) {
-    const cpf = `999${(subscriber_id * 1000 + i).toString().padStart(8, '0')}`.substring(0, 11);
+    const cpf = `999${(subscriberId * 1000 + i).toString().padStart(8, '0')}`.substring(0, 11);
     professionalsData.push({
-      subscriber_id,
+      subscriberId,
       cpf,
       name: `Profissional ${i} (${location_name})`,
       cargo: i % 2 === 0 ? 'Médico' : 'Enfermeiro',
-      email: `prof${i}_sub${subscriber_id}@sistema.gov.br`,
-      role: role.typist,
-      password_hash: passwordHash,
-      accepted_terms: true,
+      email: `prof${i}_sub${subscriberId}@sistema.gov.br`,
+      role: Role.TYPIST,
+      passwordHash: passwordHash,
+      acceptedTerms: true,
     });
   }
   await prisma.professional.createMany({ data: professionalsData, skipDuplicates: true });
@@ -66,14 +66,14 @@ async function generateMassData(params: {
 
   // 2. FORNECEDORES (Batch)
   console.log(`   - Fornecedores...`);
-  const suppliersData: Prisma.supplierCreateManyInput[] = [];
+  const suppliersData: Prisma.SupplierCreateManyInput[] = [];
   const totalSuppliers = randomInt(10, 100);
   for (let i = 1; i <= totalSuppliers; i++) {
-    const cnpj = `888${(subscriber_id * 1000 + i).toString().padStart(11, '0')}`.substring(0, 14);
+    const cnpj = `888${(subscriberId * 1000 + i).toString().padStart(11, '0')}`.substring(0, 14);
     suppliersData.push({
-      subscriber_id,
+      subscriberId,
       name: `Fornecedor ${i} (${location_name})`,
-      trade_name: `Trade ${i} ${location_name}`,
+      tradeName: `Trade ${i} ${location_name}`,
       cnpj,
       city: location_name,
       state: 'BR',
@@ -83,13 +83,13 @@ async function generateMassData(params: {
 
   // 3. PASTAS (Batch)
   console.log(`   - Pastas...`);
-  const foldersData: Prisma.folderCreateManyInput[] = [];
+  const foldersData: Prisma.FolderCreateManyInput[] = [];
   const totalFolders = randomInt(20, 40);
   for (let i = 1; i <= totalFolders; i++) {
-    const uuid = `55555555-0000-0000-${subscriber_id.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}`;
+    const uuid = `55555555-0000-0000-${subscriberId.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}`;
     foldersData.push({
       uuid,
-      subscriber_id,
+      subscriberId,
       name: `Pasta Extra ${i} (${location_name})`,
       description: `Pasta gerada automaticamente para testes de carga em ${location_name}`,
     });
@@ -98,34 +98,34 @@ async function generateMassData(params: {
 
   // 4. CUIDADOS (Batch)
   console.log(`   - Cuidados...`);
-  const caresData: Prisma.careCreateManyInput[] = [];
+  const caresData: Prisma.CareCreateManyInput[] = [];
   const totalCares = randomInt(300, 400);
   for (let i = 1; i <= totalCares; i++) {
-    const uuid = `44444444-0000-0000-${subscriber_id.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}`;
+    const uuid = `44444444-0000-0000-${subscriberId.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}`;
     caresData.push({
       uuid,
-      subscriber_id,
+      subscriberId,
       name: `Procedimento ${i} (${location_name})`,
       acronym: `P${i}`,
-      unit_measure: unit_measure.un,
-      group_id,
+      unitMeasure: UnitMeasure.UN,
+      groupId,
     });
   }
   await prisma.care.createMany({ data: caresData, skipDuplicates: true });
 
   // 5. PACIENTES (Batch)
   console.log(`   - Pacientes...`);
-  const patientsData: Prisma.patientCreateManyInput[] = [];
+  const patientsData: Prisma.PatientCreateManyInput[] = [];
   const totalPatients = randomInt(400, 500);
   for (let i = 1; i <= totalPatients; i++) {
-    const cpf = `777${(subscriber_id * 10000 + i).toString().padStart(8, '0')}`.substring(0, 11);
+    const cpf = `777${(subscriberId * 10000 + i).toString().padStart(8, '0')}`.substring(0, 11);
     patientsData.push({
-      subscriber_id,
+      subscriberId,
       cpf,
       name: `Paciente ${i} (${location_name})`,
-      birth_date: new Date('1990-01-01'),
+      birthDate: new Date('1990-01-01'),
       city: location_name,
-      cns: `7${(subscriber_id * 10000 + i).toString().padStart(14, '0')}`.substring(0, 15),
+      cns: `7${(subscriberId * 10000 + i).toString().padStart(14, '0')}`.substring(0, 15),
     });
   }
   await prisma.patient.createMany({ data: patientsData, skipDuplicates: true });
@@ -136,23 +136,23 @@ async function generateMassData(params: {
   console.log(`   - Regulações...`);
 
   // Fetch sample IDs to link
-  const samplePatient = await prisma.patient.findFirst({ where: { subscriber_id, cpf: { startsWith: '777' } } });
-  const sampleCare = await prisma.care.findFirst({ where: { subscriber_id, uuid: { startsWith: '4444' } } });
+  const samplePatient = await prisma.patient.findFirst({ where: { subscriberId, cpf: { startsWith: '777' } } });
+  const sampleCare = await prisma.care.findFirst({ where: { subscriberId } });
 
   if (samplePatient && sampleCare) {
-    const regulationsData: Prisma.regulationCreateManyInput[] = [];
+    const regulationsData: Prisma.RegulationCreateManyInput[] = [];
     // We create regulations first
     const totalRegulations = randomInt(20, 40);
     for (let i = 1; i <= totalRegulations; i++) {
-      const uuid = `99999999-1111-2222-${subscriber_id.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}`;
+      const uuid = `99999999-1111-2222-${subscriberId.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}`;
       regulationsData.push({
         uuid,
-        subscriber_id,
-        id_code: `REG-EXTRA-${subscriber_id}-${i}`,
-        patient_id: samplePatient.id,
-        status: status.in_progress,
-        supplier_id,
-        priority: priority.eletivo,
+        subscriberId,
+        idCode: `REG-EXTRA-${subscriberId}-${i}`,
+        patientId: samplePatient.id,
+        status: Status.IN_PROGRESS,
+        supplierId,
+        priority: Priority.ELECTIVE,
       });
     }
     await prisma.regulation.createMany({ data: regulationsData, skipDuplicates: true });
@@ -160,19 +160,19 @@ async function generateMassData(params: {
     // Now we need to link creating care_regulation.
     // Fetch the inserted regulations to get their IDs
     const insertedRegs = await prisma.regulation.findMany({
-      where: { subscriber_id, uuid: { startsWith: '99999999-1111-2222-' } },
+      where: { subscriberId, idCode: { startsWith: 'REG-EXTRA-' } },
       select: { id: true }
     });
 
     const careRegulationsData = insertedRegs.map(reg => ({
-      care_id: sampleCare.id,
-      regulation_id: reg.id,
-      subscriber_id,
+      careId: sampleCare.id,
+      regulationId: reg.id,
+      subscriberId,
       quantity: 1,
     }));
 
     if (careRegulationsData.length > 0) {
-      await prisma.care_regulation.createMany({ data: careRegulationsData, skipDuplicates: true });
+      await prisma.careRegulation.createMany({ data: careRegulationsData, skipDuplicates: true });
     }
   }
 }
@@ -191,39 +191,39 @@ async function main() {
     update: {},
     create: {
       name: 'Sistema Global',
-      municipality_name: 'Sistema',
+      municipalityName: 'Sistema',
       email: 'admin@sistema.gov.br',
       telephone: '00000000000',
       cnpj: '00000000000000',
-      postal_code: '00000-000',
+      postalCode: '00000-000',
       city: 'Sistema',
       neighborhood: 'Central',
       street: 'Sistema',
       number: '0',
-      state_name: 'Sistema',
-      state_acronym: 'SG',
+      stateName: 'Sistema',
+      stateAcronym: 'SG',
       payment: true,
     },
   })
 
   const adminManager = await prisma.professional.upsert({
     where: {
-      subscriber_id_cpf: {
-        subscriber_id: adminGlobalSubscriber.id,
+      subscriberId_cpf: {
+        subscriberId: adminGlobalSubscriber.id,
         cpf: '00000000000',
       },
     },
-    update: { password_hash: passwordHash },
+    update: { passwordHash: passwordHash },
     create: {
-      subscriber_id: adminGlobalSubscriber.id,
+      subscriberId: adminGlobalSubscriber.id,
       cpf: '00000000000',
       name: 'Admin Manager (Sistema)',
       cargo: 'Gerente do Sistema',
-      sex: sex.nao_informado,
+      sex: Sex.NOT_INFORMED,
       email: 'kauannjacome@gmail.com',
-      role: role.admin_manager,
-      password_hash: passwordHash,
-      accepted_terms: true,
+      role: Role.ADMIN_MANAGER,
+      passwordHash: passwordHash,
+      acceptedTerms: true,
     },
   })
 
@@ -239,52 +239,52 @@ async function main() {
     update: {},
     create: {
       name: 'Prefeitura de São Paulo',
-      municipality_name: 'São Paulo',
+      municipalityName: 'São Paulo',
       email: 'contato@saopaulo.sp.gov.br',
       telephone: '1133334444',
       cnpj: '11111111000199',
-      postal_code: '01000-000',
+      postalCode: '01000-000',
       city: 'São Paulo',
       neighborhood: 'Centro',
       street: 'Av. Paulista',
       number: '1000',
-      state_name: 'São Paulo',
-      state_acronym: 'SP',
+      stateName: 'São Paulo',
+      stateAcronym: 'SP',
       payment: true,
     },
   })
 
   // PROFISSIONAIS SP
   const adminSP = await prisma.professional.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub1.id, cpf: '11111111111' } },
-    update: { password_hash: passwordHash },
+    where: { subscriberId_cpf: { subscriberId: sub1.id, cpf: '11111111111' } },
+    update: { passwordHash: passwordHash },
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       cpf: '11111111111',
       name: 'Dr. João Silva (São Paulo)',
       cargo: 'Secretário de Saúde',
-      sex: sex.masculino,
+      sex: Sex.MALE,
       email: 'admin_municipal@saopaulo.sp.gov.br',
-      role: role.admin_municipal,
-      password_hash: passwordHash,
-      accepted_terms: true,
+      role: Role.ADMIN_MUNICIPAL,
+      passwordHash: passwordHash,
+      acceptedTerms: true,
       cns: '111456789012345',
     },
   })
 
   const typistSP = await prisma.professional.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub1.id, cpf: '11111111112' } },
-    update: { password_hash: passwordHash },
+    where: { subscriberId_cpf: { subscriberId: sub1.id, cpf: '11111111112' } },
+    update: { passwordHash: passwordHash },
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       cpf: '11111111112',
       name: 'Maria Santos (São Paulo)',
       cargo: 'Digitadora',
-      sex: sex.feminino,
+      sex: Sex.FEMALE,
       email: 'typist@saopaulo.sp.gov.br',
-      role: role.typist,
-      password_hash: passwordHash,
-      accepted_terms: true,
+      role: Role.TYPIST,
+      passwordHash: passwordHash,
+      acceptedTerms: true,
     },
   })
 
@@ -297,7 +297,7 @@ async function main() {
     create: {
       uuid: '11111111-0000-0000-0000-000000000001',
       name: 'UBS Vila Mariana (São Paulo)',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
     },
   })
 
@@ -307,7 +307,7 @@ async function main() {
     create: {
       uuid: '11111111-0000-0000-0000-000000000002',
       name: 'Hospital Municipal (São Paulo)',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
     },
   })
 
@@ -317,7 +317,7 @@ async function main() {
     create: {
       uuid: '11111111-0000-0000-0000-000000000003',
       name: 'UPA Lapa (São Paulo)',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
     },
   })
 
@@ -325,15 +325,15 @@ async function main() {
 
   // PACIENTES SP
   const pacSP1 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub1.id, cpf: '11111110001' } },
+    where: { subscriberId_cpf: { subscriberId: sub1.id, cpf: '11111110001' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       cpf: '11111110001',
       name: 'Carlos Oliveira (São Paulo)',
       gender: 'Masculino',
       race: 'Pardo',
-      birth_date: new Date('1985-01-15'),
+      birthDate: new Date('1985-01-15'),
       city: 'São Paulo',
       state: 'SP',
       cns: '700000000000001',
@@ -341,15 +341,15 @@ async function main() {
   })
 
   const pacSP2 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub1.id, cpf: '11111110002' } },
+    where: { subscriberId_cpf: { subscriberId: sub1.id, cpf: '11111110002' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       cpf: '11111110002',
       name: 'Ana Costa (São Paulo)',
       gender: 'Feminino',
       race: 'Branca',
-      birth_date: new Date('1990-05-20'),
+      birthDate: new Date('1990-05-20'),
       city: 'São Paulo',
       state: 'SP',
       cns: '700000000000002',
@@ -357,15 +357,15 @@ async function main() {
   })
 
   const pacSP3 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub1.id, cpf: '11111110003' } },
+    where: { subscriberId_cpf: { subscriberId: sub1.id, cpf: '11111110003' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       cpf: '11111110003',
       name: 'Pedro Souza (São Paulo)',
       gender: 'Masculino',
       race: 'Negra',
-      birth_date: new Date('1978-11-10'),
+      birthDate: new Date('1978-11-10'),
       city: 'São Paulo',
       state: 'SP',
       cns: '700000000000003',
@@ -373,15 +373,15 @@ async function main() {
   })
 
   const pacSP4 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub1.id, cpf: '11111110004' } },
+    where: { subscriberId_cpf: { subscriberId: sub1.id, cpf: '11111110004' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       cpf: '11111110004',
       name: 'Juliana Lima (São Paulo)',
       gender: 'Feminino',
       race: 'Amarela',
-      birth_date: new Date('2000-03-25'),
+      birthDate: new Date('2000-03-25'),
       city: 'São Paulo',
       state: 'SP',
       cns: '700000000000004',
@@ -389,15 +389,15 @@ async function main() {
   })
 
   const pacSP5 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub1.id, cpf: '11111110005' } },
+    where: { subscriberId_cpf: { subscriberId: sub1.id, cpf: '11111110005' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       cpf: '11111110005',
       name: 'Roberto Alves (São Paulo)',
       gender: 'Masculino',
       race: 'Branca',
-      birth_date: new Date('1965-07-30'),
+      birthDate: new Date('1965-07-30'),
       city: 'São Paulo',
       state: 'SP',
       cns: '700000000000005',
@@ -412,7 +412,6 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000010',
-      subscriber_id: sub1.id,
       name: 'Exames Laboratoriais (São Paulo)',
       description: 'Grupo de exames de sangue e lab',
     },
@@ -423,7 +422,6 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000011',
-      subscriber_id: sub1.id,
       name: 'Consultas Especializadas (São Paulo)',
       description: 'Consultas médicas especializadas',
     },
@@ -433,12 +431,12 @@ async function main() {
 
   // FORNECEDORES SP
   const suppSP1 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub1.id, cnpj: '11111111000111' } },
+    where: { subscriberId_cnpj: { subscriberId: sub1.id, cnpj: '11111111000111' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Laboratório Central (São Paulo)',
-      trade_name: 'LabCentral SP',
+      tradeName: 'LabCentral SP',
       cnpj: '11111111000111',
       city: 'São Paulo',
       state: 'SP',
@@ -446,12 +444,12 @@ async function main() {
   })
 
   const suppSP2 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub1.id, cnpj: '11111111000122' } },
+    where: { subscriberId_cnpj: { subscriberId: sub1.id, cnpj: '11111111000122' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Clínica Imagem (São Paulo)',
-      trade_name: 'ImagemSP',
+      tradeName: 'ImagemSP',
       cnpj: '11111111000122',
       city: 'São Paulo',
       state: 'SP',
@@ -459,12 +457,12 @@ async function main() {
   })
 
   const suppSP3 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub1.id, cnpj: '11111111000133' } },
+    where: { subscriberId_cnpj: { subscriberId: sub1.id, cnpj: '11111111000133' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Hospital Parceiro (São Paulo)',
-      trade_name: 'HospSP',
+      tradeName: 'HospSP',
       cnpj: '11111111000133',
       city: 'São Paulo',
       state: 'SP',
@@ -472,12 +470,12 @@ async function main() {
   })
 
   const suppSP4 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub1.id, cnpj: '11111111000144' } },
+    where: { subscriberId_cnpj: { subscriberId: sub1.id, cnpj: '11111111000144' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Farmácia Popular (São Paulo)',
-      trade_name: 'FarmaSP',
+      tradeName: 'FarmaSP',
       cnpj: '11111111000144',
       city: 'São Paulo',
       state: 'SP',
@@ -485,12 +483,12 @@ async function main() {
   })
 
   const suppSP5 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub1.id, cnpj: '11111111000155' } },
+    where: { subscriberId_cnpj: { subscriberId: sub1.id, cnpj: '11111111000155' } },
     update: {},
     create: {
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Centro Especialidades (São Paulo)',
-      trade_name: 'CentroEsp SP',
+      tradeName: 'CentroEsp SP',
       cnpj: '11111111000155',
       city: 'São Paulo',
       state: 'SP',
@@ -505,16 +503,16 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000020',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Hemograma Completo (São Paulo)',
       acronym: 'HEMOC',
       description: 'Exame de sangue completo',
-      resource_origin: resource_origin.municipal,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.MUNICIPAL,
+      unitMeasure: UnitMeasure.UN,
       value: 25.5,
       amount: 1,
-      group_id: groupSP1.id,
-      professional_id: adminSP.id,
+      groupId: groupSP1.id,
+      professionalId: adminSP.id,
     },
   })
 
@@ -523,16 +521,16 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000021',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Glicemia em Jejum (São Paulo)',
       acronym: 'GLICJ',
       description: 'Exame de glicose',
-      resource_origin: resource_origin.municipal,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.MUNICIPAL,
+      unitMeasure: UnitMeasure.UN,
       value: 15.0,
       amount: 1,
-      group_id: groupSP1.id,
-      professional_id: typistSP.id,
+      groupId: groupSP1.id,
+      professionalId: typistSP.id,
     },
   })
 
@@ -541,16 +539,16 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000022',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Colesterol Total (São Paulo)',
       acronym: 'COLEST',
       description: 'Exame de colesterol',
-      resource_origin: resource_origin.municipal,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.MUNICIPAL,
+      unitMeasure: UnitMeasure.UN,
       value: 18.0,
       amount: 1,
-      group_id: groupSP1.id,
-      professional_id: adminSP.id,
+      groupId: groupSP1.id,
+      professionalId: adminSP.id,
     },
   })
 
@@ -559,16 +557,16 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000023',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Consulta Cardiologia (São Paulo)',
       acronym: 'CCARDIO',
       description: 'Consulta com cardiologista',
-      resource_origin: resource_origin.municipal,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.MUNICIPAL,
+      unitMeasure: UnitMeasure.UN,
       value: 120.0,
       amount: 1,
-      group_id: groupSP2.id,
-      professional_id: adminSP.id,
+      groupId: groupSP2.id,
+      professionalId: adminSP.id,
     },
   })
 
@@ -577,16 +575,16 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000024',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Consulta Ortopedia (São Paulo)',
       acronym: 'CORTOP',
       description: 'Consulta com ortopedista',
-      resource_origin: resource_origin.municipal,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.MUNICIPAL,
+      unitMeasure: UnitMeasure.UN,
       value: 100.0,
       amount: 1,
-      group_id: groupSP2.id,
-      professional_id: typistSP.id,
+      groupId: groupSP2.id,
+      professionalId: typistSP.id,
     },
   })
 
@@ -598,10 +596,10 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000030',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Pasta Urgências (São Paulo)',
       description: 'Regulações urgentes',
-      responsible_id: adminSP.id,
+      responsibleId: adminSP.id,
     },
   })
 
@@ -610,10 +608,10 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000031',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Pasta Eletivos (São Paulo)',
       description: 'Procedimentos eletivos',
-      responsible_id: typistSP.id,
+      responsibleId: typistSP.id,
     },
   })
 
@@ -622,10 +620,10 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000032',
-      subscriber_id: sub1.id,
+      subscriberId: sub1.id,
       name: 'Pasta Exames (São Paulo)',
       description: 'Solicitações de exames',
-      responsible_id: adminSP.id,
+      responsibleId: adminSP.id,
     },
   })
 
@@ -637,26 +635,26 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000050',
-      subscriber_id: sub1.id,
-      id_code: 'REG-SP-00001',
-      patient_id: pacSP1.id,
-      status: status.in_progress,
+      subscriberId: sub1.id,
+      idCode: 'REG-SP-00001',
+      patientId: pacSP1.id,
+      status: Status.IN_PROGRESS,
       notes: 'Regulação SP 1',
-      request_date: dayjs().subtract(10, 'day').toDate(),
-      supplier_id: suppSP1.id,
-      creator_id: adminSP.id,
-      folder_id: folderSP1.id,
-      priority: priority.urgencia,
+      requestDate: dayjs().subtract(10, 'day').toDate(),
+      supplierId: suppSP1.id,
+      creatorId: adminSP.id,
+      folderId: folderSP1.id,
+      priority: Priority.URGENCY,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careSP1.id, regulation_id: regSP1.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careSP1.id, regulationId: regSP1.id } },
     update: {},
     create: {
-      care_id: careSP1.id,
-      regulation_id: regSP1.id,
-      subscriber_id: sub1.id,
+      careId: careSP1.id,
+      regulationId: regSP1.id,
+      subscriberId: sub1.id,
       quantity: 1,
     },
   })
@@ -666,27 +664,27 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000051',
-      subscriber_id: sub1.id,
-      id_code: 'REG-SP-00002',
-      patient_id: pacSP2.id,
-      status: status.approved,
+      subscriberId: sub1.id,
+      idCode: 'REG-SP-00002',
+      patientId: pacSP2.id,
+      status: Status.APPROVED,
       notes: 'Regulação SP 2',
-      request_date: dayjs().subtract(9, 'day').toDate(),
-      scheduled_date: dayjs().add(2, 'day').toDate(), // Will trigger "2 days remaining" alert
-      supplier_id: suppSP2.id,
-      creator_id: typistSP.id,
-      folder_id: folderSP2.id,
-      priority: priority.eletivo,
+      requestDate: dayjs().subtract(9, 'day').toDate(),
+      scheduledDate: dayjs().add(2, 'day').toDate(), // Will trigger "2 days remaining" alert
+      supplierId: suppSP2.id,
+      creatorId: typistSP.id,
+      folderId: folderSP2.id,
+      priority: Priority.ELECTIVE,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careSP2.id, regulation_id: regSP2.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careSP2.id, regulationId: regSP2.id } },
     update: {},
     create: {
-      care_id: careSP2.id,
-      regulation_id: regSP2.id,
-      subscriber_id: sub1.id,
+      careId: careSP2.id,
+      regulationId: regSP2.id,
+      subscriberId: sub1.id,
       quantity: 1,
     },
   })
@@ -696,27 +694,27 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000052',
-      subscriber_id: sub1.id,
-      id_code: 'REG-SP-00003',
-      patient_id: pacSP3.id,
-      status: status.in_progress,
+      subscriberId: sub1.id,
+      idCode: 'REG-SP-00003',
+      patientId: pacSP3.id,
+      status: Status.IN_PROGRESS,
       notes: 'Regulação SP 3',
-      request_date: dayjs().subtract(8, 'day').toDate(),
-      scheduled_date: dayjs().add(5, 'day').toDate(), // Will trigger "5 days remaining" alert
-      supplier_id: suppSP3.id,
-      creator_id: adminSP.id,
-      folder_id: folderSP3.id,
-      priority: priority.eletivo,
+      requestDate: dayjs().subtract(8, 'day').toDate(),
+      scheduledDate: dayjs().add(5, 'day').toDate(), // Will trigger "5 days remaining" alert
+      supplierId: suppSP3.id,
+      creatorId: adminSP.id,
+      folderId: folderSP3.id,
+      priority: Priority.ELECTIVE,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careSP3.id, regulation_id: regSP3.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careSP3.id, regulationId: regSP3.id } },
     update: {},
     create: {
-      care_id: careSP3.id,
-      regulation_id: regSP3.id,
-      subscriber_id: sub1.id,
+      careId: careSP3.id,
+      regulationId: regSP3.id,
+      subscriberId: sub1.id,
       quantity: 1,
     },
   })
@@ -726,26 +724,26 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000053',
-      subscriber_id: sub1.id,
-      id_code: 'REG-SP-00004',
-      patient_id: pacSP4.id,
-      status: status.denied,
+      subscriberId: sub1.id,
+      idCode: 'REG-SP-00004',
+      patientId: pacSP4.id,
+      status: Status.DENIED,
       notes: 'Regulação SP 4',
-      request_date: new Date('2025-01-13'),
-      supplier_id: suppSP4.id,
-      creator_id: typistSP.id,
-      folder_id: folderSP1.id,
-      priority: priority.urgencia,
+      requestDate: new Date('2025-01-13'),
+      supplierId: suppSP4.id,
+      creatorId: typistSP.id,
+      folderId: folderSP1.id,
+      priority: Priority.URGENCY,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careSP4.id, regulation_id: regSP4.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careSP4.id, regulationId: regSP4.id } },
     update: {},
     create: {
-      care_id: careSP4.id,
-      regulation_id: regSP4.id,
-      subscriber_id: sub1.id,
+      careId: careSP4.id,
+      regulationId: regSP4.id,
+      subscriberId: sub1.id,
       quantity: 1,
     },
   })
@@ -755,26 +753,26 @@ async function main() {
     update: {},
     create: {
       uuid: '11111111-0000-0000-0000-000000000054',
-      subscriber_id: sub1.id,
-      id_code: 'REG-SP-00005',
-      patient_id: pacSP5.id,
-      status: status.approved,
+      subscriberId: sub1.id,
+      idCode: 'REG-SP-00005',
+      patientId: pacSP5.id,
+      status: Status.APPROVED,
       notes: 'Regulação SP 5',
-      request_date: new Date('2025-01-14'),
-      supplier_id: suppSP5.id,
-      creator_id: adminSP.id,
-      folder_id: folderSP2.id,
-      priority: priority.eletivo,
+      requestDate: new Date('2025-01-14'),
+      supplierId: suppSP5.id,
+      creatorId: adminSP.id,
+      folderId: folderSP2.id,
+      priority: Priority.ELECTIVE,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careSP5.id, regulation_id: regSP5.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careSP5.id, regulationId: regSP5.id } },
     update: {},
     create: {
-      care_id: careSP5.id,
-      regulation_id: regSP5.id,
-      subscriber_id: sub1.id,
+      careId: careSP5.id,
+      regulationId: regSP5.id,
+      subscriberId: sub1.id,
       quantity: 1,
     },
   })
@@ -782,12 +780,12 @@ async function main() {
   console.log('✅ 5 Regulações SP criadas')
 
   await generateMassData({
-    subscriber_id: sub1.id,
+    subscriberId: sub1.id,
     location_name: 'São Paulo',
     passwordHash,
     unit_id: unitSP1.id,
-    group_id: groupSP1.id,
-    supplier_id: suppSP1.id,
+    groupId: groupSP1.id,
+    supplierId: suppSP1.id,
   });
 
   console.log('✅ SÃO PAULO COMPLETO!\n')
@@ -802,52 +800,52 @@ async function main() {
     update: {},
     create: {
       name: 'Prefeitura do Rio de Janeiro',
-      municipality_name: 'Rio de Janeiro',
+      municipalityName: 'Rio de Janeiro',
       email: 'contato@rio.rj.gov.br',
       telephone: '2133334444',
       cnpj: '22222222000199',
-      postal_code: '20000-000',
+      postalCode: '20000-000',
       city: 'Rio de Janeiro',
       neighborhood: 'Centro',
       street: 'Av. Rio Branco',
       number: '500',
-      state_name: 'Rio de Janeiro',
-      state_acronym: 'RJ',
+      stateName: 'Rio de Janeiro',
+      stateAcronym: 'RJ',
       payment: true,
     },
   })
 
   // PROFISSIONAIS RJ
   const adminRJ = await prisma.professional.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub2.id, cpf: '22222222221' } },
-    update: { password_hash: passwordHash },
+    where: { subscriberId_cpf: { subscriberId: sub2.id, cpf: '22222222221' } },
+    update: { passwordHash: passwordHash },
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       cpf: '22222222221',
       name: 'Dra. Fernanda Lima (Rio de Janeiro)',
       cargo: 'Secretária de Saúde',
-      sex: sex.feminino,
+      sex: Sex.FEMALE,
       email: 'admin_municipal@riodejaneiro.rj.gov.br',
-      role: role.admin_municipal,
-      password_hash: passwordHash,
-      accepted_terms: true,
+      role: Role.ADMIN_MUNICIPAL,
+      passwordHash: passwordHash,
+      acceptedTerms: true,
       cns: '222456789012345',
     },
   })
 
   const typistRJ = await prisma.professional.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub2.id, cpf: '22222222222' } },
-    update: { password_hash: passwordHash },
+    where: { subscriberId_cpf: { subscriberId: sub2.id, cpf: '22222222222' } },
+    update: { passwordHash: passwordHash },
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       cpf: '22222222222',
       name: 'Roberto Costa (Rio de Janeiro)',
       cargo: 'Digitador',
-      sex: sex.masculino,
+      sex: Sex.MALE,
       email: 'typist@riodejaneiro.rj.gov.br',
-      role: role.typist,
-      password_hash: passwordHash,
-      accepted_terms: true,
+      role: Role.TYPIST,
+      passwordHash: passwordHash,
+      acceptedTerms: true,
     },
   })
 
@@ -860,7 +858,7 @@ async function main() {
     create: {
       uuid: '22222222-0000-0000-0000-000000000001',
       name: 'UBS Copacabana (Rio de Janeiro)',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
     },
   })
 
@@ -870,7 +868,7 @@ async function main() {
     create: {
       uuid: '22222222-0000-0000-0000-000000000002',
       name: 'Hospital Municipal (Rio de Janeiro)',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
     },
   })
 
@@ -880,7 +878,7 @@ async function main() {
     create: {
       uuid: '22222222-0000-0000-0000-000000000003',
       name: 'UPA Tijuca (Rio de Janeiro)',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
     },
   })
 
@@ -888,15 +886,15 @@ async function main() {
 
   // PACIENTES RJ
   const pacRJ1 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub2.id, cpf: '22222220001' } },
+    where: { subscriberId_cpf: { subscriberId: sub2.id, cpf: '22222220001' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       cpf: '22222220001',
       name: 'Luciana Mendes (Rio de Janeiro)',
       gender: 'Feminino',
       race: 'Branca',
-      birth_date: new Date('1988-02-10'),
+      birthDate: new Date('1988-02-10'),
       city: 'Rio de Janeiro',
       state: 'RJ',
       cns: '800000000000001',
@@ -904,15 +902,15 @@ async function main() {
   })
 
   const pacRJ2 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub2.id, cpf: '22222220002' } },
+    where: { subscriberId_cpf: { subscriberId: sub2.id, cpf: '22222220002' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       cpf: '22222220002',
       name: 'Gabriel Santos (Rio de Janeiro)',
       gender: 'Masculino',
       race: 'Pardo',
-      birth_date: new Date('1992-06-15'),
+      birthDate: new Date('1992-06-15'),
       city: 'Rio de Janeiro',
       state: 'RJ',
       cns: '800000000000002',
@@ -920,15 +918,15 @@ async function main() {
   })
 
   const pacRJ3 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub2.id, cpf: '22222220003' } },
+    where: { subscriberId_cpf: { subscriberId: sub2.id, cpf: '22222220003' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       cpf: '22222220003',
       name: 'Beatriz Silva (Rio de Janeiro)',
       gender: 'Feminino',
       race: 'Negra',
-      birth_date: new Date('1975-09-20'),
+      birthDate: new Date('1975-09-20'),
       city: 'Rio de Janeiro',
       state: 'RJ',
       cns: '800000000000003',
@@ -936,15 +934,15 @@ async function main() {
   })
 
   const pacRJ4 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub2.id, cpf: '22222220004' } },
+    where: { subscriberId_cpf: { subscriberId: sub2.id, cpf: '22222220004' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       cpf: '22222220004',
       name: 'Thiago Pereira (Rio de Janeiro)',
       gender: 'Masculino',
       race: 'Branca',
-      birth_date: new Date('1998-12-05'),
+      birthDate: new Date('1998-12-05'),
       city: 'Rio de Janeiro',
       state: 'RJ',
       cns: '800000000000004',
@@ -952,15 +950,15 @@ async function main() {
   })
 
   const pacRJ5 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub2.id, cpf: '22222220005' } },
+    where: { subscriberId_cpf: { subscriberId: sub2.id, cpf: '22222220005' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       cpf: '22222220005',
       name: 'Camila Rodrigues (Rio de Janeiro)',
       gender: 'Feminino',
       race: 'Parda',
-      birth_date: new Date('1982-04-18'),
+      birthDate: new Date('1982-04-18'),
       city: 'Rio de Janeiro',
       state: 'RJ',
       cns: '800000000000005',
@@ -975,7 +973,6 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000010',
-      subscriber_id: sub2.id,
       name: 'Exames Cardiológicos (Rio de Janeiro)',
       description: 'Exames do coração',
     },
@@ -986,7 +983,6 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000011',
-      subscriber_id: sub2.id,
       name: 'Pediatria (Rio de Janeiro)',
       description: 'Atendimentos pediátricos',
     },
@@ -996,12 +992,12 @@ async function main() {
 
   // FORNECEDORES RJ
   const suppRJ1 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub2.id, cnpj: '22222222000111' } },
+    where: { subscriberId_cnpj: { subscriberId: sub2.id, cnpj: '22222222000111' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Laboratório Carioca (Rio de Janeiro)',
-      trade_name: 'LabCarioca',
+      tradeName: 'LabCarioca',
       cnpj: '22222222000111',
       city: 'Rio de Janeiro',
       state: 'RJ',
@@ -1009,12 +1005,12 @@ async function main() {
   })
 
   const suppRJ2 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub2.id, cnpj: '22222222000122' } },
+    where: { subscriberId_cnpj: { subscriberId: sub2.id, cnpj: '22222222000122' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Clínica Coração (Rio de Janeiro)',
-      trade_name: 'CardioRJ',
+      tradeName: 'CardioRJ',
       cnpj: '22222222000122',
       city: 'Rio de Janeiro',
       state: 'RJ',
@@ -1022,12 +1018,12 @@ async function main() {
   })
 
   const suppRJ3 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub2.id, cnpj: '22222222000133' } },
+    where: { subscriberId_cnpj: { subscriberId: sub2.id, cnpj: '22222222000133' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Hospital Infantil (Rio de Janeiro)',
-      trade_name: 'HospInfantil RJ',
+      tradeName: 'HospInfantil RJ',
       cnpj: '22222222000133',
       city: 'Rio de Janeiro',
       state: 'RJ',
@@ -1035,12 +1031,12 @@ async function main() {
   })
 
   const suppRJ4 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub2.id, cnpj: '22222222000144' } },
+    where: { subscriberId_cnpj: { subscriberId: sub2.id, cnpj: '22222222000144' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Farmácia Central (Rio de Janeiro)',
-      trade_name: 'FarmaRJ',
+      tradeName: 'FarmaRJ',
       cnpj: '22222222000144',
       city: 'Rio de Janeiro',
       state: 'RJ',
@@ -1048,12 +1044,12 @@ async function main() {
   })
 
   const suppRJ5 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub2.id, cnpj: '22222222000155' } },
+    where: { subscriberId_cnpj: { subscriberId: sub2.id, cnpj: '22222222000155' } },
     update: {},
     create: {
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Centro Diagnóstico (Rio de Janeiro)',
-      trade_name: 'DiagRJ',
+      tradeName: 'DiagRJ',
       cnpj: '22222222000155',
       city: 'Rio de Janeiro',
       state: 'RJ',
@@ -1068,16 +1064,16 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000020',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Eletrocardiograma (Rio de Janeiro)',
       acronym: 'ECG',
       description: 'Exame ECG',
-      resource_origin: resource_origin.estadual,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.STATE,
+      unitMeasure: UnitMeasure.UN,
       value: 40.0,
       amount: 1,
-      group_id: groupRJ1.id,
-      professional_id: adminRJ.id,
+      groupId: groupRJ1.id,
+      professionalId: adminRJ.id,
     },
   })
 
@@ -1086,16 +1082,16 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000021',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Ecocardiograma (Rio de Janeiro)',
       acronym: 'ECO',
       description: 'Exame de eco',
-      resource_origin: resource_origin.estadual,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.STATE,
+      unitMeasure: UnitMeasure.UN,
       value: 150.0,
       amount: 1,
-      group_id: groupRJ1.id,
-      professional_id: typistRJ.id,
+      groupId: groupRJ1.id,
+      professionalId: typistRJ.id,
     },
   })
 
@@ -1104,16 +1100,16 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000022',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Teste Ergométrico (Rio de Janeiro)',
       acronym: 'TERGO',
       description: 'Teste de esforço',
-      resource_origin: resource_origin.estadual,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.STATE,
+      unitMeasure: UnitMeasure.UN,
       value: 120.0,
       amount: 1,
-      group_id: groupRJ1.id,
-      professional_id: adminRJ.id,
+      groupId: groupRJ1.id,
+      professionalId: adminRJ.id,
     },
   })
 
@@ -1122,16 +1118,16 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000023',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Consulta Pediatria (Rio de Janeiro)',
       acronym: 'CPED',
       description: 'Consulta pediátrica',
-      resource_origin: resource_origin.estadual,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.STATE,
+      unitMeasure: UnitMeasure.UN,
       value: 80.0,
       amount: 1,
-      group_id: groupRJ2.id,
-      professional_id: adminRJ.id,
+      groupId: groupRJ2.id,
+      professionalId: adminRJ.id,
     },
   })
 
@@ -1140,16 +1136,16 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000024',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Vacinas Infantis (Rio de Janeiro)',
       acronym: 'VACINF',
       description: 'Vacinação infantil',
-      resource_origin: resource_origin.estadual,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.STATE,
+      unitMeasure: UnitMeasure.UN,
       value: 0.0,
       amount: 1,
-      group_id: groupRJ2.id,
-      professional_id: typistRJ.id,
+      groupId: groupRJ2.id,
+      professionalId: typistRJ.id,
     },
   })
 
@@ -1161,10 +1157,10 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000030',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Pasta Cardiologia (Rio de Janeiro)',
       description: 'Regulações cardio',
-      responsible_id: adminRJ.id,
+      responsibleId: adminRJ.id,
     },
   })
 
@@ -1173,10 +1169,10 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000031',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Pasta Pediatria (Rio de Janeiro)',
       description: 'Atendimentos infantis',
-      responsible_id: typistRJ.id,
+      responsibleId: typistRJ.id,
     },
   })
 
@@ -1185,10 +1181,10 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000032',
-      subscriber_id: sub2.id,
+      subscriberId: sub2.id,
       name: 'Pasta Urgências (Rio de Janeiro)',
       description: 'Casos urgentes',
-      responsible_id: adminRJ.id,
+      responsibleId: adminRJ.id,
     },
   })
 
@@ -1200,26 +1196,26 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000050',
-      subscriber_id: sub2.id,
-      id_code: 'REG-RJ-00001',
-      patient_id: pacRJ1.id,
-      status: status.in_progress,
+      subscriberId: sub2.id,
+      idCode: 'REG-RJ-00001',
+      patientId: pacRJ1.id,
+      status: Status.IN_PROGRESS,
       notes: 'Regulação RJ 1',
-      request_date: new Date('2025-01-10'),
-      supplier_id: suppRJ1.id,
-      creator_id: adminRJ.id,
-      folder_id: folderRJ1.id,
-      priority: priority.urgencia,
+      requestDate: new Date('2025-01-10'),
+      supplierId: suppRJ1.id,
+      creatorId: adminRJ.id,
+      folderId: folderRJ1.id,
+      priority: Priority.URGENCY,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careRJ1.id, regulation_id: regRJ1.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careRJ1.id, regulationId: regRJ1.id } },
     update: {},
     create: {
-      care_id: careRJ1.id,
-      regulation_id: regRJ1.id,
-      subscriber_id: sub2.id,
+      careId: careRJ1.id,
+      regulationId: regRJ1.id,
+      subscriberId: sub2.id,
       quantity: 1,
     },
   })
@@ -1229,26 +1225,26 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000051',
-      subscriber_id: sub2.id,
-      id_code: 'REG-RJ-00002',
-      patient_id: pacRJ2.id,
-      status: status.approved,
+      subscriberId: sub2.id,
+      idCode: 'REG-RJ-00002',
+      patientId: pacRJ2.id,
+      status: Status.APPROVED,
       notes: 'Regulação RJ 2',
-      request_date: new Date('2025-01-11'),
-      supplier_id: suppRJ2.id,
-      creator_id: typistRJ.id,
-      folder_id: folderRJ2.id,
-      priority: priority.eletivo,
+      requestDate: new Date('2025-01-11'),
+      supplierId: suppRJ2.id,
+      creatorId: typistRJ.id,
+      folderId: folderRJ2.id,
+      priority: Priority.ELECTIVE,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careRJ2.id, regulation_id: regRJ2.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careRJ2.id, regulationId: regRJ2.id } },
     update: {},
     create: {
-      care_id: careRJ2.id,
-      regulation_id: regRJ2.id,
-      subscriber_id: sub2.id,
+      careId: careRJ2.id,
+      regulationId: regRJ2.id,
+      subscriberId: sub2.id,
       quantity: 1,
     },
   })
@@ -1258,26 +1254,26 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000052',
-      subscriber_id: sub2.id,
-      id_code: 'REG-RJ-00003',
-      patient_id: pacRJ3.id,
-      status: status.in_progress,
+      subscriberId: sub2.id,
+      idCode: 'REG-RJ-00003',
+      patientId: pacRJ3.id,
+      status: Status.IN_PROGRESS,
       notes: 'Regulação RJ 3',
-      request_date: new Date('2025-01-12'),
-      supplier_id: suppRJ3.id,
-      creator_id: adminRJ.id,
-      folder_id: folderRJ3.id,
-      priority: priority.eletivo,
+      requestDate: new Date('2025-01-12'),
+      supplierId: suppRJ3.id,
+      creatorId: adminRJ.id,
+      folderId: folderRJ3.id,
+      priority: Priority.ELECTIVE,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careRJ3.id, regulation_id: regRJ3.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careRJ3.id, regulationId: regRJ3.id } },
     update: {},
     create: {
-      care_id: careRJ3.id,
-      regulation_id: regRJ3.id,
-      subscriber_id: sub2.id,
+      careId: careRJ3.id,
+      regulationId: regRJ3.id,
+      subscriberId: sub2.id,
       quantity: 1,
     },
   })
@@ -1287,26 +1283,26 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000053',
-      subscriber_id: sub2.id,
-      id_code: 'REG-RJ-00004',
-      patient_id: pacRJ4.id,
-      status: status.denied,
+      subscriberId: sub2.id,
+      idCode: 'REG-RJ-00004',
+      patientId: pacRJ4.id,
+      status: Status.DENIED,
       notes: 'Regulação RJ 4',
-      request_date: new Date('2025-01-13'),
-      supplier_id: suppRJ4.id,
-      creator_id: typistRJ.id,
-      folder_id: folderRJ1.id,
-      priority: priority.urgencia,
+      requestDate: new Date('2025-01-13'),
+      supplierId: suppRJ4.id,
+      creatorId: typistRJ.id,
+      folderId: folderRJ1.id,
+      priority: Priority.URGENCY,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careRJ4.id, regulation_id: regRJ4.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careRJ4.id, regulationId: regRJ4.id } },
     update: {},
     create: {
-      care_id: careRJ4.id,
-      regulation_id: regRJ4.id,
-      subscriber_id: sub2.id,
+      careId: careRJ4.id,
+      regulationId: regRJ4.id,
+      subscriberId: sub2.id,
       quantity: 1,
     },
   })
@@ -1316,26 +1312,26 @@ async function main() {
     update: {},
     create: {
       uuid: '22222222-0000-0000-0000-000000000054',
-      subscriber_id: sub2.id,
-      id_code: 'REG-RJ-00005',
-      patient_id: pacRJ5.id,
-      status: status.approved,
+      subscriberId: sub2.id,
+      idCode: 'REG-RJ-00005',
+      patientId: pacRJ5.id,
+      status: Status.APPROVED,
       notes: 'Regulação RJ 5',
-      request_date: new Date('2025-01-14'),
-      supplier_id: suppRJ5.id,
-      creator_id: adminRJ.id,
-      folder_id: folderRJ2.id,
-      priority: priority.eletivo,
+      requestDate: new Date('2025-01-14'),
+      supplierId: suppRJ5.id,
+      creatorId: adminRJ.id,
+      folderId: folderRJ2.id,
+      priority: Priority.ELECTIVE,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careRJ5.id, regulation_id: regRJ5.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careRJ5.id, regulationId: regRJ5.id } },
     update: {},
     create: {
-      care_id: careRJ5.id,
-      regulation_id: regRJ5.id,
-      subscriber_id: sub2.id,
+      careId: careRJ5.id,
+      regulationId: regRJ5.id,
+      subscriberId: sub2.id,
       quantity: 1,
     },
   })
@@ -1343,12 +1339,12 @@ async function main() {
   console.log('✅ 5 Regulações RJ criadas')
 
   await generateMassData({
-    subscriber_id: sub2.id,
+    subscriberId: sub2.id,
     location_name: 'Rio de Janeiro',
     passwordHash,
     unit_id: unitRJ1.id,
-    group_id: groupRJ1.id,
-    supplier_id: suppRJ1.id,
+    groupId: groupRJ1.id,
+    supplierId: suppRJ1.id,
   });
 
   console.log('✅ RIO DE JANEIRO COMPLETO!\n')
@@ -1363,52 +1359,52 @@ async function main() {
     update: {},
     create: {
       name: 'Prefeitura de Belo Horizonte',
-      municipality_name: 'Belo Horizonte',
+      municipalityName: 'Belo Horizonte',
       email: 'contato@belohorizonte.mg.gov.br',
       telephone: '3133334444',
       cnpj: '33333333000199',
-      postal_code: '30000-000',
+      postalCode: '30000-000',
       city: 'Belo Horizonte',
       neighborhood: 'Centro',
       street: 'Av. Afonso Pena',
       number: '1500',
-      state_name: 'Minas Gerais',
-      state_acronym: 'MG',
+      stateName: 'Minas Gerais',
+      stateAcronym: 'MG',
       payment: false,
     },
   })
 
   // PROFISSIONAIS MG
   const adminMG = await prisma.professional.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub3.id, cpf: '33333333331' } },
-    update: { password_hash: passwordHash },
+    where: { subscriberId_cpf: { subscriberId: sub3.id, cpf: '33333333331' } },
+    update: { passwordHash: passwordHash },
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       cpf: '33333333331',
       name: 'Dr. Roberto Andrade (Belo Horizonte)',
       cargo: 'Diretor de Saúde',
-      sex: sex.masculino,
+      sex: Sex.MALE,
       email: 'admin_municipal@belohorizonte.mg.gov.br',
-      role: role.admin_municipal,
-      password_hash: passwordHash,
-      accepted_terms: true,
+      role: Role.ADMIN_MUNICIPAL,
+      passwordHash: passwordHash,
+      acceptedTerms: true,
       cns: '333456789012345',
     },
   })
 
   const typistMG = await prisma.professional.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub3.id, cpf: '33333333332' } },
-    update: { password_hash: passwordHash },
+    where: { subscriberId_cpf: { subscriberId: sub3.id, cpf: '33333333332' } },
+    update: { passwordHash: passwordHash },
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       cpf: '33333333332',
       name: 'Mariana Silva (Belo Horizonte)',
       cargo: 'Digitadora',
-      sex: sex.feminino,
+      sex: Sex.FEMALE,
       email: 'typist@belohorizonte.mg.gov.br',
-      role: role.typist,
-      password_hash: passwordHash,
-      accepted_terms: true,
+      role: Role.TYPIST,
+      passwordHash: passwordHash,
+      acceptedTerms: true,
     },
   })
 
@@ -1421,7 +1417,7 @@ async function main() {
     create: {
       uuid: '33333333-0000-0000-0000-000000000001',
       name: 'UBS Pampulha (Belo Horizonte)',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
     },
   })
 
@@ -1431,7 +1427,7 @@ async function main() {
     create: {
       uuid: '33333333-0000-0000-0000-000000000002',
       name: 'Hospital Municipal (Belo Horizonte)',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
     },
   })
 
@@ -1441,7 +1437,7 @@ async function main() {
     create: {
       uuid: '33333333-0000-0000-0000-000000000003',
       name: 'UPA Venda Nova (Belo Horizonte)',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
     },
   })
 
@@ -1449,15 +1445,15 @@ async function main() {
 
   // PACIENTES MG
   const pacMG1 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub3.id, cpf: '33333330001' } },
+    where: { subscriberId_cpf: { subscriberId: sub3.id, cpf: '33333330001' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       cpf: '33333330001',
       name: 'Augusto Ferreira (Belo Horizonte)',
       gender: 'Masculino',
       race: 'Pardo',
-      birth_date: new Date('1980-03-12'),
+      birthDate: new Date('1980-03-12'),
       city: 'Belo Horizonte',
       state: 'MG',
       cns: '900000000000001',
@@ -1465,15 +1461,15 @@ async function main() {
   })
 
   const pacMG2 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub3.id, cpf: '33333330002' } },
+    where: { subscriberId_cpf: { subscriberId: sub3.id, cpf: '33333330002' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       cpf: '33333330002',
       name: 'Helena Martins (Belo Horizonte)',
       gender: 'Feminino',
       race: 'Branca',
-      birth_date: new Date('1995-07-22'),
+      birthDate: new Date('1995-07-22'),
       city: 'Belo Horizonte',
       state: 'MG',
       cns: '900000000000002',
@@ -1481,15 +1477,15 @@ async function main() {
   })
 
   const pacMG3 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub3.id, cpf: '33333330003' } },
+    where: { subscriberId_cpf: { subscriberId: sub3.id, cpf: '33333330003' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       cpf: '33333330003',
       name: 'Diego Souza (Belo Horizonte)',
       gender: 'Masculino',
       race: 'Negra',
-      birth_date: new Date('1972-11-30'),
+      birthDate: new Date('1972-11-30'),
       city: 'Belo Horizonte',
       state: 'MG',
       cns: '900000000000003',
@@ -1497,15 +1493,15 @@ async function main() {
   })
 
   const pacMG4 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub3.id, cpf: '33333330004' } },
+    where: { subscriberId_cpf: { subscriberId: sub3.id, cpf: '33333330004' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       cpf: '33333330004',
       name: 'Larissa Oliveira (Belo Horizonte)',
       gender: 'Feminino',
       race: 'Amarela',
-      birth_date: new Date('2002-05-08'),
+      birthDate: new Date('2002-05-08'),
       city: 'Belo Horizonte',
       state: 'MG',
       cns: '900000000000004',
@@ -1513,15 +1509,15 @@ async function main() {
   })
 
   const pacMG5 = await prisma.patient.upsert({
-    where: { subscriber_id_cpf: { subscriber_id: sub3.id, cpf: '33333330005' } },
+    where: { subscriberId_cpf: { subscriberId: sub3.id, cpf: '33333330005' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       cpf: '33333330005',
       name: 'Fernando Alves (Belo Horizonte)',
       gender: 'Masculino',
       race: 'Branca',
-      birth_date: new Date('1968-09-14'),
+      birthDate: new Date('1968-09-14'),
       city: 'Belo Horizonte',
       state: 'MG',
       cns: '900000000000005',
@@ -1536,7 +1532,6 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000010',
-      subscriber_id: sub3.id,
       name: 'Ortopedia (Belo Horizonte)',
       description: 'Procedimentos ortopédicos',
     },
@@ -1547,7 +1542,6 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000011',
-      subscriber_id: sub3.id,
       name: 'Ginecologia (Belo Horizonte)',
       description: 'Atendimentos ginecológicos',
     },
@@ -1557,12 +1551,12 @@ async function main() {
 
   // FORNECEDORES MG
   const suppMG1 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub3.id, cnpj: '33333333000111' } },
+    where: { subscriberId_cnpj: { subscriberId: sub3.id, cnpj: '33333333000111' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Laboratório Mineiro (Belo Horizonte)',
-      trade_name: 'LabMG',
+      tradeName: 'LabMG',
       cnpj: '33333333000111',
       city: 'Belo Horizonte',
       state: 'MG',
@@ -1570,12 +1564,12 @@ async function main() {
   })
 
   const suppMG2 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub3.id, cnpj: '33333333000122' } },
+    where: { subscriberId_cnpj: { subscriberId: sub3.id, cnpj: '33333333000122' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Clínica Ortopédica (Belo Horizonte)',
-      trade_name: 'OrtoMG',
+      tradeName: 'OrtoMG',
       cnpj: '33333333000122',
       city: 'Belo Horizonte',
       state: 'MG',
@@ -1583,12 +1577,12 @@ async function main() {
   })
 
   const suppMG3 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub3.id, cnpj: '33333333000133' } },
+    where: { subscriberId_cnpj: { subscriberId: sub3.id, cnpj: '33333333000133' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Hospital da Mulher (Belo Horizonte)',
-      trade_name: 'MulherMG',
+      tradeName: 'MulherMG',
       cnpj: '33333333000133',
       city: 'Belo Horizonte',
       state: 'MG',
@@ -1596,12 +1590,12 @@ async function main() {
   })
 
   const suppMG4 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub3.id, cnpj: '33333333000144' } },
+    where: { subscriberId_cnpj: { subscriberId: sub3.id, cnpj: '33333333000144' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Farmácia Saúde (Belo Horizonte)',
-      trade_name: 'FarmaMG',
+      tradeName: 'FarmaMG',
       cnpj: '33333333000144',
       city: 'Belo Horizonte',
       state: 'MG',
@@ -1609,12 +1603,12 @@ async function main() {
   })
 
   const suppMG5 = await prisma.supplier.upsert({
-    where: { subscriber_id_cnpj: { subscriber_id: sub3.id, cnpj: '33333333000155' } },
+    where: { subscriberId_cnpj: { subscriberId: sub3.id, cnpj: '33333333000155' } },
     update: {},
     create: {
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Centro Cirúrgico (Belo Horizonte)',
-      trade_name: 'CirurgiaMG',
+      tradeName: 'CirurgiaMG',
       cnpj: '33333333000155',
       city: 'Belo Horizonte',
       state: 'MG',
@@ -1629,16 +1623,16 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000020',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Raio-X Coluna (Belo Horizonte)',
       acronym: 'RXCOL',
       description: 'Exame de raio-x',
-      resource_origin: resource_origin.federal,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.FEDERAL,
+      unitMeasure: UnitMeasure.UN,
       value: 50.0,
       amount: 1,
-      group_id: groupMG1.id,
-      professional_id: adminMG.id,
+      groupId: groupMG1.id,
+      professionalId: adminMG.id,
     },
   })
 
@@ -1647,16 +1641,16 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000021',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Ressonância Joelho (Belo Horizonte)',
       acronym: 'RMJOE',
       description: 'Exame de ressonância',
-      resource_origin: resource_origin.federal,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.FEDERAL,
+      unitMeasure: UnitMeasure.UN,
       value: 500.0,
       amount: 1,
-      group_id: groupMG1.id,
-      professional_id: typistMG.id,
+      groupId: groupMG1.id,
+      professionalId: typistMG.id,
     },
   })
 
@@ -1665,16 +1659,16 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000022',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Fisioterapia Ortopédica (Belo Horizonte)',
       acronym: 'FISORT',
       description: 'Sessão de fisioterapia',
-      resource_origin: resource_origin.federal,
-      unit_measure: unit_measure.sessao,
+      resourceOrigin: ResourceOrigin.FEDERAL,
+      unitMeasure: UnitMeasure.SESSION,
       value: 60.0,
       amount: 10,
-      group_id: groupMG1.id,
-      professional_id: adminMG.id,
+      groupId: groupMG1.id,
+      professionalId: adminMG.id,
     },
   })
 
@@ -1683,16 +1677,16 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000023',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Consulta Ginecologia (Belo Horizonte)',
       acronym: 'CGIN',
       description: 'Consulta ginecológica',
-      resource_origin: resource_origin.federal,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.FEDERAL,
+      unitMeasure: UnitMeasure.UN,
       value: 90.0,
       amount: 1,
-      group_id: groupMG2.id,
-      professional_id: adminMG.id,
+      groupId: groupMG2.id,
+      professionalId: adminMG.id,
     },
   })
 
@@ -1701,16 +1695,16 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000024',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Ultrassom Obstétrico (Belo Horizonte)',
       acronym: 'USOBS',
       description: 'Ultrassom gestacional',
-      resource_origin: resource_origin.federal,
-      unit_measure: unit_measure.un,
+      resourceOrigin: ResourceOrigin.FEDERAL,
+      unitMeasure: UnitMeasure.UN,
       value: 100.0,
       amount: 1,
-      group_id: groupMG2.id,
-      professional_id: typistMG.id,
+      groupId: groupMG2.id,
+      professionalId: typistMG.id,
     },
   })
 
@@ -1722,10 +1716,10 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000030',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Pasta Ortopedia (Belo Horizonte)',
       description: 'Regulações ortopédicas',
-      responsible_id: adminMG.id,
+      responsibleId: adminMG.id,
     },
   })
 
@@ -1734,10 +1728,10 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000031',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Pasta Ginecologia (Belo Horizonte)',
       description: 'Atendimentos ginecológicos',
-      responsible_id: typistMG.id,
+      responsibleId: typistMG.id,
     },
   })
 
@@ -1746,10 +1740,10 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000032',
-      subscriber_id: sub3.id,
+      subscriberId: sub3.id,
       name: 'Pasta Cirurgias (Belo Horizonte)',
       description: 'Procedimentos cirúrgicos',
-      responsible_id: adminMG.id,
+      responsibleId: adminMG.id,
     },
   })
 
@@ -1761,26 +1755,26 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000050',
-      subscriber_id: sub3.id,
-      id_code: 'REG-MG-00001',
-      patient_id: pacMG1.id,
-      status: status.in_progress,
+      subscriberId: sub3.id,
+      idCode: 'REG-MG-00001',
+      patientId: pacMG1.id,
+      status: Status.IN_PROGRESS,
       notes: 'Regulação MG 1',
-      request_date: new Date('2025-01-10'),
-      supplier_id: suppMG1.id,
-      creator_id: adminMG.id,
-      folder_id: folderMG1.id,
-      priority: priority.urgencia,
+      requestDate: new Date('2025-01-10'),
+      supplierId: suppMG1.id,
+      creatorId: adminMG.id,
+      folderId: folderMG1.id,
+      priority: Priority.URGENCY,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careMG1.id, regulation_id: regMG1.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careMG1.id, regulationId: regMG1.id } },
     update: {},
     create: {
-      care_id: careMG1.id,
-      regulation_id: regMG1.id,
-      subscriber_id: sub3.id,
+      careId: careMG1.id,
+      regulationId: regMG1.id,
+      subscriberId: sub3.id,
       quantity: 1,
     },
   })
@@ -1790,26 +1784,26 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000051',
-      subscriber_id: sub3.id,
-      id_code: 'REG-MG-00002',
-      patient_id: pacMG2.id,
-      status: status.approved,
+      subscriberId: sub3.id,
+      idCode: 'REG-MG-00002',
+      patientId: pacMG2.id,
+      status: Status.APPROVED,
       notes: 'Regulação MG 2',
-      request_date: new Date('2025-01-11'),
-      supplier_id: suppMG2.id,
-      creator_id: typistMG.id,
-      folder_id: folderMG2.id,
-      priority: priority.eletivo,
+      requestDate: new Date('2025-01-11'),
+      supplierId: suppMG2.id,
+      creatorId: typistMG.id,
+      folderId: folderMG2.id,
+      priority: Priority.ELECTIVE,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careMG2.id, regulation_id: regMG2.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careMG2.id, regulationId: regMG2.id } },
     update: {},
     create: {
-      care_id: careMG2.id,
-      regulation_id: regMG2.id,
-      subscriber_id: sub3.id,
+      careId: careMG2.id,
+      regulationId: regMG2.id,
+      subscriberId: sub3.id,
       quantity: 1,
     },
   })
@@ -1819,26 +1813,26 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000052',
-      subscriber_id: sub3.id,
-      id_code: 'REG-MG-00003',
-      patient_id: pacMG3.id,
-      status: status.in_progress,
+      subscriberId: sub3.id,
+      idCode: 'REG-MG-00003',
+      patientId: pacMG3.id,
+      status: Status.IN_PROGRESS,
       notes: 'Regulação MG 3',
-      request_date: new Date('2025-01-12'),
-      supplier_id: suppMG3.id,
-      creator_id: adminMG.id,
-      folder_id: folderMG3.id,
-      priority: priority.eletivo,
+      requestDate: new Date('2025-01-12'),
+      supplierId: suppMG3.id,
+      creatorId: adminMG.id,
+      folderId: folderMG3.id,
+      priority: Priority.ELECTIVE,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careMG3.id, regulation_id: regMG3.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careMG3.id, regulationId: regMG3.id } },
     update: {},
     create: {
-      care_id: careMG3.id,
-      regulation_id: regMG3.id,
-      subscriber_id: sub3.id,
+      careId: careMG3.id,
+      regulationId: regMG3.id,
+      subscriberId: sub3.id,
       quantity: 1,
     },
   })
@@ -1848,26 +1842,26 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000053',
-      subscriber_id: sub3.id,
-      id_code: 'REG-MG-00004',
-      patient_id: pacMG4.id,
-      status: status.denied,
+      subscriberId: sub3.id,
+      idCode: 'REG-MG-00004',
+      patientId: pacMG4.id,
+      status: Status.DENIED,
       notes: 'Regulação MG 4',
-      request_date: new Date('2025-01-13'),
-      supplier_id: suppMG4.id,
-      creator_id: typistMG.id,
-      folder_id: folderMG1.id,
-      priority: priority.urgencia,
+      requestDate: new Date('2025-01-13'),
+      supplierId: suppMG4.id,
+      creatorId: typistMG.id,
+      folderId: folderMG1.id,
+      priority: Priority.URGENCY,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careMG4.id, regulation_id: regMG4.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careMG4.id, regulationId: regMG4.id } },
     update: {},
     create: {
-      care_id: careMG4.id,
-      regulation_id: regMG4.id,
-      subscriber_id: sub3.id,
+      careId: careMG4.id,
+      regulationId: regMG4.id,
+      subscriberId: sub3.id,
       quantity: 1,
     },
   })
@@ -1877,26 +1871,26 @@ async function main() {
     update: {},
     create: {
       uuid: '33333333-0000-0000-0000-000000000054',
-      subscriber_id: sub3.id,
-      id_code: 'REG-MG-00005',
-      patient_id: pacMG5.id,
-      status: status.approved,
+      subscriberId: sub3.id,
+      idCode: 'REG-MG-00005',
+      patientId: pacMG5.id,
+      status: Status.APPROVED,
       notes: 'Regulação MG 5',
-      request_date: new Date('2025-01-14'),
-      supplier_id: suppMG5.id,
-      creator_id: adminMG.id,
-      folder_id: folderMG2.id,
-      priority: priority.eletivo,
+      requestDate: new Date('2025-01-14'),
+      supplierId: suppMG5.id,
+      creatorId: adminMG.id,
+      folderId: folderMG2.id,
+      priority: Priority.ELECTIVE,
     },
   })
 
-  await prisma.care_regulation.upsert({
-    where: { care_id_regulation_id: { care_id: careMG5.id, regulation_id: regMG5.id } },
+  await prisma.careRegulation.upsert({
+    where: { careId_regulationId: { careId: careMG5.id, regulationId: regMG5.id } },
     update: {},
     create: {
-      care_id: careMG5.id,
-      regulation_id: regMG5.id,
-      subscriber_id: sub3.id,
+      careId: careMG5.id,
+      regulationId: regMG5.id,
+      subscriberId: sub3.id,
       quantity: 1,
     },
   })
@@ -1904,12 +1898,12 @@ async function main() {
   console.log('✅ 5 Regulações MG criadas')
 
   await generateMassData({
-    subscriber_id: sub3.id,
+    subscriberId: sub3.id,
     location_name: 'Belo Horizonte',
     passwordHash,
     unit_id: unitMG1.id,
-    group_id: groupMG1.id,
-    supplier_id: suppMG1.id,
+    groupId: groupMG1.id,
+    supplierId: suppMG1.id,
   });
 
   console.log('✅ BELO HORIZONTE COMPLETO!\n')
@@ -1930,37 +1924,37 @@ async function main() {
   ]
 
   const userCheck1 = await prisma.professional.findFirst({ where: { email: users[0] } })
-  if (userCheck1?.password_hash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck1.password_hash))) {
+  if (userCheck1?.passwordHash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck1.passwordHash))) {
     console.log(`✅ ${users[0]}`)
   }
 
   const userCheck2 = await prisma.professional.findFirst({ where: { email: users[1] } })
-  if (userCheck2?.password_hash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck2.password_hash))) {
+  if (userCheck2?.passwordHash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck2.passwordHash))) {
     console.log(`✅ ${users[1]}`)
   }
 
   const userCheck3 = await prisma.professional.findFirst({ where: { email: users[2] } })
-  if (userCheck3?.password_hash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck3.password_hash))) {
+  if (userCheck3?.passwordHash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck3.passwordHash))) {
     console.log(`✅ ${users[2]}`)
   }
 
   const userCheck4 = await prisma.professional.findFirst({ where: { email: users[3] } })
-  if (userCheck4?.password_hash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck4.password_hash))) {
+  if (userCheck4?.passwordHash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck4.passwordHash))) {
     console.log(`✅ ${users[3]}`)
   }
 
   const userCheck5 = await prisma.professional.findFirst({ where: { email: users[4] } })
-  if (userCheck5?.password_hash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck5.password_hash))) {
+  if (userCheck5?.passwordHash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck5.passwordHash))) {
     console.log(`✅ ${users[4]}`)
   }
 
   const userCheck6 = await prisma.professional.findFirst({ where: { email: users[5] } })
-  if (userCheck6?.password_hash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck6.password_hash))) {
+  if (userCheck6?.passwordHash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck6.passwordHash))) {
     console.log(`✅ ${users[5]}`)
   }
 
   const userCheck7 = await prisma.professional.findFirst({ where: { email: users[6] } })
-  if (userCheck7?.password_hash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck7.password_hash))) {
+  if (userCheck7?.passwordHash && (await bcrypt.compare(DEFAULT_PASSWORD, userCheck7.passwordHash))) {
     console.log(`✅ ${users[6]}`)
   }
 

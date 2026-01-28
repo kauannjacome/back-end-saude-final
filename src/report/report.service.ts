@@ -13,9 +13,9 @@ export class ReportService {
   // --- Helpers ---
   private buildRegulationWhere(filters: ReportFilterDto) {
     const { subscriber_id, status, care_id, priority, start_date, end_date, supplier_id, ids, analyzed_id, creator_id } = filters;
-    const where: any = { deleted_at: null };
+    const where: any = { deletedAt: null };
 
-    if (subscriber_id) where.subscriber_id = subscriber_id;
+    if (subscriber_id) where.subscriberId = subscriber_id;
 
     // Se IDs foram passados, ignora outros filtros de busca e retorna apenas esses IDs
     if (ids && ids.length > 0) {
@@ -24,12 +24,13 @@ export class ReportService {
     }
 
     // Filtros Normais
+    // Adaptação para Status e Priority se necessário (assumindo que DTO envia snake_case mas Prisma usa UPPERCASE ou o DTO já foi ajustado)
     if (status) where.status = status;
     if (priority) where.priority = priority;
-    if (supplier_id) where.supplier_id = supplier_id;
-    if (analyzed_id) where.analyzed_id = analyzed_id;
-    if (creator_id) where.creator_id = creator_id;
-    if (care_id) where.cares = { some: { care_id } };
+    if (supplier_id) where.supplierId = supplier_id;
+    if (analyzed_id) where.analyzedId = analyzed_id;
+    if (creator_id) where.creatorId = creator_id;
+    if (care_id) where.cares = { some: { careId: care_id } };
 
     // Filtro de Data
     if (start_date || end_date) {
@@ -40,7 +41,7 @@ export class ReportService {
         end.setHours(23, 59, 59, 999);
         dateFilter.lte = end;
       }
-      where.created_at = dateFilter;
+      where.createdAt = dateFilter;
     }
 
     return where;
@@ -71,7 +72,7 @@ export class ReportService {
         take: take,
         skip: skipValue,
         include: {
-          patient: { select: { name: true, cpf: true, birth_date: true } },
+          patient: { select: { name: true, cpf: true, birthDate: true } },
           cares: { include: { care: { select: { name: true } } } },
           supplier: { select: { name: true } },
         },
@@ -80,30 +81,32 @@ export class ReportService {
         // Aqui mantemos created_at para estabilidade.
         orderBy: [
           { priority: 'asc' }, // A-Z (Eletivo, Emergencia, Urgencia) - Não é o ideal (Emergencia deveria ser topo).
-          { created_at: 'asc' }
+          { createdAt: 'asc' }
         ]
       }),
       this.prisma.regulation.count({ where }),
     ]);
 
     // Ordenação Customizada em Memória (apenas da página atual)
-    const priorityWeight = { 'emergencia': 3, 'urgencia': 2, 'eletivo': 1 };
+    const priorityWeight = { 'EMERGENCY': 3, 'URGENCY': 2, 'ELECTIVE': 1 };
 
     const sortedData = regulations.sort((a, b) => {
       const pA = a.priority ? priorityWeight[a.priority] : 0;
       const pB = b.priority ? priorityWeight[b.priority] : 0;
       if (pA !== pB) return pB - pA;
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      const timeA = new Date(a.createdAt).getTime();
+      const timeB = new Date(b.createdAt).getTime();
+      return timeA - timeB;
     }).map(reg => ({
       id: reg.id,
-      protocol: reg.id_code || reg.uuid,
-      patient_name: reg.patient?.name || 'N/A',
-      care_type: reg.cares.map(c => c.care.name).join(', '),
+      protocol: reg.idCode || reg.uuid,
+      patient_name: (reg as any).patient?.name || 'N/A',
+      care_type: (reg as any).cares.map((c: any) => c.care.name).join(', '),
       priority: reg.priority,
       status: reg.status,
-      supplier: reg.supplier?.name || '-',
-      created_at: reg.created_at,
-      wait_time_days: Math.floor((new Date().getTime() - new Date(reg.created_at).getTime()) / (1000 * 3600 * 24))
+      supplier: (reg as any).supplier?.name || '-',
+      created_at: reg.createdAt,
+      wait_time_days: Math.floor((new Date().getTime() - new Date(reg.createdAt).getTime()) / (1000 * 3600 * 24))
     }));
 
     return {

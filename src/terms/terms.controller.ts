@@ -15,7 +15,7 @@ import { TokenPayloadParam } from '../auth/param/token-payload.param';
 
 @Controller('terms')
 export class TermsController {
-  constructor(private readonly termsService: TermsService) {}
+  constructor(private readonly termsService: TermsService) { }
 
   // Criar novo termo (apenas admin_manager)
   @UseGuards(AuthTokenGuard)
@@ -24,8 +24,8 @@ export class TermsController {
     @Body() body: { version: string; title: string; content: string },
     @TokenPayloadParam() payload: any
   ) {
-    if (payload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode criar termos de uso.');
+    if (payload.role !== 'ADMIN_MANAGER') {
+      throw new ForbiddenException('Apenas ADMIN_MANAGER pode criar termos de uso.');
     }
     return this.termsService.create(body);
   }
@@ -34,7 +34,7 @@ export class TermsController {
   @UseGuards(AuthTokenGuard)
   @Get()
   findAll(@TokenPayloadParam() payload: any) {
-    if (payload.role !== 'admin_manager' && payload.role !== 'admin_municipal') {
+    if (payload.role !== 'ADMIN_MANAGER' && payload.role !== 'ADMIN_MUNICIPAL') {
       throw new ForbiddenException('Apenas administradores podem listar todos os termos.');
     }
     return this.termsService.findAll();
@@ -58,7 +58,7 @@ export class TermsController {
   @UseGuards(AuthTokenGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @TokenPayloadParam() payload: any) {
-    if (payload.role !== 'admin_manager' && payload.role !== 'admin_municipal') {
+    if (payload.role !== 'ADMIN_MANAGER' && payload.role !== 'ADMIN_MUNICIPAL') {
       throw new ForbiddenException('Apenas administradores podem visualizar termos por ID.');
     }
     return this.termsService.findOne(+id);
@@ -72,8 +72,8 @@ export class TermsController {
     @Body() body: { title?: string; content?: string },
     @TokenPayloadParam() payload: any
   ) {
-    if (payload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode editar termos de uso.');
+    if (payload.role !== 'ADMIN_MANAGER') {
+      throw new ForbiddenException('Apenas ADMIN_MANAGER pode editar termos de uso.');
     }
     return this.termsService.update(+id, body);
   }
@@ -82,8 +82,8 @@ export class TermsController {
   @UseGuards(AuthTokenGuard)
   @Patch(':id/activate')
   activate(@Param('id') id: string, @TokenPayloadParam() payload: any) {
-    if (payload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode ativar termos de uso.');
+    if (payload.role !== 'ADMIN_MANAGER') {
+      throw new ForbiddenException('Apenas ADMIN_MANAGER pode ativar termos de uso.');
     }
     return this.termsService.activate(+id);
   }
@@ -92,8 +92,8 @@ export class TermsController {
   @UseGuards(AuthTokenGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @TokenPayloadParam() payload: any) {
-    if (payload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode remover termos de uso.');
+    if (payload.role !== 'ADMIN_MANAGER') {
+      throw new ForbiddenException('Apenas ADMIN_MANAGER pode remover termos de uso.');
     }
     return this.termsService.remove(+id);
   }

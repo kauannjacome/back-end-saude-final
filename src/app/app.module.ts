@@ -25,10 +25,7 @@ import { envSchema } from '../common/env/env';
 import { EmailModule } from '../email/email.module';
 import { NotificationModule } from '../notification/notification.module';
 import { ZapModule } from '../zap/module';
-import { ZapAdminModule } from '../zap-admin/zap-admin.module';
-import { SuggestionModule } from '../suggestion/suggestion.module';
 import { QueueModule } from '../common/queue/queue.module';
-import { ChatIaModule } from '../chat-ia/chat-ia.module';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { BullModule } from '@nestjs/bull';
 import { TermsModule } from '../terms/terms.module';
@@ -82,11 +79,8 @@ import { TermsModule } from '../terms/terms.module';
     EmailModule,
     NotificationModule,
     ZapModule,
-    ZapAdminModule,
-    SuggestionModule,
     QueueModule,
     PrismaModule,
-    ChatIaModule,
     TermsModule,
     BullModule.forRoot({
       redis: {

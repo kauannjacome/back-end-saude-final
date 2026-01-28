@@ -18,8 +18,8 @@ export class UnitController {
 
   @Get('deleted/list')
   findAllDeleted(@TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode listar itens deletados.');
+    if (TokenPayload.role !== 'ADMIN_MANAGER') {
+      throw new ForbiddenException('Apenas ADMIN_MANAGER pode listar itens deletados.');
     }
     return this.unitService.findAllDeleted(Number(TokenPayload.sub_id));
   }
@@ -55,8 +55,8 @@ export class UnitController {
 
   @Patch(':id/restore')
   restore(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode restaurar itens.');
+    if (TokenPayload.role !== 'ADMIN_MANAGER') {
+      throw new ForbiddenException('Apenas ADMIN_MANAGER pode restaurar itens.');
     }
     return this.unitService.restore(+id, Number(TokenPayload.sub_id));
   }
@@ -68,8 +68,8 @@ export class UnitController {
 
   @Delete(':id/hard')
   hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    if (TokenPayload.role !== 'ADMIN_MANAGER') {
+      throw new ForbiddenException('Apenas ADMIN_MANAGER pode remover itens permanentemente.');
     }
     return this.unitService.hardDelete(+id, Number(TokenPayload.sub_id));
   }

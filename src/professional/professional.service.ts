@@ -22,39 +22,39 @@ export class ProfessionalService {
 
     return this.prisma.professional.create({
       data: {
-        subscriber_id: createProfessionalDto.subscriber_id,
+        subscriberId: createProfessionalDto.subscriber_id,
         cpf: createProfessionalDto.cpf,
 
         name: createProfessionalDto.name,
-        name_normalized: createProfessionalDto.name
+        nameNormalized: createProfessionalDto.name
           ? normalizeText(createProfessionalDto.name)
           : null,
 
         cargo: createProfessionalDto.cargo,
         sex: createProfessionalDto.sex,
 
-        birth_date: createProfessionalDto.birth_date
+        birthDate: createProfessionalDto.birth_date
           ? new Date(createProfessionalDto.birth_date)
           : null,
 
-        phone_number: createProfessionalDto.phone_number,
+        phoneNumber: createProfessionalDto.phone_number,
         email: createProfessionalDto.email,
 
-        role: createProfessionalDto.role,
+        role: createProfessionalDto.role || 'TYPIST',
 
         // Novos Campos
-        social_name: createProfessionalDto.social_name,
+        socialName: createProfessionalDto.social_name,
         gender: createProfessionalDto.gender,
         race: createProfessionalDto.race,
-        is_disabled: createProfessionalDto.is_disabled ?? false,
-        death_date: createProfessionalDto.death_date
+        isDisabled: createProfessionalDto.is_disabled ?? false,
+        deathDate: createProfessionalDto.death_date
           ? new Date(createProfessionalDto.death_date)
           : null,
 
-        mother_name: createProfessionalDto.mother_name,
-        father_name: createProfessionalDto.father_name,
+        motherName: createProfessionalDto.mother_name,
+        fatherName: createProfessionalDto.father_name,
 
-        postal_code: createProfessionalDto.postal_code,
+        postalCode: createProfessionalDto.postal_code,
         state: createProfessionalDto.state,
         city: createProfessionalDto.city,
         address: createProfessionalDto.address,
@@ -64,32 +64,41 @@ export class ProfessionalService {
 
         nationality: createProfessionalDto.nationality,
         naturalness: createProfessionalDto.naturalness,
-        marital_status: createProfessionalDto.marital_status,
+        maritalStatus: createProfessionalDto.marital_status,
 
-        password_hash: passwordHash,
+        passwordHash: passwordHash,
 
-        is_password_temp: false,
-        number_try: 0,
-        is_blocked: false,
+        isPasswordTemp: false,
+        numberTry: 0,
+        isBlocked: false,
 
-        accepted_terms: createProfessionalDto.accepted_terms,
-        accepted_terms_at: createProfessionalDto.accepted_terms_at
+        acceptedTerms: createProfessionalDto.accepted_terms,
+        acceptedTermsAt: createProfessionalDto.accepted_terms_at
           ? new Date(createProfessionalDto.accepted_terms_at)
           : null,
 
-        accepted_terms_version: createProfessionalDto.accepted_terms_version,
+        acceptedTermsVersion: createProfessionalDto.accepted_terms_version,
+
+        employments: {
+          create: {
+            subscriberId: createProfessionalDto.subscriber_id,
+            role: createProfessionalDto.role || 'TYPIST',
+            isActive: true,
+            isPrimary: true,
+          }
+        }
       },
     });
   }
 
 
   async searchSimple(subscriber_id: number, term?: string) {
-    const where: Prisma.professionalWhereInput = {
-      subscriber_id,
-      deleted_at: null,
+    const where: Prisma.ProfessionalWhereInput = {
+      subscriberId: subscriber_id,
+      deletedAt: null,
       OR: [
         { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
-        { name_normalized: { contains: term, mode: Prisma.QueryMode.insensitive } },
+        { nameNormalized: { contains: term, mode: Prisma.QueryMode.insensitive } },
         { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
       ],
     };
@@ -114,15 +123,15 @@ export class ProfessionalService {
       const safeLimit = limit && limit > 0 ? limit : 10;
       const skip = (safePage - 1) * safeLimit;
 
-      const where: Prisma.professionalWhereInput = {
-        subscriber_id,
-        deleted_at: null,
+      const where: Prisma.ProfessionalWhereInput = {
+        subscriberId: subscriber_id,
+        deletedAt: null,
       };
 
       if (term) {
         where.OR = [
           { name: { contains: term, mode: Prisma.QueryMode.insensitive } },
-          { name_normalized: { contains: term, mode: Prisma.QueryMode.insensitive } },
+          { nameNormalized: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { cpf: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { email: { contains: term, mode: Prisma.QueryMode.insensitive } },
           { cargo: { contains: term, mode: Prisma.QueryMode.insensitive } },
@@ -139,28 +148,28 @@ export class ProfessionalService {
             id: true,
             uuid: true,
             name: true,
-            name_normalized: true,
+            nameNormalized: true,
             email: true,
             cpf: true,
             cargo: true,
             role: true,
             sex: true,
-            birth_date: true,
-            phone_number: true,
-            created_at: true,
-            updated_at: true,
-            is_blocked: true,
-            accepted_terms: true,
+            birthDate: true,
+            phoneNumber: true,
+            createdAt: true,
+            updatedAt: true,
+            isBlocked: true,
+            acceptedTerms: true,
 
             // Novos Campos
-            social_name: true,
+            socialName: true,
             gender: true,
             race: true,
-            is_disabled: true,
-            death_date: true,
-            mother_name: true,
-            father_name: true,
-            postal_code: true,
+            isDisabled: true,
+            deathDate: true,
+            motherName: true,
+            fatherName: true,
+            postalCode: true,
             state: true,
             city: true,
             address: true,
@@ -169,7 +178,7 @@ export class ProfessionalService {
             neighborhood: true,
             nationality: true,
             naturalness: true,
-            marital_status: true,
+            maritalStatus: true,
           },
         }),
         this.prisma.professional.count({ where }),
@@ -202,7 +211,7 @@ export class ProfessionalService {
     // Busca por role 'admin_manager' E email fornecido
     const admin = await this.prisma.professional.findFirst({
       where: {
-        role: 'admin_manager',
+        role: 'ADMIN_MANAGER',
         email: email
       },
     });
@@ -218,7 +227,7 @@ export class ProfessionalService {
     await this.prisma.professional.update({
       where: { id: admin.id },
       data: {
-        password_hash: passwordHash,
+        passwordHash: passwordHash,
       },
     });
 
@@ -229,8 +238,8 @@ export class ProfessionalService {
   async findAll(subscriber_id: number) {
     return this.prisma.professional.findMany({
       where: {
-        subscriber_id,
-        deleted_at: null,
+        subscriberId: subscriber_id,
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -238,7 +247,7 @@ export class ProfessionalService {
         cargo: true,
       },
       orderBy: {
-        created_at: 'desc',
+        createdAt: 'desc',
       },
     });
   }
@@ -247,13 +256,14 @@ export class ProfessionalService {
   // ✅ BUSCAR POR ID
   async findOne(id: number, subscriber_id: number) {
     const professional = await this.prisma.professional.findUnique({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
       include: {
         cares: true,
-        audit_logs: true,
-        regulations_created: true,
-        regulations_analyzed: true,
-        regulations_printed: true,
+        auditLogs: true,
+        regulationsCreated: true,
+        regulationsAnalyzed: true,
+        regulationsPrinted: true,
+        employments: true,
       },
     });
 
@@ -265,7 +275,7 @@ export class ProfessionalService {
   async update(id: number, updateProfessionalDto: UpdateProfessionalDto, subscriber_id: number) {
     try {
       const professional = await this.prisma.professional.findUnique({
-        where: { id, subscriber_id },
+        where: { id, subscriberId: subscriber_id },
       });
 
       if (!professional) {
@@ -276,39 +286,39 @@ export class ProfessionalService {
       }
 
       const dataProfessional: any = {
-        subscriber_id: updateProfessionalDto.subscriber_id ?? professional.subscriber_id,
+        subscriberId: updateProfessionalDto.subscriber_id ?? professional.subscriberId,
         cpf: updateProfessionalDto.cpf ?? professional.cpf,
 
         name: updateProfessionalDto.name ?? professional.name,
-        name_normalized: updateProfessionalDto.name
+        nameNormalized: updateProfessionalDto.name
           ? normalizeText(updateProfessionalDto.name)
-          : professional.name_normalized,
+          : professional.nameNormalized,
 
         cargo: updateProfessionalDto.cargo ?? professional.cargo,
         sex: updateProfessionalDto.sex ?? professional.sex,
 
-        birth_date: updateProfessionalDto.birth_date
+        birthDate: updateProfessionalDto.birth_date
           ? new Date(updateProfessionalDto.birth_date)
-          : professional.birth_date,
+          : professional.birthDate,
 
-        phone_number: updateProfessionalDto.phone_number ?? professional.phone_number,
+        phoneNumber: updateProfessionalDto.phone_number ?? professional.phoneNumber,
         email: updateProfessionalDto.email ?? professional.email,
 
         role: updateProfessionalDto.role ?? professional.role,
 
         // Novos Campos
-        social_name: updateProfessionalDto.social_name ?? professional.social_name,
+        socialName: updateProfessionalDto.social_name ?? professional.socialName,
         gender: updateProfessionalDto.gender ?? professional.gender,
         race: updateProfessionalDto.race ?? professional.race,
-        is_disabled: updateProfessionalDto.is_disabled ?? professional.is_disabled,
-        death_date: updateProfessionalDto.death_date
+        isDisabled: updateProfessionalDto.is_disabled ?? professional.isDisabled,
+        deathDate: updateProfessionalDto.death_date
           ? new Date(updateProfessionalDto.death_date)
-          : professional.death_date,
+          : professional.deathDate,
 
-        mother_name: updateProfessionalDto.mother_name ?? professional.mother_name,
-        father_name: updateProfessionalDto.father_name ?? professional.father_name,
+        motherName: updateProfessionalDto.mother_name ?? professional.motherName,
+        fatherName: updateProfessionalDto.father_name ?? professional.fatherName,
 
-        postal_code: updateProfessionalDto.postal_code ?? professional.postal_code,
+        postalCode: updateProfessionalDto.postal_code ?? professional.postalCode,
         state: updateProfessionalDto.state ?? professional.state,
         city: updateProfessionalDto.city ?? professional.city,
         address: updateProfessionalDto.address ?? professional.address,
@@ -318,32 +328,32 @@ export class ProfessionalService {
 
         nationality: updateProfessionalDto.nationality ?? professional.nationality,
         naturalness: updateProfessionalDto.naturalness ?? professional.naturalness,
-        marital_status: updateProfessionalDto.marital_status ?? professional.marital_status,
+        maritalStatus: updateProfessionalDto.marital_status ?? professional.maritalStatus,
 
-        accepted_terms:
-          updateProfessionalDto.accepted_terms ?? professional.accepted_terms,
+        acceptedTerms:
+          updateProfessionalDto.accepted_terms ?? professional.acceptedTerms,
 
-        accepted_terms_at: updateProfessionalDto.accepted_terms_at
+        acceptedTermsAt: updateProfessionalDto.accepted_terms_at
           ? new Date(updateProfessionalDto.accepted_terms_at)
-          : professional.accepted_terms_at,
+          : professional.acceptedTermsAt,
 
-        accepted_terms_version:
+        acceptedTermsVersion:
           updateProfessionalDto.accepted_terms_version ??
-          professional.accepted_terms_version,
+          professional.acceptedTermsVersion,
       };
 
       // 🔐 Atualiza senha apenas se enviada
       if (updateProfessionalDto.password_hash) {
-        dataProfessional.password_hash =
+        dataProfessional.passwordHash =
           await this.hashingService.hash(updateProfessionalDto.password_hash);
 
-        dataProfessional.is_password_temp = false;
-        dataProfessional.number_try = 0;
-        dataProfessional.is_blocked = false;
+        dataProfessional.isPasswordTemp = false;
+        dataProfessional.numberTry = 0;
+        dataProfessional.isBlocked = false;
       }
 
       return await this.prisma.professional.update({
-        where: { id, subscriber_id },
+        where: { id, subscriberId: subscriber_id },
         data: dataProfessional,
         select: {
           id: true,
@@ -351,7 +361,7 @@ export class ProfessionalService {
           name: true,
           email: true,
           role: true,
-          updated_at: true,
+          updatedAt: true,
         },
       });
     } catch (err) {
@@ -366,59 +376,59 @@ export class ProfessionalService {
   // ✅ REMOVER (soft delete)
   // ✅ REMOVER (soft delete)
   async remove(id: number, subscriber_id: number) {
-    const professional = await this.prisma.professional.findUnique({ where: { id, subscriber_id } });
-    if (!professional || professional.deleted_at) {
+    const professional = await this.prisma.professional.findUnique({ where: { id, subscriberId: subscriber_id } });
+    if (!professional || professional.deletedAt) {
       throw new NotFoundException(`Professional #${id} not found`);
     }
 
     return this.prisma.professional.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: new Date() },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: new Date() },
     });
   }
 
   // ✅ RESTAURAR (apenas admin_manager)
   async restore(id: number, subscriber_id: number) {
-    const professional = await this.prisma.professional.findUnique({ where: { id, subscriber_id } });
+    const professional = await this.prisma.professional.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!professional) {
       throw new NotFoundException(`Professional #${id} not found`);
     }
-    if (!professional.deleted_at) {
+    if (!professional.deletedAt) {
       throw new BadRequestException(`Professional #${id} is not deleted`);
     }
 
     return this.prisma.professional.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: null },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: null },
     });
   }
 
   // ✅ DELETAR DE VEZ (apenas admin_manager)
   async hardDelete(id: number, subscriber_id: number) {
-    const professional = await this.prisma.professional.findUnique({ where: { id, subscriber_id } });
+    const professional = await this.prisma.professional.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!professional) {
       throw new NotFoundException(`Professional #${id} not found`);
     }
 
     return this.prisma.professional.delete({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
     });
   }
 
   // ✅ LISTAR DELETADOS (apenas admin_manager)
   async findAllDeleted(subscriber_id: number) {
     return this.prisma.professional.findMany({
-      where: { subscriber_id, deleted_at: { not: null } },
-      orderBy: { deleted_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
       select: {
         id: true,
         name: true,
         cpf: true,
         email: true,
-        deleted_at: true,
+        deletedAt: true,
         role: true,
         cargo: true,
-        birth_date: true,
+        birthDate: true,
       },
     });
   }
@@ -431,7 +441,7 @@ export class ProfessionalService {
     adminRole: string
   ) {
     // Verificar permissão
-    if (adminRole !== 'admin_manager' && adminRole !== 'admin_municipal') {
+    if (adminRole !== 'ADMIN_MANAGER' && adminRole !== 'ADMIN_MUNICIPAL') {
       throw new HttpException(
         'Apenas administradores podem criar senhas temporárias',
         HttpStatus.FORBIDDEN
@@ -442,8 +452,8 @@ export class ProfessionalService {
     const professional = await this.prisma.professional.findFirst({
       where: {
         id: professionalId,
-        subscriber_id,
-        deleted_at: null
+        subscriberId: subscriber_id,
+        deletedAt: null
       }
     });
 
@@ -452,7 +462,7 @@ export class ProfessionalService {
     }
 
     // Apenas typist pode receber senha temporária de admin_municipal
-    if (adminRole === 'admin_municipal' && professional.role !== 'typist') {
+    if (adminRole === 'ADMIN_MUNICIPAL' && professional.role !== 'TYPIST') {
       throw new HttpException(
         'Admin municipal só pode criar senha temporária para digitadores',
         HttpStatus.FORBIDDEN
@@ -466,11 +476,11 @@ export class ProfessionalService {
     await this.prisma.professional.update({
       where: { id: professionalId },
       data: {
-        password_hash: passwordHash,
-        is_password_temp: true,
-        number_try: 0,
-        number_unlock: 0,
-        is_blocked: false
+        passwordHash: passwordHash,
+        isPasswordTemp: true,
+        numberTry: 0,
+        numberUnlock: 0,
+        isBlocked: false
       }
     });
 

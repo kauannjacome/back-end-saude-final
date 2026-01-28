@@ -3,12 +3,12 @@ import { Type } from 'class-transformer';
 
 export enum PriorityEnum {
   eletivo = 'eletivo',
-  urgencia = 'urgencia',
-  emergencia = 'emergencia',
+  urgencia = 'URGENCY',
+  emergencia = 'EMERGENCY',
 }
 
 export enum StatusEnum {
-  in_progress = 'in_progress',
+  in_progress = 'IN_PROGRESS',
   approved = 'approved',
   denied = 'denied',
   returned = 'returned',

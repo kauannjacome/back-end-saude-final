@@ -7,7 +7,7 @@ import {
   IsBoolean,
   IsInt,
 } from 'class-validator';
-import { sex, role } from '@prisma/client';
+import { Sex, Role } from '@prisma/client';
 
 export class CreateProfessionalDto {
   @IsString()
@@ -23,8 +23,8 @@ export class CreateProfessionalDto {
   cargo?: string;
 
   @IsOptional()
-  @IsEnum(sex)
-  sex?: sex;
+  @IsEnum(Sex)
+  sex?: Sex;
 
   @IsOptional()
   @IsDateString()
@@ -131,8 +131,8 @@ export class CreateProfessionalDto {
   marital_status?: string;
 
   @IsOptional()
-  @IsEnum(role)
-  role?: role;
+  @IsEnum(Role)
+  role?: Role;
 
   @IsString()
   password_hash: string;

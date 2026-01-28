@@ -60,7 +60,7 @@ export class PatientController {
 
   @Delete(':id/hard')
   hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
+    if (TokenPayload.role !== 'ADMIN_MANAGER') {
       throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
     }
     return this.patientService.hardDelete(+id, Number(TokenPayload.sub_id));

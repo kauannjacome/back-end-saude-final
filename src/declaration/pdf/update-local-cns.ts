@@ -28,7 +28,7 @@ export async function UpdateLocalCns(data: DeclarationPdfData): Promise<Buffer> 
     size: LAYOUT.pageSize,
     bufferPages: true,
     info: {
-      Title: `${DOCUMENT_TITLE} - ${data.id_code || 'N/A'}`,
+      Title: `${DOCUMENT_TITLE} - ${data.idCode || 'N/A'}`,
       Author: data.creator?.name || 'Sistema de Regulação',
       Subject: 'Documento administrativo',
       Creator: 'Sistema Municipal',
@@ -46,30 +46,30 @@ export async function UpdateLocalCns(data: DeclarationPdfData): Promise<Buffer> 
 
   const formatDate = (d: Date | string | null) =>
     d ? new Date(d).toLocaleDateString('pt-BR') : 'N/A';
-  const requestDate = formatDate(data.request_date);
+  const requestDate = formatDate(data.requestDate);
   // === Logos ===
   try {
-    if (subscriber.state_logo) {
-      const resEstadual = await fetch(subscriber.state_logo);
+    if (subscriber.stateLogo) {
+      const resEstadual = await fetch(subscriber.stateLogo);
       const bufEstadual = await resEstadual.arrayBuffer();
       doc.image(Buffer.from(bufEstadual), 30, 0, { width: 50 });
     }
 
-    if (subscriber.administration_logo) {
-      const resAdm = await fetch(subscriber.administration_logo);
+    if (subscriber.administrationLogo) {
+      const resAdm = await fetch(subscriber.administrationLogo);
       const bufAdm = await resAdm.arrayBuffer();
       const centerX = (595.28 / 2) - (50 / 2);
       const centerY = 0;
       doc.image(Buffer.from(bufAdm), centerX, centerY, { width: 50 });
     }
 
-    if (subscriber.municipal_logo) {
-      const resMunicipal = await fetch(subscriber.municipal_logo);
+    if (subscriber.municipalLogo) {
+      const resMunicipal = await fetch(subscriber.municipalLogo);
       const bufMunicipal = await resMunicipal.arrayBuffer();
       doc.image(Buffer.from(bufMunicipal), 500, 0, { width: 50 });
     }
 
-    if (subscriber.administration_logo) {
+    if (subscriber.administrationLogo) {
       doc.y += 30;
     } else {
       doc.y = 20;
@@ -87,7 +87,7 @@ export async function UpdateLocalCns(data: DeclarationPdfData): Promise<Buffer> 
   doc
     .font(LAYOUT.font.body.family)
     .fontSize(LAYOUT.font.body.size)
-    .text(`${subscriber.municipality_name || 'N/A'}`, { align: 'center' })
+    .text(`${subscriber.municipalityName || 'N/A'}`, { align: 'center' })
     .text(`${subscriber.email || 'N/A'}`, { align: 'center' })
     .text(`${subscriber.telephone || 'N/A'}`, { align: 'center' })
     .moveDown(0.5);
@@ -147,7 +147,7 @@ export async function UpdateLocalCns(data: DeclarationPdfData): Promise<Buffer> 
     paragraphGap: 5,
   });
   doc.moveDown(1);
-  doc.text(`${subscriber.municipality_name}/${subscriber.state_acronym}, ${requestDate}`, { align: 'right' });
+  doc.text(`${subscriber.municipalityName}/${subscriber.stateAcronym}, ${requestDate}`, { align: 'right' });
   // === Assinaturas ===
   doc.y = doc.page.height - 80;
 

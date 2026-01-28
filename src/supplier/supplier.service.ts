@@ -10,8 +10,13 @@ export class SupplierService {
   async create(createSupplierDto: CreateSupplierDto, subscriber_id: number) {
     return this.prisma.supplier.create({
       data: {
-        ...createSupplierDto,
-        subscriber_id: subscriber_id
+        name: createSupplierDto.name,
+        tradeName: createSupplierDto.trade_name,
+        cnpj: createSupplierDto.cnpj,
+        postalCode: createSupplierDto.postal_code,
+        city: createSupplierDto.city,
+        state: createSupplierDto.state,
+        subscriberId: subscriber_id,
       },
     });
   }
@@ -21,14 +26,14 @@ export class SupplierService {
     const skip = (safePage - 1) * safeLimit;
 
     const where: any = {
-      subscriber_id,
-      deleted_at: null,
+      subscriberId: subscriber_id,
+      deletedAt: null,
     };
 
     if (term) {
       where.OR = [
         { name: { contains: term, mode: 'insensitive' } },
-        { trade_name: { contains: term, mode: 'insensitive' } },
+        { tradeName: { contains: term, mode: 'insensitive' } },
         { cnpj: { contains: term, mode: 'insensitive' } },
       ];
     }
@@ -40,7 +45,7 @@ export class SupplierService {
           id: true,
           uuid: true,
           name: true,
-          trade_name: true,
+          tradeName: true,
           cnpj: true,
         },
         take: safeLimit,
@@ -63,17 +68,17 @@ export class SupplierService {
 
     return this.prisma.supplier.findMany({
       where: {
-        subscriber_id,
-        deleted_at: null,
+        subscriberId: subscriber_id,
+        deletedAt: null,
         OR: [
           { name: { contains: term, mode: 'insensitive' } },
-          { trade_name: { contains: term, mode: 'insensitive' } },
+          { tradeName: { contains: term, mode: 'insensitive' } },
           { cnpj: { contains: term, mode: 'insensitive' } },
         ],
       },
       include: {
         regulations: {
-          select: { id: true, id_code: true, status: true },
+          select: { id: true, idCode: true, status: true },
         },
       },
       take: 10,
@@ -83,15 +88,15 @@ export class SupplierService {
   }
   async findAll(subscriber_id: number) {
     return this.prisma.supplier.findMany({
-      where: { subscriber_id, deleted_at: null },
+      where: { subscriberId: subscriber_id, deletedAt: null },
       // include: { regulations: true }, // Removed to optimize
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   async findOne(id: number, subscriber_id: number) {
     const supplier = await this.prisma.supplier.findUnique({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
       include: { regulations: true },
     });
 
@@ -102,59 +107,66 @@ export class SupplierService {
   async update(id: number, updateSupplierDto: UpdateSupplierDto, subscriber_id: number) {
     await this.findOne(id, subscriber_id);
     return this.prisma.supplier.update({
-      where: { id, subscriber_id },
-      data: updateSupplierDto,
+      where: { id, subscriberId: subscriber_id },
+      data: {
+        name: updateSupplierDto.name,
+        tradeName: updateSupplierDto.trade_name,
+        cnpj: updateSupplierDto.cnpj,
+        postalCode: updateSupplierDto.postal_code,
+        city: updateSupplierDto.city,
+        state: updateSupplierDto.state,
+      },
     });
   }
 
   async remove(id: number, subscriber_id: number) {
-    const supplier = await this.prisma.supplier.findUnique({ where: { id, subscriber_id } });
-    if (!supplier || supplier.deleted_at) {
+    const supplier = await this.prisma.supplier.findUnique({ where: { id, subscriberId: subscriber_id } });
+    if (!supplier || supplier.deletedAt) {
       throw new NotFoundException(`Supplier #${id} not found`);
     }
 
     return this.prisma.supplier.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: new Date() },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: new Date() },
     });
   }
 
   async restore(id: number, subscriber_id: number) {
-    const supplier = await this.prisma.supplier.findUnique({ where: { id, subscriber_id } });
+    const supplier = await this.prisma.supplier.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!supplier) {
       throw new NotFoundException(`Supplier #${id} not found`);
     }
-    if (!supplier.deleted_at) {
+    if (!supplier.deletedAt) {
       throw new BadRequestException(`Supplier #${id} is not deleted`);
     }
 
     return this.prisma.supplier.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: null },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: null },
     });
   }
 
   async hardDelete(id: number, subscriber_id: number) {
-    const supplier = await this.prisma.supplier.findUnique({ where: { id, subscriber_id } });
+    const supplier = await this.prisma.supplier.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!supplier) {
       throw new NotFoundException(`Supplier #${id} not found`);
     }
 
     return this.prisma.supplier.delete({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
     });
   }
 
   async findAllDeleted(subscriber_id: number) {
     return this.prisma.supplier.findMany({
-      where: { subscriber_id, deleted_at: { not: null } },
-      orderBy: { deleted_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
       select: {
         id: true,
         name: true,
         cnpj: true,
-        deleted_at: true,
-        trade_name: true,
+        deletedAt: true,
+        tradeName: true,
       },
     });
   }

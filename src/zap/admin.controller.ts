@@ -13,16 +13,16 @@ import {
 } from '@nestjs/common';
 import { AuthTokenGuard } from '../auth/guard/auth-token-guard';
 import { TokenPayloadParam } from '../auth/param/token-payload.param';
-import { ZapAdminService } from './zap-admin.service';
+import { ZapService } from './service';
 
 @UseGuards(AuthTokenGuard)
 @Controller('zap-admin')
 export class ZapAdminController {
-  constructor(private readonly zapAdminService: ZapAdminService) { }
+  constructor(private readonly zapService: ZapService) { }
 
   private checkAdminManager(role: string) {
-    if (role !== 'admin_manager') {
-      throw new UnauthorizedException('Apenas admin_manager pode acessar esta rota.');
+    if (role !== 'ADMIN_MANAGER') {
+      throw new UnauthorizedException('Apenas ADMIN_MANAGER pode acessar esta rota.');
     }
   }
 
@@ -33,7 +33,7 @@ export class ZapAdminController {
   @Get('instances')
   async listInstances(@TokenPayloadParam() payload: any) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.listAllInstances();
+    return this.zapService.adminListAllInstances();
   }
 
   @Get('instances/:subscriberId')
@@ -42,7 +42,7 @@ export class ZapAdminController {
     @TokenPayloadParam() payload: any
   ) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.getInstance(subscriberId);
+    return this.zapService.adminGetInstance(subscriberId);
   }
 
   @Post('instances/:subscriberId/connect')
@@ -51,7 +51,7 @@ export class ZapAdminController {
     @TokenPayloadParam() payload: any
   ) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.connectInstance(subscriberId);
+    return this.zapService.adminConnectInstance(subscriberId);
   }
 
   @Delete('instances/:subscriberId/disconnect')
@@ -60,7 +60,7 @@ export class ZapAdminController {
     @TokenPayloadParam() payload: any
   ) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.disconnectInstance(subscriberId);
+    return this.zapService.adminDisconnectInstance(subscriberId);
   }
 
   @Patch('instances/:subscriberId')
@@ -70,7 +70,7 @@ export class ZapAdminController {
     @TokenPayloadParam() payload: any
   ) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.updateInstance(subscriberId, body);
+    return this.zapService.adminUpdateInstance(subscriberId, body);
   }
 
   @Post('instances/:subscriberId/regenerate-key')
@@ -79,7 +79,7 @@ export class ZapAdminController {
     @TokenPayloadParam() payload: any
   ) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.regenerateApiKey(subscriberId);
+    return this.zapService.adminRegenerateApiKey(subscriberId);
   }
 
   // =============================================
@@ -93,7 +93,7 @@ export class ZapAdminController {
     @TokenPayloadParam() payload: any
   ) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.sendMessageAsAdmin(subscriberId, body.phone, body.message);
+    return this.zapService.adminSendMessage(subscriberId, body.phone, body.message);
   }
 
   // =============================================
@@ -103,7 +103,7 @@ export class ZapAdminController {
   @Get('queue/stats')
   async getQueueStats(@TokenPayloadParam() payload: any) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.getQueueStats();
+    return this.zapService.getQueueStats();
   }
 
   @Get('queue/failed')
@@ -112,7 +112,7 @@ export class ZapAdminController {
     @TokenPayloadParam() payload: any
   ) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.getFailedJobs(limit ? parseInt(limit) : 50);
+    return this.zapService.getFailedJobs(limit ? parseInt(limit) : 50);
   }
 
   @Post('queue/retry/:jobId')
@@ -121,12 +121,12 @@ export class ZapAdminController {
     @TokenPayloadParam() payload: any
   ) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.retryFailedJob(jobId);
+    return this.zapService.retryFailedJob(jobId);
   }
 
   @Delete('queue/failed')
   async clearFailedJobs(@TokenPayloadParam() payload: any) {
     this.checkAdminManager(payload.role);
-    return this.zapAdminService.clearFailedJobs();
+    return this.zapService.clearFailedJobs();
   }
 }

@@ -93,95 +93,95 @@ export class UploadService {
     }
   }
 
-async uploadRequirement(
-  file: Express.Multer.File,
-  userId: number,
-  regulationId: number,
-) {
-  const regulation = await this.prisma.regulation.findUnique({
-    where: { id: regulationId },
-  });
+  async uploadRequirement(
+    file: Express.Multer.File,
+    userId: number,
+    regulationId: number,
+  ) {
+    const regulation = await this.prisma.regulation.findUnique({
+      where: { id: regulationId },
+    });
 
-  if (!regulation) {
-    throw new NotFoundException('Regulação não encontrada.');
+    if (!regulation) {
+      throw new NotFoundException('Regulação não encontrada.');
+    }
+
+    const fileExt = path.extname(file.originalname).toLowerCase();
+    const key = `users/${userId}/regulations/${regulationId}/requirements/${randomUUID()}${fileExt}`;
+
+    await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      }),
+    );
+
+    await this.prisma.regulation.update({
+      where: { id: regulationId },
+      data: {
+        urlRequirement: key,
+        history: { increment: 1 },
+      },
+    });
+
+    return {
+      message: 'Upload realizado com sucesso',
+      key,
+    };
   }
-
-  const fileExt = path.extname(file.originalname).toLowerCase();
-  const key = `users/${userId}/regulations/${regulationId}/requirements/${randomUUID()}${fileExt}`;
-
-  await this.s3Client.send(
-    new PutObjectCommand({
-      Bucket: this.bucketName,
-      Key: key,
-      Body: file.buffer,
-      ContentType: file.mimetype,
-    }),
-  );
-
-  await this.prisma.regulation.update({
-    where: { id: regulationId },
-    data: {
-      url_requirement: key,
-      history: { increment: 1 },
-    },
-  });
-
-  return {
-    message: 'Upload realizado com sucesso',
-    key,
-  };
-}
 
 
 
   /**
    * Upload de imagem e atualização do subscriber
    */
-async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
+  async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
 
-  try {
-    if (!file) throw new Error('Nenhum arquivo pending.');
+    try {
+      if (!file) throw new Error('Nenhum arquivo pending.');
 
-    const subscriber = await this.prisma.subscriber.findUnique({ where: { id } });
-    if (!subscriber) throw new NotFoundException(`Assinante #${id} não encontrado.`);
+      const subscriber = await this.prisma.subscriber.findUnique({ where: { id } });
+      if (!subscriber) throw new NotFoundException(`Assinante #${id} não encontrado.`);
 
-    const fileExt = path.extname(file.originalname).toLowerCase();
-    const key = `imagens/${id}/${tipo}-${randomUUID()}${fileExt}`;
+      const fileExt = path.extname(file.originalname).toLowerCase();
+      const key = `imagens/${id}/${tipo}-${randomUUID()}${fileExt}`;
 
-    const command = new PutObjectCommand({
-      Bucket: this.imageBucket,  // ← USA O BUCKET DE IMAGENS
-      Key: key,
-      Body: file.buffer,
-      ContentType: file.mimetype,
-    });
+      const command = new PutObjectCommand({
+        Bucket: this.imageBucket,  // ← USA O BUCKET DE IMAGENS
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      });
 
-    await this.s3Client.send(command);
+      await this.s3Client.send(command);
 
-    const fileUrl = `https://${this.imageBucket}.s3.${this.region}.amazonaws.com/${key}`;
+      const fileUrl = `https://${this.imageBucket}.s3.${this.region}.amazonaws.com/${key}`;
 
-    let updateData: Record<string, any> = {};
-    switch (tipo.toLowerCase()) {
-      case TipoArquivo.ESTADUAL.toLowerCase():
-        updateData.state_logo = fileUrl;
-        break;
-      case TipoArquivo.MUNICIPAL.toLowerCase():
-        updateData.municipal_logo = fileUrl;
-        break;
-      case TipoArquivo.ADMINISTRATION.toLowerCase():
-        updateData.administration_logo = fileUrl;
-        break;
+      let updateData: Record<string, any> = {};
+      switch (tipo.toLowerCase()) {
+        case TipoArquivo.ESTADUAL.toLowerCase():
+          updateData.stateLogo = fileUrl;
+          break;
+        case TipoArquivo.MUNICIPAL.toLowerCase():
+          updateData.municipalLogo = fileUrl;
+          break;
+        case TipoArquivo.ADMINISTRATION.toLowerCase():
+          updateData.administrationLogo = fileUrl;
+          break;
+      }
+
+      return await this.prisma.subscriber.update({
+        where: { id },
+        data: updateData,
+      });
+
+    } catch (error) {
+      console.error('❌ Erro no uploadImage:', error);
+      throw new InternalServerErrorException('Erro ao enviar imagem.');
     }
-
-    return await this.prisma.subscriber.update({
-      where: { id },
-      data: updateData,
-    });
-
-  } catch (error) {
-    console.error('❌ Erro no uploadImage:', error);
-    throw new InternalServerErrorException('Erro ao enviar imagem.');
   }
-}
 
   /**
    * Gera URL de download temporária (assinada)
@@ -217,9 +217,9 @@ async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
       const regulation = await this.prisma.regulation.findUnique({
         where: { id: Number(id) },
         select: {
-          url_requirement: true,
-          url_pre_document: true,
-          url_current_document: true,
+          urlRequirement: true,
+          urlPreDocument: true,
+          urlCurrentDocument: true,
         },
       });
 
@@ -232,11 +232,11 @@ async uploadImage(file: Express.Multer.File, tipo: TipoArquivo, id: number) {
 
 
       if (type === 'requirement') {
-        key = regulation.url_requirement;
+        key = regulation.urlRequirement;
       } else if (type === 'pre') {
-        key = regulation.url_pre_document;
+        key = regulation.urlPreDocument;
       } else if (type === 'current') {
-        key = regulation.url_current_document;
+        key = regulation.urlCurrentDocument;
       } else {
         throw new BadRequestException('Tipo inválido. Use requirement, pre ou current.');
       }

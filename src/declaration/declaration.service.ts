@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { Requerimento1Pdf } from './pdf/requerimento-1';
-import { Requerimento2Pdf } from './pdf/requerimento-2';
 import { AihPdf } from './pdf/aih';
 import { AjudaDeCustoPDf } from './pdf/ajuda-de-custo';
 import { AtulizacaoCadsusPdf } from './pdf/atulizacao-cadsus';
@@ -198,7 +197,7 @@ export class DeclarationService {
 
 
     // const pdfBuffer = await generateRegulationPdf(regulation, copies);
-    const pdfBuffer = await Requerimento2Pdf(regulation);
+    const pdfBuffer = await Requerimento1Pdf(regulation);
     return pdfBuffer; // você pode retornar direto ou salvar num arquivo temporário
   }
 

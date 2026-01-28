@@ -3,12 +3,12 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class TermsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // Criar novo termo de uso (apenas admin_manager)
   async create(data: { version: string; title: string; content: string }) {
     // Verificar se versão já existe
-    const existingVersion = await this.prisma.terms_of_use.findUnique({
+    const existingVersion = await this.prisma.termsOfUse.findUnique({
       where: { version: data.version }
     });
 
@@ -19,37 +19,37 @@ export class TermsService {
       );
     }
 
-    return this.prisma.terms_of_use.create({
+    return this.prisma.termsOfUse.create({
       data: {
         version: data.version,
         title: data.title,
         content: data.content,
-        is_active: false
+        isActive: false
       }
     });
   }
 
   // Listar todos os termos
   async findAll() {
-    return this.prisma.terms_of_use.findMany({
-      where: { deleted_at: null },
-      orderBy: { created_at: 'desc' },
+    return this.prisma.termsOfUse.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         uuid: true,
         version: true,
         title: true,
-        is_active: true,
-        created_at: true,
-        updated_at: true
+        isActive: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
   }
 
   // Buscar termo por ID
   async findOne(id: number) {
-    const term = await this.prisma.terms_of_use.findFirst({
-      where: { id, deleted_at: null }
+    const term = await this.prisma.termsOfUse.findFirst({
+      where: { id, deletedAt: null }
     });
 
     if (!term) {
@@ -61,8 +61,8 @@ export class TermsService {
 
   // Buscar termo ativo (versão atual)
   async findActive() {
-    const term = await this.prisma.terms_of_use.findFirst({
-      where: { is_active: true, deleted_at: null }
+    const term = await this.prisma.termsOfUse.findFirst({
+      where: { isActive: true, deletedAt: null }
     });
 
     if (!term) {
@@ -74,22 +74,22 @@ export class TermsService {
 
   // Atualizar termo
   async update(id: number, data: { title?: string; content?: string }) {
-    const term = await this.prisma.terms_of_use.findFirst({
-      where: { id, deleted_at: null }
+    const term = await this.prisma.termsOfUse.findFirst({
+      where: { id, deletedAt: null }
     });
 
     if (!term) {
       throw new NotFoundException(`Termo de uso #${id} não encontrado`);
     }
 
-    if (term.is_active) {
+    if (term.isActive) {
       throw new HttpException(
         'Não é possível editar um termo ativo. Desative-o primeiro ou crie uma nova versão.',
         HttpStatus.BAD_REQUEST
       );
     }
 
-    return this.prisma.terms_of_use.update({
+    return this.prisma.termsOfUse.update({
       where: { id },
       data: {
         title: data.title ?? term.title,
@@ -100,8 +100,8 @@ export class TermsService {
 
   // Ativar termo (desativa todos os outros)
   async activate(id: number) {
-    const term = await this.prisma.terms_of_use.findFirst({
-      where: { id, deleted_at: null }
+    const term = await this.prisma.termsOfUse.findFirst({
+      where: { id, deletedAt: null }
     });
 
     if (!term) {
@@ -109,15 +109,15 @@ export class TermsService {
     }
 
     // Desativar todos os termos
-    await this.prisma.terms_of_use.updateMany({
-      where: { is_active: true },
-      data: { is_active: false }
+    await this.prisma.termsOfUse.updateMany({
+      where: { isActive: true },
+      data: { isActive: false }
     });
 
     // Ativar o termo selecionado
-    await this.prisma.terms_of_use.update({
+    await this.prisma.termsOfUse.update({
       where: { id },
-      data: { is_active: true }
+      data: { isActive: true }
     });
 
     return {
@@ -128,24 +128,24 @@ export class TermsService {
 
   // Soft delete
   async remove(id: number) {
-    const term = await this.prisma.terms_of_use.findFirst({
-      where: { id, deleted_at: null }
+    const term = await this.prisma.termsOfUse.findFirst({
+      where: { id, deletedAt: null }
     });
 
     if (!term) {
       throw new NotFoundException(`Termo de uso #${id} não encontrado`);
     }
 
-    if (term.is_active) {
+    if (term.isActive) {
       throw new HttpException(
         'Não é possível remover um termo ativo. Desative-o primeiro.',
         HttpStatus.BAD_REQUEST
       );
     }
 
-    return this.prisma.terms_of_use.update({
+    return this.prisma.termsOfUse.update({
       where: { id },
-      data: { deleted_at: new Date() }
+      data: { deletedAt: new Date() }
     });
   }
 
@@ -154,8 +154,8 @@ export class TermsService {
     const professional = await this.prisma.professional.findUnique({
       where: { id: userId },
       select: {
-        accepted_terms: true,
-        accepted_terms_version: true
+        acceptedTerms: true,
+        acceptedTermsVersion: true
       }
     });
 
@@ -163,8 +163,8 @@ export class TermsService {
       throw new NotFoundException('Usuário não encontrado');
     }
 
-    const activeTerm = await this.prisma.terms_of_use.findFirst({
-      where: { is_active: true, deleted_at: null }
+    const activeTerm = await this.prisma.termsOfUse.findFirst({
+      where: { isActive: true, deletedAt: null }
     });
 
     if (!activeTerm) {
@@ -175,13 +175,13 @@ export class TermsService {
     }
 
     const needsAcceptance =
-      !professional.accepted_terms ||
-      professional.accepted_terms_version !== activeTerm.version;
+      !professional.acceptedTerms ||
+      professional.acceptedTermsVersion !== activeTerm.version;
 
     return {
       needs_acceptance: needsAcceptance,
       current_version: activeTerm.version,
-      user_accepted_version: professional.accepted_terms_version,
+      user_accepted_version: professional.acceptedTermsVersion,
       term: needsAcceptance ? {
         id: activeTerm.id,
         version: activeTerm.version,

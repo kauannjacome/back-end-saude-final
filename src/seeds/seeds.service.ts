@@ -52,24 +52,24 @@ export class SeedsService {
 
           await this.prisma.patient.create({
             data: {
-              subscriber_id: subscriberId,
+              subscriberId: subscriberId,
               cpf: row.nu_cpf || '',
               cns: row.nu_cns || null,
 
               // ✔ name corrigido
               name: this.formatName(row.no_cidadao || ''),
 
-              social_name: row.no_social || null,
+              socialName: row.no_social || null,
 
               gender: this.mapGender(row.no_sexo),
               race: this.mapRace(row.co_raca_cor),
               sex: row.no_sexo || null,
 
-              birth_date: this.brDate(row.dt_nascimento),
-              death_date: this.brNullableDate(row.dt_obito),
+              birthDate: this.brDate(row.dt_nascimento),
+              deathDate: this.brNullableDate(row.dt_obito),
 
-              mother_name: row.no_mae || null,
-              father_name: row.no_pai || null,
+              motherName: row.no_mae || null,
+              fatherName: row.no_pai || null,
 
               phone:
                 row.nu_telefone_celular ||
@@ -77,7 +77,7 @@ export class SeedsService {
                 null,
 
               email: row.ds_email || null,
-              postal_code: row.ds_cep || null,
+              postalCode: row.ds_cep || null,
               state: null,
               city: null,
               address: row.ds_logradouro || null,
@@ -87,8 +87,8 @@ export class SeedsService {
 
               nationality: row.co_nacionalidade || null,
               naturalness: row.co_pais_nascimento || null,
-              marital_status: row.co_estado_civil || null,
-              blood_type: row.no_tipo_sanguineo || null,
+              maritalStatus: row.co_estado_civil || null,
+              bloodType: row.no_tipo_sanguineo || null,
             },
           });
 

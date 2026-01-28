@@ -7,7 +7,10 @@
       "Bash(npx nest build:*)",
       "Bash(cd:*)",
       "Bash(npx tsc:*)",
-      "Bash(timeout 15 npm run start:dev)"
+      "Bash(timeout 15 npm run start:dev)",
+      "mcp__ide__getDiagnostics",
+      "Bash(del \"C:\\\\Users\\\\kauan\\\\OneDrive\\\\Área de Trabalho\\\\Projetos\\\\SAUDE\\\\back-end-saude-final\\\\prisma\\\\schema_refactored.prisma\")",
+      "Bash(npm run build:*)"
     ]
   }
 }

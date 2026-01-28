@@ -40,14 +40,14 @@ export class AuthService {
     }
 
     // Verificar se usuário está bloqueado
-    if (professional.is_blocked) {
+    if (professional.isBlocked) {
       throw new HttpException(
         "Conta bloqueada. Solicite o desbloqueio por e-mail, WhatsApp ou contate um administrador.",
         HttpStatus.FORBIDDEN
       );
     }
 
-    if (!professional.password_hash) {
+    if (!professional.passwordHash) {
       throw new HttpException(
         'Usuário não possui senha cadastrada',
         HttpStatus.UNAUTHORIZED,
@@ -56,19 +56,19 @@ export class AuthService {
 
     const passwordIsValid = await this.hashingService.compare(
       signInDto.password,
-      professional.password_hash,
+      professional.passwordHash,
     );
 
     if (!passwordIsValid) {
       // Incrementar tentativas de login
-      const newTryCount = (professional.number_try || 0) + 1;
+      const newTryCount = (professional.numberTry || 0) + 1;
       const shouldBlock = newTryCount >= MAX_LOGIN_ATTEMPTS;
 
       await this.prisma.professional.update({
         where: { id: professional.id },
         data: {
-          number_try: newTryCount,
-          is_blocked: shouldBlock
+          numberTry: newTryCount,
+          isBlocked: shouldBlock
         }
       });
 
@@ -87,23 +87,23 @@ export class AuthService {
     }
 
     // Login correto - resetar contador de tentativas
-    if (professional.number_try && professional.number_try > 0) {
+    if (professional.numberTry && professional.numberTry > 0) {
       await this.prisma.professional.update({
         where: { id: professional.id },
-        data: { number_try: 0 }
+        data: { numberTry: 0 }
       });
     }
 
-    const subscriber = await this.prisma.subscriber.findFirst({
+    const subscriber = professional.subscriberId ? await this.prisma.subscriber.findFirst({
       where: {
-        id: professional.subscriber_id
+        id: professional.subscriberId
       }
-    })
+    }) : null
 
     const token = await this.jwtService.signAsync(
       {
         user_id: professional.id,
-        sub_id: professional.subscriber_id,
+        sub_id: professional.subscriberId,
         role: professional.role
       },
       {
@@ -122,9 +122,9 @@ export class AuthService {
       nome_sub: subscriber?.name,
       pay_sub: subscriber?.payment,
       token: token,
-      is_password_temp: professional.is_password_temp,
-      accepted_terms: professional.accepted_terms,
-      accepted_terms_version: professional.accepted_terms_version
+      is_password_temp: professional.isPasswordTemp,
+      accepted_terms: professional.acceptedTerms,
+      accepted_terms_version: professional.acceptedTermsVersion
     }
   }
 
@@ -137,7 +137,7 @@ export class AuthService {
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
     }
 
-    if (professional.role === 'admin_manager') {
+    if (professional.role === 'ADMIN_MANAGER') {
       throw new HttpException(
         'Administradores não podem redefinir senha por aqui. Contate o suporte ou use a rota administrativa.',
         HttpStatus.FORBIDDEN
@@ -154,8 +154,8 @@ export class AuthService {
     await this.prisma.professional.update({
       where: { id: professional.id },
       data: {
-        reset_token: token,
-        reset_token_expiry: expiry
+        resetToken: token,
+        resetTokenExpiry: expiry
       }
     });
 
@@ -167,8 +167,8 @@ export class AuthService {
   async resetPassword(token: string, newPassword: string) {
     const professional = await this.prisma.professional.findFirst({
       where: {
-        reset_token: token,
-        reset_token_expiry: {
+        resetToken: token,
+        resetTokenExpiry: {
           gt: new Date()
         }
       }
@@ -183,9 +183,9 @@ export class AuthService {
     await this.prisma.professional.update({
       where: { id: professional.id },
       data: {
-        password_hash: passwordHash,
-        reset_token: null,
-        reset_token_expiry: null
+        passwordHash: passwordHash,
+        resetToken: null,
+        resetTokenExpiry: null
       }
     });
 
@@ -204,12 +204,12 @@ export class AuthService {
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
     }
 
-    if (!professional.is_blocked) {
+    if (!professional.isBlocked) {
       throw new HttpException('Conta não está bloqueada', HttpStatus.BAD_REQUEST);
     }
 
     // Verificar se excedeu limite de tentativas de desbloqueio
-    if ((professional.number_unlock || 0) >= MAX_UNLOCK_ATTEMPTS) {
+    if ((professional.numberUnlock || 0) >= MAX_UNLOCK_ATTEMPTS) {
       throw new HttpException(
         'Limite de tentativas de desbloqueio atingido. Contate um administrador.',
         HttpStatus.FORBIDDEN
@@ -226,8 +226,8 @@ export class AuthService {
     await this.prisma.professional.update({
       where: { id: professional.id },
       data: {
-        reset_token: token,
-        reset_token_expiry: expiry
+        resetToken: token,
+        resetTokenExpiry: expiry
       }
     });
 
@@ -239,8 +239,8 @@ export class AuthService {
   async confirmUnlockByEmail(token: string) {
     const professional = await this.prisma.professional.findFirst({
       where: {
-        reset_token: token,
-        reset_token_expiry: {
+        resetToken: token,
+        resetTokenExpiry: {
           gt: new Date()
         }
       }
@@ -250,12 +250,12 @@ export class AuthService {
       throw new HttpException('Token inválido ou expirado', HttpStatus.BAD_REQUEST);
     }
 
-    if (!professional.is_blocked) {
+    if (!professional.isBlocked) {
       throw new HttpException('Conta não está bloqueada', HttpStatus.BAD_REQUEST);
     }
 
     // Verificar se ainda pode desbloquear por email
-    if ((professional.number_unlock || 0) >= MAX_UNLOCK_ATTEMPTS) {
+    if ((professional.numberUnlock || 0) >= MAX_UNLOCK_ATTEMPTS) {
       throw new HttpException(
         'Limite de tentativas de desbloqueio atingido. Contate um administrador.',
         HttpStatus.FORBIDDEN
@@ -266,11 +266,11 @@ export class AuthService {
     await this.prisma.professional.update({
       where: { id: professional.id },
       data: {
-        is_blocked: false,
-        number_try: 0,
-        number_unlock: (professional.number_unlock || 0) + 1,
-        reset_token: null,
-        reset_token_expiry: null
+        isBlocked: false,
+        numberTry: 0,
+        numberUnlock: (professional.numberUnlock || 0) + 1,
+        resetToken: null,
+        resetTokenExpiry: null
       }
     });
 
@@ -290,16 +290,16 @@ export class AuthService {
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
     }
 
-    if (!professional.is_blocked) {
+    if (!professional.isBlocked) {
       throw new HttpException('Conta não está bloqueada', HttpStatus.BAD_REQUEST);
     }
 
-    if (!professional.phone_number) {
+    if (!professional.phoneNumber) {
       throw new HttpException('Usuário não possui telefone cadastrado', HttpStatus.BAD_REQUEST);
     }
 
     // Verificar se excedeu limite de tentativas de desbloqueio
-    if ((professional.number_unlock || 0) >= MAX_UNLOCK_ATTEMPTS) {
+    if ((professional.numberUnlock || 0) >= MAX_UNLOCK_ATTEMPTS) {
       throw new HttpException(
         'Limite de tentativas de desbloqueio atingido. Contate um administrador.',
         HttpStatus.FORBIDDEN
@@ -316,8 +316,8 @@ export class AuthService {
     await this.prisma.professional.update({
       where: { id: professional.id },
       data: {
-        reset_token: code,
-        reset_token_expiry: expiry
+        resetToken: code,
+        resetTokenExpiry: expiry
       }
     });
 
@@ -325,8 +325,8 @@ export class AuthService {
     const message = `🔓 *Código de Desbloqueio*\n\nSeu código para desbloquear a conta é:\n\n*${code}*\n\nEste código expira em 15 minutos.\n\nSe você não solicitou este desbloqueio, ignore esta mensagem.`;
 
     await this.zapService.sendMessage(
-      professional.subscriber_id,
-      professional.phone_number,
+      professional.subscriberId!,
+      professional.phoneNumber,
       message
     );
 
@@ -337,8 +337,8 @@ export class AuthService {
     const professional = await this.prisma.professional.findFirst({
       where: {
         email,
-        reset_token: code.toUpperCase(),
-        reset_token_expiry: {
+        resetToken: code.toUpperCase(),
+        resetTokenExpiry: {
           gt: new Date()
         }
       }
@@ -348,12 +348,12 @@ export class AuthService {
       throw new HttpException('Código inválido ou expirado', HttpStatus.BAD_REQUEST);
     }
 
-    if (!professional.is_blocked) {
+    if (!professional.isBlocked) {
       throw new HttpException('Conta não está bloqueada', HttpStatus.BAD_REQUEST);
     }
 
     // Verificar se ainda pode desbloquear por WhatsApp
-    if ((professional.number_unlock || 0) >= MAX_UNLOCK_ATTEMPTS) {
+    if ((professional.numberUnlock || 0) >= MAX_UNLOCK_ATTEMPTS) {
       throw new HttpException(
         'Limite de tentativas de desbloqueio atingido. Contate um administrador.',
         HttpStatus.FORBIDDEN
@@ -364,11 +364,11 @@ export class AuthService {
     await this.prisma.professional.update({
       where: { id: professional.id },
       data: {
-        is_blocked: false,
-        number_try: 0,
-        number_unlock: (professional.number_unlock || 0) + 1,
-        reset_token: null,
-        reset_token_expiry: null
+        isBlocked: false,
+        numberTry: 0,
+        numberUnlock: (professional.numberUnlock || 0) + 1,
+        resetToken: null,
+        resetTokenExpiry: null
       }
     });
 
@@ -379,8 +379,8 @@ export class AuthService {
   // DESBLOQUEIO POR ADMIN (SEM LIMITE)
   // =============================================
   async adminUnlock(professionalId: number, adminRole: string) {
-    // Apenas admin_manager ou admin_municipal podem desbloquear
-    if (adminRole !== 'admin_manager' && adminRole !== 'admin_municipal') {
+    // Apenas ADMIN_MANAGER ou ADMIN_MUNICIPAL podem desbloquear
+    if (adminRole !== 'ADMIN_MANAGER' && adminRole !== 'ADMIN_MUNICIPAL') {
       throw new HttpException(
         'Apenas administradores podem desbloquear contas',
         HttpStatus.FORBIDDEN
@@ -395,15 +395,15 @@ export class AuthService {
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
     }
 
-    // Admin pode desbloquear mesmo se number_unlock >= 10
+    // Admin pode desbloquear mesmo se numberUnlock >= 10
     await this.prisma.professional.update({
       where: { id: professionalId },
       data: {
-        is_blocked: false,
-        number_try: 0,
-        number_unlock: 0,
-        reset_token: null,
-        reset_token_expiry: null
+        isBlocked: false,
+        numberTry: 0,
+        numberUnlock: 0,
+        resetToken: null,
+        resetTokenExpiry: null
       }
     });
 
@@ -418,11 +418,11 @@ export class AuthService {
       where: { id: userId }
     });
 
-    if (!professional || !professional.password_hash) {
+    if (!professional || !professional.passwordHash) {
       return false;
     }
 
-    return await this.hashingService.compare(password, professional.password_hash);
+    return await this.hashingService.compare(password, professional.passwordHash);
   }
 
   async updatePassword(userId: number, currentPassword: string, newPassword: string) {
@@ -434,13 +434,13 @@ export class AuthService {
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
     }
 
-    if (!professional.password_hash) {
+    if (!professional.passwordHash) {
       throw new HttpException('Usuário não possui senha cadastrada', HttpStatus.BAD_REQUEST);
     }
 
     const isCurrentPasswordValid = await this.hashingService.compare(
       currentPassword,
-      professional.password_hash
+      professional.passwordHash
     );
 
     if (!isCurrentPasswordValid) {
@@ -456,8 +456,8 @@ export class AuthService {
     await this.prisma.professional.update({
       where: { id: userId },
       data: {
-        password_hash: newPasswordHash,
-        is_password_temp: false
+        passwordHash: newPasswordHash,
+        isPasswordTemp: false
       }
     });
 
@@ -476,9 +476,9 @@ export class AuthService {
     await this.prisma.professional.update({
       where: { id: userId },
       data: {
-        accepted_terms: true,
-        accepted_terms_at: new Date(),
-        accepted_terms_version: version
+        acceptedTerms: true,
+        acceptedTermsAt: new Date(),
+        acceptedTermsVersion: version
       }
     });
 
@@ -493,9 +493,9 @@ export class AuthService {
     const professional = await this.prisma.professional.findUnique({
       where: { id: userId },
       select: {
-        accepted_terms: true,
-        accepted_terms_at: true,
-        accepted_terms_version: true
+        acceptedTerms: true,
+        acceptedTermsAt: true,
+        acceptedTermsVersion: true
       }
     });
 
@@ -504,9 +504,9 @@ export class AuthService {
     }
 
     return {
-      accepted_terms: professional.accepted_terms,
-      accepted_terms_at: professional.accepted_terms_at,
-      accepted_terms_version: professional.accepted_terms_version
+      accepted_terms: professional.acceptedTerms,
+      accepted_terms_at: professional.acceptedTermsAt,
+      accepted_terms_version: professional.acceptedTermsVersion
     };
   }
 
@@ -514,38 +514,38 @@ export class AuthService {
     let professional;
 
     if (role) {
-      if (role === 'admin_municipal') {
+      if (role === 'ADMIN_MUNICIPAL') {
         professional = await this.prisma.professional.findFirst({
           where: {
-            subscriber_id: Number(subscriberId),
-            role: { in: ['admin_municipal', 'admin_manager'] }
+            subscriberId: Number(subscriberId),
+            role: { in: ['ADMIN_MUNICIPAL', 'ADMIN_MANAGER'] }
           },
-          orderBy: { created_at: 'asc' }
+          orderBy: { createdAt: 'asc' }
         });
       } else {
         professional = await this.prisma.professional.findFirst({
           where: {
-            subscriber_id: Number(subscriberId),
+            subscriberId: Number(subscriberId),
             role: role as any
           },
-          orderBy: { created_at: 'asc' }
+          orderBy: { createdAt: 'asc' }
         });
       }
     } else {
       professional = await this.prisma.professional.findFirst({
         where: {
-          subscriber_id: Number(subscriberId),
-          role: 'admin_municipal'
+          subscriberId: Number(subscriberId),
+          role: 'ADMIN_MUNICIPAL'
         },
-        orderBy: { created_at: 'asc' }
+        orderBy: { createdAt: 'asc' }
       });
 
       if (!professional) {
         professional = await this.prisma.professional.findFirst({
           where: {
-            subscriber_id: Number(subscriberId),
+            subscriberId: Number(subscriberId),
           },
-          orderBy: { created_at: 'asc' }
+          orderBy: { createdAt: 'asc' }
         });
       }
     }
@@ -561,7 +561,7 @@ export class AuthService {
           where: { id: Number(subscriberId) }
         });
 
-        const targetRole = role || 'admin_municipal';
+        const targetRole = role || 'ADMIN_MUNICIPAL';
 
         const token = await this.jwtService.signAsync(
           {
@@ -603,7 +603,7 @@ export class AuthService {
     const token = await this.jwtService.signAsync(
       {
         user_id: professional.id,
-        sub_id: professional.subscriber_id,
+        sub_id: professional.subscriberId,
         role: finalRole
       },
       {

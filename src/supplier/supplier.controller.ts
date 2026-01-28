@@ -71,8 +71,8 @@ export class SupplierController {
 
   @Delete(':id/hard')
   hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    if (TokenPayload.role !== 'ADMIN_MANAGER') {
+      throw new ForbiddenException('Apenas ADMIN_MANAGER pode remover itens permanentemente.');
     }
     return this.supplierService.hardDelete(+id, Number(TokenPayload.sub_id));
   }

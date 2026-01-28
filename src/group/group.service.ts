@@ -10,8 +10,9 @@ export class GroupService {
   async create(createGroupDto: CreateGroupDto, subscriber_id: number) {
     return this.prisma.group.create({
       data: {
-        ...createGroupDto,
-        subscriber_id: subscriber_id
+        name: createGroupDto.name,
+        description: createGroupDto.description,
+        subscriberId: createGroupDto.subscriber_id,
       },
     });
   }
@@ -22,8 +23,8 @@ export class GroupService {
     const skip = (safePage - 1) * safeLimit;
 
     const where: any = {
-      subscriber_id,
-      deleted_at: null,
+      subscriberId: subscriber_id,
+      deletedAt: null,
     };
 
     if (term) {
@@ -61,8 +62,8 @@ export class GroupService {
 
     return this.prisma.group.findMany({
       where: {
-        subscriber_id,
-        deleted_at: null,
+        subscriberId: subscriber_id,
+        deletedAt: null,
         OR: [
           { name: { contains: term, mode: 'insensitive' } },
           { description: { contains: term, mode: 'insensitive' } },
@@ -80,15 +81,15 @@ export class GroupService {
   async findAll(subscriber_id: number) {
     return this.prisma.group.findMany({
       where: {
-        subscriber_id,
-        deleted_at: null,
+        subscriberId: subscriber_id,
+        deletedAt: null,
       },
       select: {
         id: true,
         name: true,
       },
       orderBy: {
-        created_at: 'desc',
+        createdAt: 'desc',
       },
     });
   }
@@ -96,7 +97,7 @@ export class GroupService {
 
   async findOne(id: number, subscriber_id: number) {
     const group = await this.prisma.group.findUnique({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
       include: { cares: true },
     });
 
@@ -107,58 +108,62 @@ export class GroupService {
   async update(id: number, updateGroupDto: UpdateGroupDto, subscriber_id: number) {
     await this.findOne(id, subscriber_id);
     return this.prisma.group.update({
-      where: { id, subscriber_id },
-      data: updateGroupDto,
+      where: { id, subscriberId: subscriber_id },
+      data: {
+        name: updateGroupDto.name,
+        description: updateGroupDto.description,
+        subscriberId: updateGroupDto.subscriber_id,
+      },
     });
   }
 
   async remove(id: number, subscriber_id: number) {
-    const group = await this.prisma.group.findUnique({ where: { id, subscriber_id } });
-    if (!group || group.deleted_at) {
+    const group = await this.prisma.group.findUnique({ where: { id, subscriberId: subscriber_id } });
+    if (!group || group.deletedAt) {
       throw new NotFoundException(`Group #${id} not found`);
     }
 
     return this.prisma.group.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: new Date() },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: new Date() },
     });
   }
 
   async restore(id: number, subscriber_id: number) {
-    const group = await this.prisma.group.findUnique({ where: { id, subscriber_id } });
+    const group = await this.prisma.group.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!group) {
       throw new NotFoundException(`Group #${id} not found`);
     }
-    if (!group.deleted_at) {
+    if (!group.deletedAt) {
       throw new BadRequestException(`Group #${id} is not deleted`);
     }
 
     return this.prisma.group.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: null },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: null },
     });
   }
 
   async hardDelete(id: number, subscriber_id: number) {
-    const group = await this.prisma.group.findUnique({ where: { id, subscriber_id } });
+    const group = await this.prisma.group.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!group) {
       throw new NotFoundException(`Group #${id} not found`);
     }
 
     return this.prisma.group.delete({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
     });
   }
 
   async findAllDeleted(subscriber_id: number) {
     return this.prisma.group.findMany({
-      where: { subscriber_id, deleted_at: { not: null } },
-      orderBy: { deleted_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
       select: {
         id: true,
         name: true,
         description: true,
-        deleted_at: true,
+        deletedAt: true,
       },
     });
   }

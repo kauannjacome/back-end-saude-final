@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { PrismaService } from '../prisma/prisma.service';
-import { notification_type, Prisma } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -85,9 +85,9 @@ export class NotificationService implements OnModuleInit {
     // Buscar todos os admin_municipal do subscriber
     const adminMunicipals = await this.prisma.professional.findMany({
       where: {
-        subscriber_id: subscriberId,
-        role: 'admin_municipal',
-        deleted_at: null,
+        subscriberId: subscriberId,
+        role: 'ADMIN_MUNICIPAL',
+        deletedAt: null,
       },
       select: { id: true }
     });
@@ -105,8 +105,8 @@ export class NotificationService implements OnModuleInit {
   private async checkScheduledDates(subscriberFilter: any) {
     const regulations = await this.prisma.regulation.findMany({
       where: {
-        scheduled_date: { not: null },
-        status: { in: ['in_progress', 'approved'] },
+        scheduledDate: { not: null },
+        status: { in: ['IN_PROGRESS', 'APPROVED'] },
         subscriber: subscriberFilter,
       },
       include: {
@@ -119,36 +119,34 @@ export class NotificationService implements OnModuleInit {
     const daysToNotify = [5, 4, 3, 2, 1, 0];
 
     for (const reg of regulations) {
-      if (!reg.scheduled_date) continue;
+      if (!reg.scheduledDate) continue;
 
       const today = dayjs().tz(this.FORTALEZA_TZ).startOf('day');
-      const scheduled = dayjs(reg.scheduled_date).tz(this.FORTALEZA_TZ).startOf('day');
+      const scheduled = dayjs(reg.scheduledDate).tz(this.FORTALEZA_TZ).startOf('day');
       const diffDays = scheduled.diff(today, 'day');
 
       if (daysToNotify.includes(diffDays)) {
         const milestone = `prazo_${diffDays}_dias`;
         const title = diffDays === 0 ? `Prazo vence hoje` : `Prazo vence em ${diffDays} dias`;
-        const caresSummary = reg.cares?.map(c => c.care.name).join(', ') || 'Sem procedimentos';
-        const patientName = reg.patient?.name || 'Paciente não identificado';
+        const caresSummary = (reg as any).cares?.map((c: any) => c.care.name).join(', ') || 'Sem procedimentos';
+        const patientName = (reg as any).patient?.name || 'Paciente não identificado';
         const message = `${patientName} - ${caresSummary}`;
 
         // Buscar profissionais alvo
-        const targetProfessionals = await this.getTargetProfessionals(reg.subscriber_id, reg.analyzed_id);
+        const targetProfessionals = await this.getTargetProfessionals(reg.subscriberId, reg.analyzedId);
 
         // Criar notificação para cada profissional alvo
         for (const professionalId of targetProfessionals) {
           await this.createNotificationIfNotExists({
-            subscriberId: reg.subscriber_id,
+            subscriberId: reg.subscriberId,
             regulationId: reg.id,
             title,
             message,
-            type: notification_type.PRAZO,
-            milestone,
+            type: NotificationType.PRAZO,
             professionalId,
             patientName,
-            caresSummary,
             daysCount: diffDays,
-            scheduledDate: reg.scheduled_date
+            scheduledDate: reg.scheduledDate
           });
         }
       }
@@ -158,8 +156,8 @@ export class NotificationService implements OnModuleInit {
   private async checkPriorities(subscriberFilter: any) {
     const regulations = await this.prisma.regulation.findMany({
       where: {
-        priority: { in: ['urgencia', 'emergencia'] },
-        status: { in: ['in_progress'] },
+        priority: { in: ['URGENCY', 'EMERGENCY'] },
+        status: { in: ['IN_PROGRESS'] },
         subscriber: subscriberFilter,
       },
       include: {
@@ -172,31 +170,29 @@ export class NotificationService implements OnModuleInit {
 
     for (const reg of regulations) {
       const today = dayjs().tz(this.FORTALEZA_TZ).startOf('day');
-      const created = dayjs(reg.created_at).tz(this.FORTALEZA_TZ).startOf('day');
+      const created = dayjs(reg.createdAt).tz(this.FORTALEZA_TZ).startOf('day');
       const diffDays = today.diff(created, 'day');
 
       if (daysToNotify.includes(diffDays)) {
         const milestone = `prioridade_${diffDays}_dias`;
         const title = `Urgência pendente há ${diffDays} dias`;
-        const caresSummary = reg.cares?.map(c => c.care.name).join(', ') || 'Sem procedimentos';
-        const patientName = reg.patient?.name || 'Paciente não identificado';
+        const caresSummary = (reg as any).cares?.map((c: any) => c.care.name).join(', ') || 'Sem procedimentos';
+        const patientName = (reg as any).patient?.name || 'Paciente não identificado';
         const message = `${patientName} - ${caresSummary}`;
 
         // Buscar profissionais alvo
-        const targetProfessionals = await this.getTargetProfessionals(reg.subscriber_id, reg.analyzed_id);
+        const targetProfessionals = await this.getTargetProfessionals(reg.subscriberId, reg.analyzedId);
 
         // Criar notificação para cada profissional alvo
         for (const professionalId of targetProfessionals) {
           await this.createNotificationIfNotExists({
-            subscriberId: reg.subscriber_id,
+            subscriberId: reg.subscriberId,
             regulationId: reg.id,
             title,
             message,
-            type: notification_type.PRIORIDADE,
-            milestone,
+            type: NotificationType.PRIORIDADE,
             professionalId,
             patientName,
-            caresSummary,
             daysCount: diffDays,
             priority: reg.priority ?? undefined
           });
@@ -210,55 +206,51 @@ export class NotificationService implements OnModuleInit {
     regulationId: number;
     title: string;
     message: string;
-    type: notification_type;
-    milestone: string;
+    type: NotificationType;
     professionalId: number;
     patientName?: string;
-    caresSummary?: string;
     daysCount?: number;
     scheduledDate?: Date;
-    priority?: Prisma.notificationCreateInput['priority'];
+    priority?: Prisma.NotificationCreateInput['priority'];
   }) {
     const exists = await this.prisma.notification.findFirst({
       where: {
-        regulation_id: params.regulationId,
-        milestone: params.milestone,
-        professional_id: params.professionalId
+        regulationId: params.regulationId,
+        daysCount: params.daysCount,
+        type: params.type,
+        professionalId: params.professionalId
       },
     });
 
     if (!exists) {
       await this.prisma.notification.create({
         data: {
-          subscriber_id: params.subscriberId,
-          regulation_id: params.regulationId,
-          professional_id: params.professionalId,
+          subscriberId: params.subscriberId,
+          regulationId: params.regulationId,
+          professionalId: params.professionalId,
           title: params.title,
           message: params.message,
           type: params.type,
-          milestone: params.milestone,
-          patient_name: params.patientName,
-          cares_summary: params.caresSummary,
-          days_count: params.daysCount,
-          scheduled_date: params.scheduledDate,
+          patientName: params.patientName,
+          daysCount: params.daysCount,
+          scheduledDate: params.scheduledDate,
           priority: params.priority,
-          is_read: false,
-          viewed_by: [],
+          readAt: null,
         },
       });
-      this.logger.log(`Notificação criada para regulation ${params.regulationId} - professional ${params.professionalId} - ${params.milestone}`);
+      this.logger.log(`Notificação criada para regulation ${params.regulationId} - professional ${params.professionalId}`);
     }
   }
 
   async getNotificationsForUser(subscriberId: number, professionalId: number) {
     const notifications = await this.prisma.notification.findMany({
       where: {
-        subscriber_id: subscriberId,
-        deleted_at: null,
-        professional_id: professionalId,
+        subscriberId: subscriberId,
+        deletedAt: null,
+        professionalId: professionalId,
       },
       orderBy: {
-        created_at: 'desc'
+        createdAt: 'desc'
       },
       select: {
         id: true,
@@ -266,13 +258,11 @@ export class NotificationService implements OnModuleInit {
         title: true,
         message: true,
         type: true,
-        milestone: true,
-        created_at: true,
-        is_read: true,
-        patient_name: true,
-        cares_summary: true,
-        days_count: true,
-        scheduled_date: true,
+        createdAt: true,
+        readAt: true,
+        patientName: true,
+        daysCount: true,
+        scheduledDate: true,
         priority: true
       }
     });
@@ -294,36 +284,21 @@ export class NotificationService implements OnModuleInit {
     // Buscar notificações não lidas
     const unreadNotifications = await this.prisma.notification.findMany({
       where: {
-        subscriber_id: subscriberId,
-        professional_id: professionalId,
-        is_read: false
+        subscriberId: subscriberId,
+        professionalId: professionalId,
+        readAt: null
       },
-      select: { id: true, viewed_by: true }
+      select: { id: true }
     });
 
-    const now = dayjs().tz(this.FORTALEZA_TZ).toISOString();
+    const now = new Date();
 
-    // Atualizar cada notificação adicionando o registro de visualização
+    // Atualizar cada notificação marcando como lida
     for (const notification of unreadNotifications) {
-      const currentViewedBy = (notification.viewed_by as unknown as ViewedByEntry[]) || [];
-
-      // Verificar se já existe registro deste profissional
-      const alreadyViewed = currentViewedBy.some(v => v.professional_id === professionalId);
-
-      if (!alreadyViewed) {
-        currentViewedBy.push({
-          professional_id: professionalId,
-          name: professional.name || 'Sem nome',
-          viewed_at: now
-        });
-      }
-
       await this.prisma.notification.update({
         where: { id: notification.id },
         data: {
-          is_read: true,
-          read_at: new Date(),
-          viewed_by: currentViewedBy as unknown as Prisma.InputJsonValue
+          readAt: now,
         }
       });
     }
@@ -334,12 +309,12 @@ export class NotificationService implements OnModuleInit {
   async clearAll(subscriberId: number, professionalId: number) {
     const result = await this.prisma.notification.updateMany({
       where: {
-        subscriber_id: subscriberId,
-        professional_id: professionalId,
-        deleted_at: null
+        subscriberId: subscriberId,
+        professionalId: professionalId,
+        deletedAt: null
       },
       data: {
-        deleted_at: new Date()
+        deletedAt: new Date()
       }
     });
     return { success: true, count: result.count };
@@ -358,22 +333,20 @@ export class NotificationService implements OnModuleInit {
   async getNotificationViews(subscriberId: number) {
     const notifications = await this.prisma.notification.findMany({
       where: {
-        subscriber_id: subscriberId,
-        deleted_at: null,
+        subscriberId: subscriberId,
+        deletedAt: null,
       },
       orderBy: {
-        created_at: 'desc'
+        createdAt: 'desc'
       },
       select: {
         id: true,
         uuid: true,
         title: true,
-        message: true,
         type: true,
-        created_at: true,
-        is_read: true,
-        viewed_by: true,
-        patient_name: true,
+        createdAt: true,
+        readAt: true,
+        patientName: true,
         professional: {
           select: {
             id: true,
@@ -386,7 +359,15 @@ export class NotificationService implements OnModuleInit {
 
     return {
       notifications: notifications.map(n => {
-        const viewedBy = (n.viewed_by as unknown as ViewedByEntry[]) || [];
+        const viewedBy: ViewedByEntry[] = [];
+        if (n.readAt) {
+          viewedBy.push({
+            professional_id: n.professional.id,
+            name: n.professional.name || 'Sem nome',
+            viewed_at: n.readAt.toISOString()
+          });
+        }
+
         return {
           ...n,
           viewed_by: viewedBy,
@@ -404,16 +385,15 @@ export class NotificationService implements OnModuleInit {
     const notification = await this.prisma.notification.findFirst({
       where: {
         id: notificationId,
-        subscriber_id: subscriberId,
+        subscriberId: subscriberId,
       },
       select: {
         id: true,
         uuid: true,
-        title: true,
         message: true,
         type: true,
-        created_at: true,
-        viewed_by: true,
+        createdAt: true,
+        readAt: true,
         professional: {
           select: {
             id: true,
@@ -428,7 +408,15 @@ export class NotificationService implements OnModuleInit {
       return null;
     }
 
-    const viewedBy = (notification.viewed_by as unknown as ViewedByEntry[]) || [];
+    const viewedBy: ViewedByEntry[] = [];
+    if (notification.readAt) {
+      viewedBy.push({
+        professional_id: notification.professional.id,
+        name: notification.professional.name || 'Sem nome',
+        viewed_at: notification.readAt.toISOString()
+      });
+    }
+
     return {
       ...notification,
       viewed_by: viewedBy,

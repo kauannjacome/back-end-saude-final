@@ -1,1 +1,43 @@
-export class Patient {}
+import { Sex } from '@prisma/client';
+
+export class Patient {
+  id: number;
+  uuid: string;
+  name: string;
+  nameNormalized: string | null;
+  socialName: string | null;
+  cpf: string;
+  cns: string | null;
+  rg: string | null;
+  gender: string | null;
+  race: string | null;
+  sex: Sex;
+  birthDate: Date;
+  deathDate: Date | null;
+  motherName: string | null;
+  fatherName: string | null;
+  phone: string | null;
+  email: string | null;
+  postalCode: string | null;
+  state: string | null;
+  city: string | null;
+  address: string | null;
+  number: string | null;
+  complement: string | null;
+  neighborhood: string | null;
+  nationality: string | null;
+  naturalness: string | null;
+  maritalStatus: string | null;
+  bloodType: string | null;
+  passwordHash: string | null;
+  isPasswordTemp: boolean;
+  numberTry: number;
+  isBlocked: boolean;
+  acceptedTerms: boolean;
+  acceptedTermsAt: Date | null;
+  acceptedTermsVersion: string | null;
+  subscriberId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}

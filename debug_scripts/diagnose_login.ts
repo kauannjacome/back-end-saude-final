@@ -20,14 +20,14 @@ async function main() {
   }
 
   console.log(`✅ User found: ${user.name} (ID: ${user.id})`);
-  console.log(`🔑 Stored Hash: ${user.password_hash}`);
+  console.log(`🔑 Stored Hash: ${user.passwordHash}`);
 
-  if (!user.password_hash) {
-    console.error('❌ User has no password_hash!');
+  if (!user.passwordHash) {
+    console.error('❌ User has no passwordHash!');
     return;
   }
 
-  const isValid = await bcrypt.compare(password, user.password_hash);
+  const isValid = await bcrypt.compare(password, user.passwordHash);
 
   if (isValid) {
     console.log('✅ Password "123456" matches the stored hash!');

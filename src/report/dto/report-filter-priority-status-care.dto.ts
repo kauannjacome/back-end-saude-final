@@ -2,8 +2,8 @@ import { IsDateString, IsEnum, IsInt, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 export enum PriorityEnum {
   eletivo = 'eletivo',
-  urgencia = 'urgencia',
-  emergencia = 'emergencia',
+  urgencia = 'URGENCY',
+  emergencia = 'EMERGENCY',
 }
 export class ReportFilterPriorityStatusCareDto {
   @IsOptional()
@@ -25,7 +25,7 @@ export class ReportFilterPriorityStatusCareDto {
   })
   priority?: PriorityEnum; // ✅ restringe aos valores do enum
 
-   @IsOptional()
+  @IsOptional()
   @IsDateString()
   start_date?: string; // 👈 data inicial (ISO string, ex: "2025-01-01")
 

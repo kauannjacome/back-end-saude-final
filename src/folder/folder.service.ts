@@ -11,10 +11,13 @@ export class FolderService {
   async create(createFolderDto: CreateFolderDto, subscriber_id: number) {
     return this.prisma.folder.create({
       data: {
-        ...createFolderDto,
-        subscriber_id: subscriber_id,
-        start_date: createFolderDto.start_date ? new Date(createFolderDto.start_date) : null,
-        end_date: createFolderDto.end_date ? new Date(createFolderDto.end_date) : null,
+        name: createFolderDto.name,
+        idCode: createFolderDto.id_code,
+        description: createFolderDto.description,
+        responsibleId: createFolderDto.responsible_id,
+        subscriberId: subscriber_id,
+        startDate: createFolderDto.start_date ? new Date(createFolderDto.start_date) : null,
+        endDate: createFolderDto.end_date ? new Date(createFolderDto.end_date) : null,
       },
     });
   }
@@ -25,8 +28,8 @@ export class FolderService {
     const skip = (safePage - 1) * safeLimit;
 
     const where: any = {
-      subscriber_id,
-      deleted_at: null,
+      subscriberId: subscriber_id,
+      deletedAt: null,
     };
 
     if (term) {
@@ -49,7 +52,7 @@ export class FolderService {
               uuid: true,
               cpf: true,
               name: true,
-              name_normalized: true,
+              nameNormalized: true,
               cargo: true,
               sex: true,
             }
@@ -74,8 +77,8 @@ export class FolderService {
 
   async findAll(subscriber_id: number) {
     return this.prisma.folder.findMany({
-      where: { subscriber_id, deleted_at: null },
-      orderBy: { created_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         name: true,
@@ -91,15 +94,15 @@ export class FolderService {
       select: {
         id: true,
         uuid: true,
-        subscriber_id: true,
+        subscriberId: true,
         name: true,
-        id_code: true,
+        idCode: true,
         description: true,
-        responsible_id: true,
-        start_date: true,
-        end_date: true,
-        created_at: true,
-        updated_at: true,
+        responsibleId: true,
+        startDate: true,
+        endDate: true,
+        createdAt: true,
+        updatedAt: true,
 
         responsible: {
           select: {
@@ -111,31 +114,31 @@ export class FolderService {
         },
 
         regulations: {
-          where: { deleted_at: null },
-          orderBy: { created_at: 'desc' },
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'desc' },
           select: {
-            id_code: true,
-            patient_id: true,
+            idCode: true,
+            patientId: true,
             status: true,
             notes: true,
-            clinical_indication: true,
+            clinicalIndication: true,
             priority: true,
-            type_declaration: true,
+            typeDeclaration: true,
 
             patient: {
               select: {
                 cpf: true,
                 cns: true,
                 name: true,
-                social_name: true,
+                socialName: true,
               },
             },
 
             cares: {
               select: {
                 id: true,
-                care_id: true,
-                regulation_id: true,
+                careId: true,
+                regulationId: true,
                 quantity: true,
                 care: {
                   select: {
@@ -171,7 +174,7 @@ export class FolderService {
 
   async findOne(id: number, subscriber_id: number) {
     const folder = await this.prisma.folder.findUnique({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
       include: { regulations: true, responsible: true, },
     });
 
@@ -182,58 +185,66 @@ export class FolderService {
   async update(id: number, updateFolderDto: UpdateFolderDto, subscriber_id: number) {
     await this.findOne(id, subscriber_id);
     return this.prisma.folder.update({
-      where: { id, subscriber_id },
-      data: updateFolderDto,
+      where: { id, subscriberId: subscriber_id },
+      data: {
+        name: updateFolderDto.name,
+        idCode: updateFolderDto.id_code,
+        description: updateFolderDto.description,
+        responsibleId: updateFolderDto.responsible_id,
+        subscriberId: updateFolderDto.subscriber_id,
+        startDate: updateFolderDto.start_date ? new Date(updateFolderDto.start_date) : undefined,
+        endDate: updateFolderDto.end_date ? new Date(updateFolderDto.end_date) : undefined,
+      },
     });
   }
 
   async remove(id: number, subscriber_id: number) {
-    const folder = await this.prisma.folder.findUnique({ where: { id, subscriber_id } });
-    if (!folder || folder.deleted_at) {
+    const folder = await this.prisma.folder.findUnique({ where: { id, subscriberId: subscriber_id } });
+    if (!folder || folder.deletedAt) {
       throw new NotFoundException(`Folder #${id} not found`);
     }
 
     return this.prisma.folder.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: new Date() },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: new Date() },
     });
   }
 
   async restore(id: number, subscriber_id: number) {
-    const folder = await this.prisma.folder.findUnique({ where: { id, subscriber_id } });
+    const folder = await this.prisma.folder.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!folder) {
       throw new NotFoundException(`Folder #${id} not found`);
     }
-    if (!folder.deleted_at) {
+    if (!folder.deletedAt) {
       throw new BadRequestException(`Folder #${id} is not deleted`);
     }
 
     return this.prisma.folder.update({
-      where: { id, subscriber_id },
-      data: { deleted_at: null },
+      where: { id, subscriberId: subscriber_id },
+      data: { deletedAt: null },
     });
   }
 
   async hardDelete(id: number, subscriber_id: number) {
-    const folder = await this.prisma.folder.findUnique({ where: { id, subscriber_id } });
+    const folder = await this.prisma.folder.findUnique({ where: { id, subscriberId: subscriber_id } });
     if (!folder) {
       throw new NotFoundException(`Folder #${id} not found`);
     }
 
     return this.prisma.folder.delete({
-      where: { id, subscriber_id },
+      where: { id, subscriberId: subscriber_id },
     });
   }
 
   async findAllDeleted(subscriber_id: number) {
     return this.prisma.folder.findMany({
-      where: { subscriber_id, deleted_at: { not: null } },
-      orderBy: { deleted_at: 'desc' },
+      where: { subscriberId: subscriber_id, deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
       select: {
         id: true,
         name: true,
         description: true,
-        deleted_at: true,
+        deletedAt: true,
         responsible: { select: { name: true } },
       },
     });

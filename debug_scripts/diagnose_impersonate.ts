@@ -43,7 +43,7 @@ async function main() {
 
     // 1. Find an admin_master
     const admin = await prisma.professional.findFirst({
-      where: { role: 'admin_manager' }
+      where: { role: 'ADMIN_MANAGER' }
     });
 
     if (!admin) {
@@ -71,7 +71,7 @@ async function executeTest(user: any) {
   // 2. Generate Token
   const token = signJwt({
     user_id: user.id,
-    sub_id: user.subscriber_id,
+    sub_id: user.subscriberId,
     role: user.role
   }, SECRET);
 
@@ -79,10 +79,10 @@ async function executeTest(user: any) {
 
   // 3. Find a target subscriber to impersonate
   const targetSub = await prisma.subscriber.findFirst({
-    where: { id: { not: user.subscriber_id } }
+    where: { id: { not: user.subscriberId ?? undefined } }
   });
 
-  const targetId = targetSub ? targetSub.id : (user.subscriber_id || 1);
+  const targetId = targetSub ? targetSub.id : (user.subscriberId || 1);
   console.log(`🎯 Target Subscriber ID: ${targetId}`);
 
   // 4. Request

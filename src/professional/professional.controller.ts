@@ -72,8 +72,8 @@ export class ProfessionalController {
 
   @Delete(':id/hard')
   hardDelete(@Param('id') id: string, @TokenPayloadParam() TokenPayload: PayloadTokenDto) {
-    if (TokenPayload.role !== 'admin_manager') {
-      throw new ForbiddenException('Apenas admin_manager pode remover itens permanentemente.');
+    if (TokenPayload.role !== 'ADMIN_MANAGER') {
+      throw new ForbiddenException('Apenas ADMIN_MANAGER pode remover itens permanentemente.');
     }
     return this.professionalService.hardDelete(+id, Number(TokenPayload.sub_id));
   }
@@ -84,7 +84,7 @@ export class ProfessionalController {
     @Body() body: { password: string },
     @TokenPayloadParam() TokenPayload: PayloadTokenDto
   ) {
-    if (TokenPayload.role !== 'admin_manager' && TokenPayload.role !== 'admin_municipal') {
+    if (TokenPayload.role !== 'ADMIN_MANAGER' && TokenPayload.role !== 'ADMIN_MUNICIPAL') {
       throw new ForbiddenException('Apenas administradores podem criar senhas temporárias.');
     }
     return this.professionalService.setTemporaryPassword(

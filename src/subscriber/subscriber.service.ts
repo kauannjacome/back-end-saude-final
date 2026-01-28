@@ -15,7 +15,25 @@ export class SubscriberService {
 
   async create(createSubscriberDto: CreateSubscriberDto) {
     return this.prisma.subscriber.create({
-      data: createSubscriberDto,
+      data: {
+        name: createSubscriberDto.name,
+        municipalityName: createSubscriberDto.municipality_name,
+        email: createSubscriberDto.email,
+        telephone: createSubscriberDto.telephone,
+        cnpj: createSubscriberDto.cnpj,
+        postalCode: createSubscriberDto.postal_code,
+        city: createSubscriberDto.city,
+        neighborhood: createSubscriberDto.neighborhood,
+        street: createSubscriberDto.street,
+        number: createSubscriberDto.number,
+        stateName: createSubscriberDto.state_name,
+        stateAcronym: createSubscriberDto.state_acronym,
+        stateLogo: createSubscriberDto.state_logo,
+        municipalLogo: createSubscriberDto.municipal_logo,
+        administrationLogo: createSubscriberDto.administration_logo,
+        payment: createSubscriberDto.payment ?? true,
+        isBlocked: createSubscriberDto.is_blocked ?? false,
+      },
     });
   }
 
@@ -48,7 +66,25 @@ export class SubscriberService {
     return this.prisma.$transaction(async (tx) => {
       // a) Criar Assinante
       const newSubscriber = await tx.subscriber.create({
-        data: subscriber
+        data: {
+          name: subscriber.name,
+          municipalityName: subscriber.municipality_name,
+          email: subscriber.email,
+          telephone: subscriber.telephone,
+          cnpj: subscriber.cnpj,
+          postalCode: subscriber.postal_code,
+          city: subscriber.city,
+          neighborhood: subscriber.neighborhood,
+          street: subscriber.street,
+          number: subscriber.number,
+          stateName: subscriber.state_name,
+          stateAcronym: subscriber.state_acronym,
+          stateLogo: subscriber.state_logo,
+          municipalLogo: subscriber.municipal_logo,
+          administrationLogo: subscriber.administration_logo,
+          payment: subscriber.payment ?? true,
+          isBlocked: subscriber.is_blocked ?? false,
+        }
       });
 
       // b) Hash da senha
@@ -60,11 +96,11 @@ export class SubscriberService {
           name: admin.name,
           cpf: admin.cpf,
           email: admin.email,
-          password_hash: passwordHash,
-          role: 'admin_manager', // Papel de Admin Local
-          subscriber_id: newSubscriber.id,
+          passwordHash: passwordHash,
+          role: 'ADMIN_MANAGER', // Papel de Admin Local
+          subscriberId: newSubscriber.id,
           // Outros campos obrigatórios ou defaults
-          sex: 'nao_informado', // Default safe
+          sex: 'NOT_INFORMED', // Default safe
         }
       });
 
@@ -85,22 +121,22 @@ export class SubscriberService {
     const limit = filters?.limit || 10;
     const skip = (page - 1) * limit;
 
-    const where: any = { deleted_at: null };
+    const where: any = { deletedAt: null };
 
     if (filters?.name) {
       where.name = { contains: filters.name, mode: 'insensitive' };
     }
     if (filters?.city) {
-      where.municipality_name = { contains: filters.city, mode: 'insensitive' };
+      where.municipalityName = { contains: filters.city, mode: 'insensitive' };
     }
     if (filters?.state) {
-      where.state_acronym = { contains: filters.state, mode: 'insensitive' };
+      where.stateAcronym = { contains: filters.state, mode: 'insensitive' };
     }
     if (filters?.payment !== undefined) {
       where.payment = filters.payment;
     }
     if (filters?.is_blocked !== undefined) {
-      where.is_blocked = filters.is_blocked;
+      where.isBlocked = filters.is_blocked;
     }
 
     const [total, data] = await Promise.all([
@@ -109,16 +145,16 @@ export class SubscriberService {
         where,
         take: Number(limit),
         skip: Number(skip),
-        orderBy: { created_at: 'desc' },
+        orderBy: { createdAt: 'desc' },
         select: {
           id: true,
           uuid: true,
           name: true,
-          municipality_name: true,
+          municipalityName: true,
           cnpj: true,
           payment: true,
-          is_blocked: true,
-          created_at: true,
+          isBlocked: true,
+          createdAt: true,
           _count: {
             select: {
               patients: true,
@@ -144,10 +180,10 @@ export class SubscriberService {
     // ... existing search logic if you want to keep it, but findAll is better
     return this.prisma.subscriber.findMany({
       where: {
-        deleted_at: null,
+        deletedAt: null,
         OR: [
           { name: { contains: term, mode: 'insensitive' } },
-          { municipality_name: { contains: term, mode: 'insensitive' } },
+          { municipalityName: { contains: term, mode: 'insensitive' } },
           { email: { contains: term, mode: 'insensitive' } },
           { cnpj: { contains: term, mode: 'insensitive' } },
         ],
@@ -166,10 +202,10 @@ export class SubscriberService {
       totalRegulations,
       totalPatients
     ] = await Promise.all([
-      this.prisma.subscriber.count({ where: { deleted_at: null } }),
-      this.prisma.subscriber.count({ where: { is_blocked: false, payment: true, deleted_at: null } }),
-      this.prisma.subscriber.count({ where: { is_blocked: true, deleted_at: null } }),
-      this.prisma.subscriber.count({ where: { payment: false, is_blocked: false, deleted_at: null } }),
+      this.prisma.subscriber.count({ where: { deletedAt: null } }),
+      this.prisma.subscriber.count({ where: { isBlocked: false, payment: true, deletedAt: null } }),
+      this.prisma.subscriber.count({ where: { isBlocked: true, deletedAt: null } }),
+      this.prisma.subscriber.count({ where: { payment: false, isBlocked: false, deletedAt: null } }),
       this.prisma.regulation.count(),
       this.prisma.patient.count()
     ]);
@@ -204,7 +240,25 @@ export class SubscriberService {
 
     return this.prisma.subscriber.update({
       where: { id },
-      data: updateSubscriberDto,
+      data: {
+        name: updateSubscriberDto.name,
+        municipalityName: updateSubscriberDto.municipality_name,
+        email: updateSubscriberDto.email,
+        telephone: updateSubscriberDto.telephone,
+        cnpj: updateSubscriberDto.cnpj,
+        postalCode: updateSubscriberDto.postal_code,
+        city: updateSubscriberDto.city,
+        neighborhood: updateSubscriberDto.neighborhood,
+        street: updateSubscriberDto.street,
+        number: updateSubscriberDto.number,
+        stateName: updateSubscriberDto.state_name,
+        stateAcronym: updateSubscriberDto.state_acronym,
+        stateLogo: updateSubscriberDto.state_logo,
+        municipalLogo: updateSubscriberDto.municipal_logo,
+        administrationLogo: updateSubscriberDto.administration_logo,
+        payment: updateSubscriberDto.payment,
+        isBlocked: updateSubscriberDto.is_blocked,
+      },
     });
   }
 
@@ -217,7 +271,7 @@ export class SubscriberService {
     // Soft delete (recomendado)
     return this.prisma.subscriber.update({
       where: { id },
-      data: { deleted_at: new Date() },
+      data: { deletedAt: new Date() },
     });
 
     // Caso queira deletar de verdade:
